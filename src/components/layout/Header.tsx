@@ -90,6 +90,7 @@ export function Header() {
         <nav style={{ display: 'flex', alignItems: 'center', gap: 16, marginLeft: 4 }}>
           <NavLink href="/">Keşfet</NavLink>
           <NavLink href="/kategoriler">Kategoriler</NavLink>
+          <NavLink href="/blog">Blog</NavLink>
         </nav>
 
         <div style={{ flex: 1 }} />
