@@ -1,0 +1,296 @@
+'use client';
+import { Suspense, useState, useCallback } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
+import { useSearch } from '@/hooks/useSearch';
+import { ListingCard } from '@/components/listings/ListingCard';
+import { useQuery } from '@tanstack/react-query';
+import { api } from '@/lib/api';
+import { Search, SlidersHorizontal, X, ChevronDown, ChevronUp } from 'lucide-react';
+
+const CONDITIONS = [
+  { value: '', label: 'Tümü' },
+  { value: 'NEW', label: 'Sıfır' },
+  { value: 'LIKE_NEW', label: 'Sıfır gibi' },
+  { value: 'GOOD', label: 'İyi' },
+  { value: 'FAIR', label: 'Kabul edilebilir' },
+];
+
+const SORT_OPTIONS = [
+  { value: 'newest', label: 'En yeni' },
+  { value: 'price_asc', label: 'Fiyat (düşük→yüksek)' },
+  { value: 'price_desc', label: 'Fiyat (yüksek→düşük)' },
+  { value: 'oldest', label: 'En eski' },
+];
+
+function SearchPageInner() {
+  const router = useRouter();
+  const sp = useSearchParams();
+
+  const q = sp.get('q') ?? '';
+  const categoryId = sp.get('categoryId') ?? '';
+  const brandId = sp.get('brandId') ?? '';
+  const condition = sp.get('condition') ?? '';
+  const city = sp.get('city') ?? '';
+  const minPrice = sp.get('minPrice') ? Number(sp.get('minPrice')) : undefined;
+  const maxPrice = sp.get('maxPrice') ? Number(sp.get('maxPrice')) : undefined;
+  const sort = sp.get('sort') ?? 'newest';
+  const page = Number(sp.get('page') ?? 1);
+
+  const [inputVal, setInputVal] = useState(q);
+  const [priceFrom, setPriceFrom] = useState(minPrice?.toString() ?? '');
+  const [priceTo, setPriceTo] = useState(maxPrice?.toString() ?? '');
+  const [showFilters, setShowFilters] = useState(false);
+
+  const { data: categories } = useQuery({
+    queryKey: ['categories'],
+    queryFn: () => api.get('/listings/categories').then((r) => r.data),
+  });
+
+  const { data: brands } = useQuery({
+    queryKey: ['brands'],
+    queryFn: () => api.get('/listings/brands').then((r) => r.data),
+  });
+
+  const { data, isLoading } = useSearch({
+    q: q || undefined,
+    categoryId: categoryId || undefined,
+    brandId: brandId || undefined,
+    condition: condition || undefined,
+    city: city || undefined,
+    minPrice,
+    maxPrice,
+    sort,
+    page,
+    limit: 20,
+  });
+
+  const push = useCallback((overrides: Record<string, string | number | undefined>) => {
+    const params = new URLSearchParams();
+    const merged = { q, categoryId, brandId, condition, city, sort, page: 1, ...overrides };
+    Object.entries(merged).forEach(([k, v]) => {
+      if (v !== undefined && v !== '' && v !== 1) params.set(k, String(v));
+      else if (k === 'page' && v === 1) {} // skip page=1
+    });
+    router.push(`/ara?${params.toString()}`);
+  }, [q, categoryId, brandId, condition, city, sort, page, router]);
+
+  const handleSearch = (e: React.FormEvent) => {
+    e.preventDefault();
+    push({ q: inputVal, page: 1 });
+  };
+
+  const items = data?.items ?? [];
+  const meta = data?.meta;
+
+  return (
+    <div className="m-wrap" style={{ paddingTop: 28, paddingBottom: 60 }}>
+
+      {/* Search bar */}
+      <form onSubmit={handleSearch} style={{ display: 'flex', gap: 8, marginBottom: 20 }}>
+        <div style={{ flex: 1, display: 'flex', alignItems: 'center', gap: 10, height: 48, background: 'var(--bg-1)', border: '1px solid var(--line)', borderRadius: 10, padding: '0 8px 0 14px' }}>
+          <Search size={18} style={{ color: 'var(--ink-3)', flexShrink: 0 }} />
+          <input
+            value={inputVal}
+            onChange={e => setInputVal(e.target.value)}
+            placeholder="Kask, mont, egzoz ara…"
+            style={{ flex: 1, background: 'none', border: 'none', outline: 'none', fontSize: 14, color: 'var(--ink)' }}
+          />
+          {inputVal && (
+            <button type="button" onClick={() => { setInputVal(''); push({ q: '', page: 1 }); }} style={{ background: 'none', border: 'none', padding: 4, color: 'var(--ink-3)', cursor: 'pointer' }}>
+              <X size={16} />
+            </button>
+          )}
+        </div>
+        <button type="submit" className="m-btn m-btn-primary">Ara</button>
+        <button
+          type="button"
+          onClick={() => setShowFilters(!showFilters)}
+          className="m-btn"
+          style={{ gap: 6, position: 'relative' }}
+        >
+          <SlidersHorizontal size={16} />
+          Filtre
+          {(categoryId || brandId || condition || city || minPrice || maxPrice) && (
+            <span style={{ position: 'absolute', top: 6, right: 6, width: 7, height: 7, borderRadius: '50%', background: 'var(--accent)' }} />
+          )}
+        </button>
+      </form>
+
+      {/* Filter panel */}
+      {showFilters && (
+        <div style={{ background: 'var(--bg-1)', border: '1px solid var(--line)', borderRadius: 12, padding: '18px 20px', marginBottom: 20, display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(180px, 1fr))', gap: 16 }}>
+          {/* Category */}
+          <div>
+            <label className="m-label">Kategori</label>
+            <select
+              value={categoryId}
+              onChange={e => push({ categoryId: e.target.value, brandId: '', page: 1 })}
+              className="m-field"
+              style={{ height: 38 }}
+            >
+              <option value="">Tümü</option>
+              {(categories ?? []).map((c: any) => (
+                <option key={c.id} value={c.id}>{c.name}</option>
+              ))}
+            </select>
+          </div>
+
+          {/* Brand */}
+          <div>
+            <label className="m-label">Marka</label>
+            <select
+              value={brandId}
+              onChange={e => push({ brandId: e.target.value, page: 1 })}
+              className="m-field"
+              style={{ height: 38 }}
+            >
+              <option value="">Tümü</option>
+              {(brands ?? []).map((b: any) => (
+                <option key={b.id} value={b.id}>{b.name}</option>
+              ))}
+            </select>
+          </div>
+
+          {/* Condition */}
+          <div>
+            <label className="m-label">Durum</label>
+            <select
+              value={condition}
+              onChange={e => push({ condition: e.target.value, page: 1 })}
+              className="m-field"
+              style={{ height: 38 }}
+            >
+              {CONDITIONS.map(c => <option key={c.value} value={c.value}>{c.label}</option>)}
+            </select>
+          </div>
+
+          {/* Price range */}
+          <div>
+            <label className="m-label">Min Fiyat (₺)</label>
+            <input
+              type="number"
+              value={priceFrom}
+              onChange={e => setPriceFrom(e.target.value)}
+              onBlur={() => push({ minPrice: priceFrom ? Number(priceFrom) : undefined, page: 1 })}
+              placeholder="0"
+              className="m-field"
+              style={{ height: 38 }}
+            />
+          </div>
+
+          <div>
+            <label className="m-label">Max Fiyat (₺)</label>
+            <input
+              type="number"
+              value={priceTo}
+              onChange={e => setPriceTo(e.target.value)}
+              onBlur={() => push({ maxPrice: priceTo ? Number(priceTo) : undefined, page: 1 })}
+              placeholder="—"
+              className="m-field"
+              style={{ height: 38 }}
+            />
+          </div>
+
+          {/* Reset */}
+          <div style={{ display: 'flex', alignItems: 'flex-end' }}>
+            <button
+              onClick={() => { setPriceFrom(''); setPriceTo(''); router.push(`/ara${q ? `?q=${q}` : ''}`); }}
+              className="m-btn m-btn-ghost"
+              style={{ width: '100%', height: 38, fontSize: 13 }}
+            >
+              Filtreleri sıfırla
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Result header */}
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16, flexWrap: 'wrap', gap: 10 }}>
+        <p style={{ fontSize: 14, color: 'var(--ink-2)' }}>
+          {isLoading ? 'Aranıyor…' : (
+            meta?.total !== undefined
+              ? <><strong style={{ color: 'var(--ink)' }}>{meta.total.toLocaleString('tr-TR')}</strong> sonuç{q ? ` — "${q}"` : ''}</>
+              : null
+          )}
+        </p>
+        <select
+          value={sort}
+          onChange={e => push({ sort: e.target.value, page: 1 })}
+          className="m-field"
+          style={{ width: 'auto', height: 36, fontSize: 13, paddingRight: 28 }}
+        >
+          {SORT_OPTIONS.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
+        </select>
+      </div>
+
+      {/* Active filter chips */}
+      {(categoryId || brandId || condition || city) && (
+        <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginBottom: 16 }}>
+          {categoryId && (
+            <span className="m-chip active" onClick={() => push({ categoryId: '', page: 1 })}>
+              {(categories ?? []).find((c: any) => c.id === categoryId)?.name ?? categoryId} <X size={13} />
+            </span>
+          )}
+          {brandId && (
+            <span className="m-chip active" onClick={() => push({ brandId: '', page: 1 })}>
+              {(brands ?? []).find((b: any) => b.id === brandId)?.name ?? brandId} <X size={13} />
+            </span>
+          )}
+          {condition && (
+            <span className="m-chip active" onClick={() => push({ condition: '', page: 1 })}>
+              {CONDITIONS.find(c => c.value === condition)?.label} <X size={13} />
+            </span>
+          )}
+        </div>
+      )}
+
+      {/* Grid */}
+      {isLoading ? (
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(clamp(155px, 42vw, 240px), 1fr))', gap: 12 }}>
+          {Array.from({ length: 12 }).map((_, i) => (
+            <div key={i} style={{ aspectRatio: '4/5', background: 'var(--bg-1)', borderRadius: 12, animation: 'pulse 1.5s ease-in-out infinite' }} />
+          ))}
+        </div>
+      ) : items.length === 0 ? (
+        <div style={{ textAlign: 'center', padding: '80px 0' }}>
+          <Search size={44} style={{ margin: '0 auto 12px', opacity: 0.2 }} />
+          <p style={{ fontWeight: 600, color: 'var(--ink-2)' }}>Sonuç bulunamadı</p>
+          <p style={{ fontSize: 13, color: 'var(--ink-3)', marginTop: 4 }}>Farklı anahtar kelime veya filtre deneyin</p>
+        </div>
+      ) : (
+        <>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(clamp(155px, 42vw, 240px), 1fr))', gap: 12 }}>
+            {items.map((item: any) => (
+              <ListingCard key={item.id} listing={item} />
+            ))}
+          </div>
+
+          {/* Pagination */}
+          {meta && meta.totalPages > 1 && (
+            <div style={{ display: 'flex', justifyContent: 'center', gap: 6, marginTop: 36, flexWrap: 'wrap' }}>
+              {Array.from({ length: meta.totalPages }, (_, i) => i + 1).map(p => (
+                <button
+                  key={p}
+                  onClick={() => push({ page: p })}
+                  className="m-btn sm"
+                  style={p === page ? { background: 'var(--accent)', color: 'var(--accent-ink)', borderColor: 'transparent' } : {}}
+                >
+                  {p}
+                </button>
+              ))}
+            </div>
+          )}
+        </>
+      )}
+      <style>{`@keyframes pulse{0%,100%{opacity:1}50%{opacity:.5}}`}</style>
+    </div>
+  );
+}
+
+export default function SearchPage() {
+  return (
+    <Suspense>
+      <SearchPageInner />
+    </Suspense>
+  );
+}

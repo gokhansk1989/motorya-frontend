@@ -145,7 +145,7 @@ function HomeContent() {
   });
 
   const handleSearch = (val: string) => {
-    router.push(`/?q=${encodeURIComponent(val)}`);
+    router.push(`/ara?q=${encodeURIComponent(val)}`);
   };
 
   return (

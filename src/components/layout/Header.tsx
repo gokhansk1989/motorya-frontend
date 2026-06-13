@@ -45,7 +45,7 @@ export function Header() {
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
     setSearchOpen(false);
-    router.push(`/?q=${encodeURIComponent(searchVal)}`);
+    router.push(`/ara?q=${encodeURIComponent(searchVal)}`);
   };
 
   const badgeDot: React.CSSProperties = {
