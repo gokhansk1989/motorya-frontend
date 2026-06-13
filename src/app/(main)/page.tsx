@@ -33,7 +33,7 @@ function HeroSection({ onSearch }: { onSearch: (q: string) => void }) {
         'radial-gradient(80% 120% at 12% -10%, color-mix(in oklch, var(--accent) 22%, transparent), transparent 55%),' +
         'radial-gradient(70% 100% at 100% 110%, color-mix(in oklch, var(--accent-2) 18%, transparent), transparent 55%)',
         zIndex: 0 }} />
-      <div className="m-wrap" style={{ position: 'relative', zIndex: 1, padding: '54px 28px 46px' }}>
+      <div className="m-wrap" style={{ position: 'relative', zIndex: 1, paddingTop: 'clamp(28px, 6vw, 54px)', paddingBottom: 'clamp(24px, 4vw, 46px)' }}>
         <div style={{ maxWidth: 620 }} className="m-fade-up">
           <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 20 }}>
             <span className="m-badge new" style={{ display: 'inline-flex', gap: 5 }}>
@@ -46,7 +46,7 @@ function HeroSection({ onSearch }: { onSearch: (q: string) => void }) {
             Garajındaki ekipman,<br />birinin{' '}
             <span className="m-accent">bir sonraki</span> yolculuğu.
           </h1>
-          <p style={{ fontSize: 17, maxWidth: 480, marginTop: 18, lineHeight: 1.55, color: 'var(--ink-2)' }}>
+          <p style={{ fontSize: 'clamp(14px, 3vw, 17px)', maxWidth: 480, marginTop: 18, lineHeight: 1.55, color: 'var(--ink-2)' }}>
             İkinci el kask, mont, egzoz ve parça al-sat. Güvenli ödeme, kargo takibi
             ya da güvenli buluşma noktasında yüz yüze.
           </p>
@@ -58,9 +58,9 @@ function HeroSection({ onSearch }: { onSearch: (q: string) => void }) {
                 value={val}
                 onChange={e => setVal(e.target.value)}
                 placeholder="Ne arıyorsun?"
-                style={{ flex: 1, background: 'none', border: 0, color: 'var(--ink)', fontSize: 15, outline: 'none' }}
+                style={{ flex: 1, background: 'none', border: 0, color: 'var(--ink)', fontSize: 15, outline: 'none', minWidth: 0 }}
               />
-              <button type="submit" className="m-btn m-btn-primary" style={{ height: 38, padding: '0 18px', fontSize: 14 }}>Ara</button>
+              <button type="submit" className="m-btn m-btn-primary" style={{ height: 38, padding: '0 14px', fontSize: 14, flexShrink: 0 }}>Ara</button>
             </div>
           </form>
 
@@ -113,7 +113,7 @@ function CategoryStrip({ active, setActive }: { active: string; setActive: (id: 
 
 function SkeletonGrid() {
   return (
-    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))', gap: 18 }}>
+    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(clamp(160px, 40vw, 220px), 1fr))', gap: 'clamp(10px, 2vw, 18px)' }}>
       {Array.from({ length: 8 }).map((_, i) => (
         <div key={i} className="m-card" style={{ opacity: 0.5 }}>
           <div className="m-card-media" style={{ background: 'var(--bg-2)' }} />
@@ -186,7 +186,7 @@ function HomeContent() {
           <SkeletonGrid />
         ) : data?.items?.length ? (
           <>
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))', gap: 18 }}>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(clamp(155px, 42vw, 240px), 1fr))', gap: 'clamp(10px, 2vw, 18px)' }}>
               {data.items.map((l: any) => <ListingCard key={l.id} listing={l} />)}
             </div>
             {(data.meta?.totalPages ?? 1) > 1 && (
@@ -227,7 +227,7 @@ export default function HomePage() {
   return (
     <Suspense fallback={
       <div className="m-wrap" style={{ paddingTop: 48 }}>
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))', gap: 18 }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(clamp(155px, 42vw, 240px), 1fr))', gap: 'clamp(10px, 2vw, 18px)' }}>
           {Array.from({ length: 8 }).map((_, i) => (
             <div key={i} className="m-card" style={{ opacity: 0.4 }}>
               <div className="m-card-media" style={{ background: 'var(--bg-2)' }} />

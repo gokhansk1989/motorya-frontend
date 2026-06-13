@@ -150,7 +150,7 @@ export default function ProfilePage() {
               placeholder="Kendinizden kısaca bahsedin…"
             />
           </div>
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14 }}>
+          <div className="m-grid-1-mobile" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14 }}>
             <div>
               <label style={lbl}>Şehir</label>
               <div style={{ position: 'relative' }}>

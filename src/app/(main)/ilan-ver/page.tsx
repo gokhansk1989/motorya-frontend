@@ -189,7 +189,7 @@ export default function CreateListingPage() {
         </div>
 
         {/* Kategori & Marka */}
-        <div style={{ ...card, display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
+        <div className="m-grid-1-mobile" style={{ ...card, display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
           <div>
             <label style={label}>Kategori *</label>
             <div style={{ position: 'relative' }}>
@@ -214,7 +214,7 @@ export default function CreateListingPage() {
         </div>
 
         {/* Durum, Beden, Şehir */}
-        <div style={{ ...card, display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 16 }}>
+        <div className="m-grid-2-mobile" style={{ ...card, display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 16 }}>
           <div>
             <label style={label}>Durum *</label>
             <div style={{ position: 'relative' }}>
@@ -241,7 +241,7 @@ export default function CreateListingPage() {
         </div>
 
         {/* Fiyat */}
-        <div style={{ ...card, display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
+        <div className="m-grid-1-mobile" style={{ ...card, display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
           <div>
             <label style={label}>Fiyat (₺) *</label>
             <input {...register('price')} type="number" style={inputSt(!!errors.price)} placeholder="0" />

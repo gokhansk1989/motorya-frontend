@@ -79,6 +79,21 @@ input, textarea, select { font-family: inherit; color: var(--ink); }
 /* ---------- layout ---------- */
 .m-wrap { width: 100%; max-width: var(--maxw); margin: 0 auto; padding: 0 28px; position: relative; z-index: 1; }
 
+/* ---------- responsive ---------- */
+@media (max-width: 768px) {
+  :root { --header-h: 60px; }
+  .m-wrap { padding: 0 16px; }
+  .m-hide-mobile { display: none !important; }
+  .m-stack-mobile { flex-direction: column !important; }
+  .m-full-mobile { width: 100% !important; }
+  .m-grid-1-mobile { grid-template-columns: 1fr !important; }
+  .m-grid-2-mobile { grid-template-columns: 1fr 1fr !important; }
+  .m-btn.lg { height: 46px; padding: 0 18px; font-size: 15px; }
+}
+@media (max-width: 480px) {
+  .m-grid-2-mobile { grid-template-columns: 1fr !important; }
+}
+
 /* ---------- buttons ---------- */
 .m-btn {
   display: inline-flex; align-items: center; justify-content: center; gap: 8px;
