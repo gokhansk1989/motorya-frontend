@@ -103,7 +103,11 @@ export function Header() {
 
           {/* Desktop nav */}
           <nav className="desktop-nav" style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
-            {[{ href: '/', label: 'Keşfet' }, { href: '/blog', label: 'Blog' }].map(({ href, label }) => (
+            {[
+              { href: '/', label: 'Keşfet' },
+              { href: '/blog', label: 'Blog' },
+              ...(user ? [{ href: '/ilanlarim', label: 'İlanlarım' }] : []),
+            ].map(({ href, label }) => (
               <Link key={href} href={href} style={{
                 color: pathname === href ? 'var(--ink)' : 'var(--ink-3)',
                 fontFamily: 'var(--font-display)', fontWeight: 600, fontSize: 14,
