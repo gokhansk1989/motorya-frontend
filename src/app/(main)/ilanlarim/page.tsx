@@ -27,7 +27,7 @@ export default function MyListingsPage() {
     onError: () => toast.error('İlan silinemedi'),
   });
 
-  const listings = data?.items ?? [];
+  const listings = Array.isArray(data) ? data : (data?.items ?? []);
   const filtered = filter === 'ALL' ? listings : listings.filter((l: any) => l.status === filter);
 
   const tabs = [
