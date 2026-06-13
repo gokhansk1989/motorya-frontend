@@ -1,14 +1,12 @@
 'use client';
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { useQuery, useMutation } from '@tanstack/react-query';
 import { api } from '@/lib/api';
 import { useAuthStore } from '@/store/auth';
-import { Input } from '@/components/ui/Input';
-import { Button } from '@/components/ui/Button';
-import { User, Lock, Star } from 'lucide-react';
+import { User, Lock, Star, MapPin, Eye, EyeOff, ShoppingBag, Tag } from 'lucide-react';
 import toast from 'react-hot-toast';
 
 const profileSchema = z.object({
@@ -27,8 +25,26 @@ const passwordSchema = z.object({
 type ProfileData = z.infer<typeof profileSchema>;
 type PasswordData = z.infer<typeof passwordSchema>;
 
+const card: React.CSSProperties = {
+  background: 'var(--bg-1)', border: '1px solid var(--line)',
+  borderRadius: 'var(--radius-m)', padding: 24, marginBottom: 16,
+};
+
+const lbl: React.CSSProperties = {
+  display: 'block', fontSize: 13, fontWeight: 600,
+  color: 'var(--ink-2)', marginBottom: 7, fontFamily: 'var(--font-display)',
+};
+
+const inp = (err?: boolean): React.CSSProperties => ({
+  width: '100%', height: 44, padding: '0 14px',
+  background: 'var(--bg-0)', border: `1px solid ${err ? 'var(--bad)' : 'var(--line)'}`,
+  borderRadius: 'var(--radius-s)', color: 'var(--ink)', fontSize: 14, outline: 'none',
+});
+
 export default function ProfilePage() {
   const { user, setAuth, token } = useAuthStore();
+  const [showPwd, setShowPwd] = useState(false);
+  const [showNewPwd, setShowNewPwd] = useState(false);
 
   const { data: profile } = useQuery({
     queryKey: ['my-profile'],
@@ -51,10 +67,7 @@ export default function ProfilePage() {
 
   const updateProfile = useMutation({
     mutationFn: (data: ProfileData) => api.patch('/users/profile', data).then(r => r.data),
-    onSuccess: (updated) => {
-      setAuth(updated, token!);
-      toast.success('Profil güncellendi');
-    },
+    onSuccess: (updated) => { setAuth(updated, token!); toast.success('Profil güncellendi'); },
     onError: () => toast.error('Güncellenemedi'),
   });
 
@@ -64,54 +77,128 @@ export default function ProfilePage() {
     onError: () => toast.error('Şifre değiştirilemedi'),
   });
 
-  return (
-    <div className="max-w-lg mx-auto py-8 px-4">
-      <h1 className="text-2xl font-bold text-gray-900 mb-6">Profilim</h1>
+  const initials = profile?.displayName?.split(' ').map((w: string) => w[0]).join('').slice(0, 2).toUpperCase() || '?';
 
-      {/* Avatar + stats */}
+  return (
+    <div className="m-wrap" style={{ maxWidth: 680, paddingTop: 36, paddingBottom: 60 }}>
+      <h1 className="m-display" style={{ fontSize: 28, color: 'var(--ink)', marginBottom: 28 }}>Profilim</h1>
+
+      {/* Profil kartı */}
       {profile && (
-        <div className="bg-white rounded-2xl border border-gray-100 p-5 mb-5 flex items-center gap-4">
-          <div className="w-16 h-16 rounded-full bg-orange-100 flex items-center justify-center text-2xl font-bold text-orange-500 overflow-hidden shrink-0">
-            {profile.avatarUrl ? <img src={profile.avatarUrl} className="w-full h-full object-cover" alt=""/> : profile.displayName?.[0]}
+        <div style={{ ...card, display: 'flex', alignItems: 'center', gap: 20, marginBottom: 20 }}>
+          <div style={{ width: 72, height: 72, borderRadius: '50%', background: 'var(--bg-3)', border: '2px solid var(--line)', display: 'grid', placeItems: 'center', overflow: 'hidden', flexShrink: 0 }}>
+            {profile.avatarUrl
+              ? <img src={profile.avatarUrl} style={{ width: '100%', height: '100%', objectFit: 'cover' }} alt="" />
+              : <span style={{ fontFamily: 'var(--font-display)', fontSize: 24, fontWeight: 700, color: 'var(--accent)' }}>{initials}</span>}
           </div>
-          <div>
-            <p className="font-semibold text-gray-900">{profile.displayName}</p>
-            <p className="text-sm text-gray-500">{profile.email}</p>
-            <div className="flex items-center gap-3 mt-1 text-xs text-gray-400">
-              <span className="flex items-center gap-1"><Star className="w-3 h-3 text-yellow-400"/>{profile.ratingAvg?.toFixed(1) ?? '—'} ({profile.ratingCount} değerlendirme)</span>
-              <span>{profile.salesCount} satış</span>
+          <div style={{ flex: 1 }}>
+            <p style={{ fontWeight: 700, fontSize: 18, color: 'var(--ink)', fontFamily: 'var(--font-display)' }}>{profile.displayName}</p>
+            <p style={{ fontSize: 13, color: 'var(--ink-3)', marginTop: 2 }}>{profile.email}</p>
+            {profile.city && (
+              <p style={{ fontSize: 12, color: 'var(--ink-3)', marginTop: 4, display: 'flex', alignItems: 'center', gap: 4 }}>
+                <MapPin size={11} />{profile.city}
+              </p>
+            )}
+          </div>
+          <div style={{ display: 'flex', gap: 20, textAlign: 'center' }}>
+            <div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 4, justifyContent: 'center' }}>
+                <Star size={14} style={{ color: '#f59e0b' }} />
+                <span style={{ fontWeight: 700, fontSize: 16, fontFamily: 'var(--font-mono)', color: 'var(--ink)' }}>{profile.ratingAvg?.toFixed(1) ?? '—'}</span>
+              </div>
+              <p style={{ fontSize: 11, color: 'var(--ink-3)', marginTop: 2 }}>{profile.ratingCount ?? 0} yorum</p>
+            </div>
+            <div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 4, justifyContent: 'center' }}>
+                <ShoppingBag size={14} style={{ color: 'var(--accent)' }} />
+                <span style={{ fontWeight: 700, fontSize: 16, fontFamily: 'var(--font-mono)', color: 'var(--ink)' }}>{profile.salesCount ?? 0}</span>
+              </div>
+              <p style={{ fontSize: 11, color: 'var(--ink-3)', marginTop: 2 }}>satış</p>
             </div>
           </div>
         </div>
       )}
 
       {/* Profil güncelle */}
-      <div className="bg-white rounded-2xl border border-gray-100 p-5 mb-5">
-        <h2 className="font-semibold text-gray-800 mb-4 flex items-center gap-2"><User className="w-4 h-4"/> Profil Bilgileri</h2>
-        <form onSubmit={profileForm.handleSubmit(d => updateProfile.mutate(d))} className="space-y-3">
-          <Input label="Ad Soyad" {...profileForm.register('displayName')} error={profileForm.formState.errors.displayName?.message}/>
+      <div style={card}>
+        <p style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 15, fontWeight: 700, color: 'var(--ink)', fontFamily: 'var(--font-display)', marginBottom: 20 }}>
+          <User size={16} style={{ color: 'var(--accent)' }} />Profil Bilgileri
+        </p>
+        <form onSubmit={profileForm.handleSubmit(d => updateProfile.mutate(d))} style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1.5">Hakkımda</label>
-            <textarea {...profileForm.register('bio')} rows={3}
-              className="w-full px-3 py-2.5 text-sm border border-gray-200 rounded-xl outline-none focus:border-orange-400 resize-none"
-              placeholder="Kendinizden bahsedin…"/>
+            <label style={lbl}>Ad Soyad</label>
+            <input {...profileForm.register('displayName')} style={inp(!!profileForm.formState.errors.displayName)} />
+            {profileForm.formState.errors.displayName && <p style={{ marginTop: 5, fontSize: 12, color: 'var(--bad)', fontFamily: 'var(--font-mono)' }}>{profileForm.formState.errors.displayName.message}</p>}
           </div>
-          <Input label="Şehir" {...profileForm.register('city')} placeholder="İstanbul"/>
-          <Input label="Profil Fotoğrafı URL" {...profileForm.register('avatarUrl')} error={profileForm.formState.errors.avatarUrl?.message} placeholder="https://…"/>
-          <Button type="submit" loading={updateProfile.isPending} className="w-full">Kaydet</Button>
+          <div>
+            <label style={lbl}>Hakkımda <span style={{ fontWeight: 400, opacity: 0.5 }}>opsiyonel</span></label>
+            <textarea
+              {...profileForm.register('bio')}
+              rows={3}
+              style={{ ...inp(), height: 'auto', padding: '10px 14px', resize: 'vertical' }}
+              placeholder="Kendinizden kısaca bahsedin…"
+            />
+          </div>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14 }}>
+            <div>
+              <label style={lbl}>Şehir</label>
+              <input {...profileForm.register('city')} style={inp()} placeholder="İstanbul" />
+            </div>
+            <div>
+              <label style={lbl}>Profil Fotoğrafı URL</label>
+              <input {...profileForm.register('avatarUrl')} style={inp(!!profileForm.formState.errors.avatarUrl)} placeholder="https://…" />
+            </div>
+          </div>
+          <button
+            type="submit"
+            disabled={updateProfile.isPending}
+            className="m-btn m-btn-primary"
+            style={{ height: 46, borderRadius: 10, fontSize: 14, fontWeight: 700, display: 'flex', justifyContent: 'center', alignItems: 'center', gap: 8 }}
+          >
+            {updateProfile.isPending ? <span style={{ width: 16, height: 16, border: '2px solid var(--accent-ink)', borderTopColor: 'transparent', borderRadius: '50%', animation: 'spin .7s linear infinite', display: 'inline-block' }} /> : 'Kaydet'}
+          </button>
         </form>
       </div>
 
       {/* Şifre değiştir */}
-      <div className="bg-white rounded-2xl border border-gray-100 p-5">
-        <h2 className="font-semibold text-gray-800 mb-4 flex items-center gap-2"><Lock className="w-4 h-4"/> Şifre Değiştir</h2>
-        <form onSubmit={passwordForm.handleSubmit(d => changePassword.mutate(d))} className="space-y-3">
-          <Input label="Mevcut Şifre" type="password" {...passwordForm.register('currentPassword')} error={passwordForm.formState.errors.currentPassword?.message}/>
-          <Input label="Yeni Şifre" type="password" {...passwordForm.register('newPassword')} error={passwordForm.formState.errors.newPassword?.message}/>
-          <Input label="Şifre Tekrar" type="password" {...passwordForm.register('confirmPassword')} error={passwordForm.formState.errors.confirmPassword?.message}/>
-          <Button type="submit" loading={changePassword.isPending} variant="secondary" className="w-full">Şifreyi Değiştir</Button>
+      <div style={card}>
+        <p style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 15, fontWeight: 700, color: 'var(--ink)', fontFamily: 'var(--font-display)', marginBottom: 20 }}>
+          <Lock size={16} style={{ color: 'var(--accent)' }} />Şifre Değiştir
+        </p>
+        <form onSubmit={passwordForm.handleSubmit(d => changePassword.mutate(d))} style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+          {[
+            { field: 'currentPassword', label: 'Mevcut Şifre', show: showPwd, toggle: () => setShowPwd(v => !v) },
+            { field: 'newPassword', label: 'Yeni Şifre', show: showNewPwd, toggle: () => setShowNewPwd(v => !v) },
+            { field: 'confirmPassword', label: 'Şifre Tekrar', show: showNewPwd, toggle: () => setShowNewPwd(v => !v) },
+          ].map(({ field, label: lbTxt, show, toggle }) => (
+            <div key={field}>
+              <label style={lbl}>{lbTxt}</label>
+              <div style={{ position: 'relative' }}>
+                <input
+                  {...passwordForm.register(field as any)}
+                  type={show ? 'text' : 'password'}
+                  style={{ ...inp(!!(passwordForm.formState.errors as any)[field]), paddingRight: 44 }}
+                />
+                <button type="button" onClick={toggle} style={{ position: 'absolute', right: 14, top: '50%', transform: 'translateY(-50%)', background: 'none', border: 0, color: 'var(--ink-3)', display: 'flex', padding: 0 }}>
+                  {show ? <EyeOff size={16} /> : <Eye size={16} />}
+                </button>
+              </div>
+              {(passwordForm.formState.errors as any)[field] && (
+                <p style={{ marginTop: 5, fontSize: 12, color: 'var(--bad)', fontFamily: 'var(--font-mono)' }}>{(passwordForm.formState.errors as any)[field].message}</p>
+              )}
+            </div>
+          ))}
+          <button
+            type="submit"
+            disabled={changePassword.isPending}
+            className="m-btn m-btn-ghost"
+            style={{ height: 46, borderRadius: 10, fontSize: 14, fontWeight: 700, display: 'flex', justifyContent: 'center', alignItems: 'center', gap: 8 }}
+          >
+            {changePassword.isPending ? <span style={{ width: 16, height: 16, border: '2px solid var(--ink)', borderTopColor: 'transparent', borderRadius: '50%', animation: 'spin .7s linear infinite', display: 'inline-block' }} /> : 'Şifreyi Değiştir'}
+          </button>
         </form>
       </div>
+      <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
     </div>
   );
 }
