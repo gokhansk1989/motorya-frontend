@@ -34,12 +34,24 @@ export default function MyListingsPage() {
 
   const toggleMutation = useMutation({
     mutationFn: (id: string) => api.patch(`/listings/${id}/toggle-status`),
+    onMutate: (id) => {
+      qc.setQueryData(['myListings'], (old: any) => {
+        const items = Array.isArray(old) ? old : (old?.items ?? []);
+        const updated = items.map((l: any) =>
+          l.id === id ? { ...l, status: l.status === 'ACTIVE' ? 'ARCHIVED' : 'ACTIVE' } : l
+        );
+        return Array.isArray(old) ? updated : { ...old, items: updated };
+      });
+    },
     onSuccess: () => {
       toast.success('İlan durumu güncellendi');
       qc.invalidateQueries({ queryKey: ['myListings'] });
       qc.invalidateQueries({ queryKey: ['listings'] });
     },
-    onError: () => toast.error('Durum güncellenemedi'),
+    onError: () => {
+      toast.error('Durum güncellenemedi');
+      qc.invalidateQueries({ queryKey: ['myListings'] });
+    },
   });
 
   const listings = Array.isArray(data) ? data : (data?.items ?? []);
