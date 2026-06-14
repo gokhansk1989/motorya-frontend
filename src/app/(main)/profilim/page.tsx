@@ -102,7 +102,7 @@ export default function ProfilePage() {
         toast.success(`Tatil modu kapandı. ${data.restoredCount} ilan aktife alındı.`);
       }
       qc.invalidateQueries({ queryKey: ['my-profile'] });
-      qc.invalidateQueries({ queryKey: ['myListings'] });
+      qc.invalidateQueries({ queryKey: ['my-listings'] });
       qc.invalidateQueries({ queryKey: ['listings'] });
     },
     onError: () => {

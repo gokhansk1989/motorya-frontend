@@ -24,18 +24,30 @@ export default function MyListingsPage() {
 
   const deleteMutation = useMutation({
     mutationFn: (id: string) => api.delete(`/listings/${id}`),
+    onMutate: (id) => {
+      qc.setQueryData(['my-listings'], (old: any) => {
+        if (!old) return old;
+        const items = Array.isArray(old) ? old : (old?.items ?? []);
+        const updated = items.filter((l: any) => l.id !== id);
+        return Array.isArray(old) ? updated : { ...old, items: updated };
+      });
+    },
     onSuccess: () => {
       toast.success('İlan silindi');
-      qc.invalidateQueries({ queryKey: ['myListings'] });
+      qc.invalidateQueries({ queryKey: ['my-listings'] });
       qc.invalidateQueries({ queryKey: ['listings'] });
     },
-    onError: () => toast.error('İlan silinemedi'),
+    onError: () => {
+      toast.error('İlan silinemedi');
+      qc.invalidateQueries({ queryKey: ['my-listings'] });
+    },
   });
 
   const toggleMutation = useMutation({
     mutationFn: (id: string) => api.patch(`/listings/${id}/toggle-status`),
     onMutate: (id) => {
-      qc.setQueryData(['myListings'], (old: any) => {
+      qc.setQueryData(['my-listings'], (old: any) => {
+        if (!old) return old;
         const items = Array.isArray(old) ? old : (old?.items ?? []);
         const updated = items.map((l: any) =>
           l.id === id ? { ...l, status: l.status === 'ACTIVE' ? 'ARCHIVED' : 'ACTIVE' } : l
@@ -45,12 +57,12 @@ export default function MyListingsPage() {
     },
     onSuccess: () => {
       toast.success('İlan durumu güncellendi');
-      qc.invalidateQueries({ queryKey: ['myListings'] });
+      qc.invalidateQueries({ queryKey: ['my-listings'] });
       qc.invalidateQueries({ queryKey: ['listings'] });
     },
     onError: () => {
       toast.error('Durum güncellenemedi');
-      qc.invalidateQueries({ queryKey: ['myListings'] });
+      qc.invalidateQueries({ queryKey: ['my-listings'] });
     },
   });
 
