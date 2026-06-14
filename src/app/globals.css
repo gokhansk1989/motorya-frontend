@@ -1,7 +1,51 @@
 @import url('https://fonts.googleapis.com/css2?family=Saira:wght@400;500;600;700;800&family=Saira+Condensed:wght@500;600;700&family=Hanken+Grotesk:wght@400;500;600;700&family=Space+Mono:wght@400;700&display=swap');
 @import "tailwindcss";
 
+/* ===== LIGHT THEME (default) ===== */
 :root {
+  --bg-0: oklch(0.99 0.002 255);
+  --bg-1: oklch(0.97 0.003 255);
+  --bg-2: oklch(0.93 0.005 255);
+  --bg-3: oklch(0.87 0.008 255);
+  --line: oklch(0.82 0.010 255);
+  --line-soft: oklch(0.89 0.006 255);
+
+  --ink: oklch(0.14 0.012 255);
+  --ink-2: oklch(0.32 0.014 255);
+  --ink-3: oklch(0.52 0.014 255);
+
+  --accent: oklch(0.65 0.200 50);
+  --accent-ink: oklch(0.99 0.002 255);
+  --accent-2: oklch(0.55 0.160 215);
+  --accent-2-ink: oklch(0.99 0.002 255);
+
+  --good: oklch(0.50 0.16 150);
+  --warn: oklch(0.58 0.18 85);
+  --bad: oklch(0.52 0.20 25);
+
+  --radius: 12px;
+  --radius-s: 8px;
+  --radius-m: 14px;
+  --radius-l: 18px;
+
+  --shadow: 0 1px 0 oklch(1 0 0 / 0.6) inset, 0 4px 16px -4px oklch(0 0 0 / 0.10);
+  --shadow-s: 0 1px 4px oklch(0 0 0 / 0.08);
+  --shadow-lg: 0 12px 40px -12px oklch(0 0 0 / 0.14);
+
+  --header-bg: oklch(0.99 0.002 255 / 0.92);
+  --grid-line: oklch(0 0 0 / 0.04);
+
+  --maxw: 1320px;
+  --header-h: 68px;
+
+  --font-display: 'Saira', system-ui, sans-serif;
+  --font-cond: 'Saira Condensed', 'Saira', sans-serif;
+  --font-body: 'Hanken Grotesk', system-ui, sans-serif;
+  --font-mono: 'Space Mono', ui-monospace, monospace;
+}
+
+/* ===== DARK THEME ===== */
+[data-theme="dark"] {
   --bg-0: oklch(0.155 0.008 255);
   --bg-1: oklch(0.195 0.010 255);
   --bg-2: oklch(0.235 0.012 255);
@@ -22,20 +66,12 @@
   --warn: oklch(0.80 0.16 85);
   --bad: oklch(0.68 0.20 25);
 
-  --radius: 12px;
-  --radius-s: 8px;
-  --radius-l: 18px;
-
   --shadow: 0 1px 0 oklch(1 0 0 / 0.04) inset, 0 18px 40px -24px oklch(0 0 0 / 0.8);
+  --shadow-s: 0 1px 4px oklch(0 0 0 / 0.4);
   --shadow-lg: 0 30px 70px -30px oklch(0 0 0 / 0.85);
 
-  --maxw: 1320px;
-  --header-h: 68px;
-
-  --font-display: 'Saira', system-ui, sans-serif;
-  --font-cond: 'Saira Condensed', 'Saira', sans-serif;
-  --font-body: 'Hanken Grotesk', system-ui, sans-serif;
-  --font-mono: 'Space Mono', ui-monospace, monospace;
+  --header-bg: oklch(0.155 0.008 255 / 0.90);
+  --grid-line: oklch(1 0 0 / 0.018);
 }
 
 * { box-sizing: border-box; }
@@ -49,14 +85,15 @@ body {
   line-height: 1.5;
   -webkit-font-smoothing: antialiased;
   text-rendering: optimizeLegibility;
+  transition: background 0.2s ease, color 0.2s ease;
 }
 
 body::before {
   content: "";
   position: fixed; inset: 0; z-index: 0; pointer-events: none;
   background-image:
-    linear-gradient(oklch(1 0 0 / 0.018) 1px, transparent 1px),
-    linear-gradient(90deg, oklch(1 0 0 / 0.018) 1px, transparent 1px);
+    linear-gradient(var(--grid-line) 1px, transparent 1px),
+    linear-gradient(90deg, var(--grid-line) 1px, transparent 1px);
   background-size: 46px 46px;
   mask-image: radial-gradient(120% 90% at 50% 0%, #000 30%, transparent 90%);
 }
@@ -112,7 +149,7 @@ input, textarea, select { font-family: inherit; color: var(--ink); }
 
 .m-btn-primary {
   background: var(--accent) !important; color: var(--accent-ink) !important; border-color: transparent !important;
-  box-shadow: 0 10px 26px -12px var(--accent);
+  box-shadow: 0 6px 20px -8px var(--accent);
 }
 .m-btn-primary:hover { filter: brightness(1.08); }
 .m-btn-ghost { background: transparent !important; border-color: var(--line) !important; color: var(--ink) !important; }
@@ -141,7 +178,7 @@ input, textarea, select { font-family: inherit; color: var(--ink); }
 .m-badge.warn { background: color-mix(in oklch, var(--warn) 20%, transparent); color: var(--warn); }
 .m-badge.bad { background: color-mix(in oklch, var(--bad) 20%, transparent); color: var(--bad); }
 .m-badge.solid { background: var(--accent); color: var(--accent-ink); }
-.m-badge.dark { background: oklch(0 0 0 / 0.6); color: var(--ink); backdrop-filter: blur(4px); }
+.m-badge.dark { background: oklch(0 0 0 / 0.6); color: oklch(1 0 0); backdrop-filter: blur(4px); }
 
 /* ---------- cards ---------- */
 .m-surface { background: var(--bg-1); border: 1px solid var(--line-soft); border-radius: var(--radius); }
