@@ -3,7 +3,7 @@ import { useEffect, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { useQuery, useMutation } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { api } from '@/lib/api';
 import { useAuthStore } from '@/store/auth';
 import { User, Lock, Star, MapPin, Eye, EyeOff, ShoppingBag, ChevronDown, Palmtree } from 'lucide-react';
@@ -88,6 +88,8 @@ export default function ProfilePage() {
     onError: () => toast.error('Şifre değiştirilemedi'),
   });
 
+  const qc = useQueryClient();
+
   const vacationMutation = useMutation({
     mutationFn: (enabled: boolean) => api.patch('/users/me/vacation', { enabled }).then(r => r.data),
     onSuccess: (data) => {
@@ -96,6 +98,9 @@ export default function ProfilePage() {
       } else {
         toast.success(`Tatil modu kapandı. ${data.restoredCount} ilan aktife alındı.`);
       }
+      qc.invalidateQueries({ queryKey: ['my-profile'] });
+      qc.invalidateQueries({ queryKey: ['myListings'] });
+      qc.invalidateQueries({ queryKey: ['listings'] });
     },
     onError: () => toast.error('Tatil modu güncellenemedi'),
   });
