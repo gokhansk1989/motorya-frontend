@@ -1,12 +1,12 @@
 'use client';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, Suspense } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import { api } from '@/lib/api';
 import { useAuthStore } from '@/store/auth';
 import { CheckCircle, XCircle, Loader2 } from 'lucide-react';
 import Link from 'next/link';
 
-export default function EmailDogrulaPage() {
+function EmailDogrulaContent() {
   const searchParams = useSearchParams();
   const router = useRouter();
   const { setAuth } = useAuthStore();
@@ -58,5 +58,13 @@ export default function EmailDogrulaPage() {
         <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
       </div>
     </div>
+  );
+}
+
+export default function EmailDogrulaPage() {
+  return (
+    <Suspense fallback={<div style={{ minHeight: '100vh', display: 'grid', placeItems: 'center' }}><Loader2 size={32} style={{ animation: 'spin 1s linear infinite', color: 'var(--accent)' }} /><style>{`@keyframes spin{to{transform:rotate(360deg)}}`}</style></div>}>
+      <EmailDogrulaContent />
+    </Suspense>
   );
 }

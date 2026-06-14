@@ -1,12 +1,12 @@
 'use client';
-import { useState } from 'react';
+import { useState, Suspense } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import { api } from '@/lib/api';
 import { CheckCircle } from 'lucide-react';
 import Link from 'next/link';
 import toast from 'react-hot-toast';
 
-export default function SifreSifirlaPage() {
+function SifreSifirlaContent() {
   const searchParams = useSearchParams();
   const router = useRouter();
   const [password, setPassword] = useState('');
@@ -62,5 +62,13 @@ export default function SifreSifirlaPage() {
         )}
       </div>
     </div>
+  );
+}
+
+export default function SifreSifirlaPage() {
+  return (
+    <Suspense fallback={null}>
+      <SifreSifirlaContent />
+    </Suspense>
   );
 }

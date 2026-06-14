@@ -1,12 +1,12 @@
 'use client';
 import { useSearchParams } from 'next/navigation';
-import { useState } from 'react';
+import { useState, Suspense } from 'react';
 import { api } from '@/lib/api';
 import { Mail } from 'lucide-react';
 import Link from 'next/link';
 import toast from 'react-hot-toast';
 
-export default function EmailGonderildiPage() {
+function EmailGonderildiContent() {
   const searchParams = useSearchParams();
   const email = searchParams.get('email') || '';
   const [resending, setResending] = useState(false);
@@ -48,5 +48,13 @@ export default function EmailGonderildiPage() {
         </div>
       </div>
     </div>
+  );
+}
+
+export default function EmailGonderildiPage() {
+  return (
+    <Suspense fallback={null}>
+      <EmailGonderildiContent />
+    </Suspense>
   );
 }
