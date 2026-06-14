@@ -6,7 +6,7 @@ import { z } from 'zod';
 import { useQuery, useMutation } from '@tanstack/react-query';
 import { api } from '@/lib/api';
 import { useAuthStore } from '@/store/auth';
-import { User, Lock, Star, MapPin, Eye, EyeOff, ShoppingBag, ChevronDown } from 'lucide-react';
+import { User, Lock, Star, MapPin, Eye, EyeOff, ShoppingBag, ChevronDown, Palmtree } from 'lucide-react';
 
 const CITIES = [
   'Adana','Adıyaman','Afyonkarahisar','Ağrı','Aksaray','Amasya','Ankara','Antalya','Ardahan','Artvin',
@@ -86,6 +86,18 @@ export default function ProfilePage() {
     mutationFn: (data: PasswordData) => api.patch('/users/me/password', data),
     onSuccess: () => { toast.success('Şifre değiştirildi'); passwordForm.reset(); },
     onError: () => toast.error('Şifre değiştirilemedi'),
+  });
+
+  const vacationMutation = useMutation({
+    mutationFn: (enabled: boolean) => api.patch('/users/me/vacation', { enabled }).then(r => r.data),
+    onSuccess: (data) => {
+      if (data.vacationMode) {
+        toast.success(`Tatil modu açıldı. ${data.pausedCount} ilan pasife çekildi.`);
+      } else {
+        toast.success(`Tatil modu kapandı. ${data.restoredCount} ilan aktife alındı.`);
+      }
+    },
+    onError: () => toast.error('Tatil modu güncellenemedi'),
   });
 
   const initials = profile?.displayName?.split(' ').map((w: string) => w[0]).join('').slice(0, 2).toUpperCase() || '?';
@@ -175,6 +187,41 @@ export default function ProfilePage() {
             {updateProfile.isPending ? <span style={{ width: 16, height: 16, border: '2px solid var(--accent-ink)', borderTopColor: 'transparent', borderRadius: '50%', animation: 'spin .7s linear infinite', display: 'inline-block' }} /> : 'Kaydet'}
           </button>
         </form>
+      </div>
+
+      {/* Tatil Modu */}
+      <div style={card}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 16 }}>
+          <div>
+            <p style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 15, fontWeight: 700, color: 'var(--ink)', fontFamily: 'var(--font-display)', marginBottom: 6 }}>
+              <Palmtree size={16} style={{ color: profile?.vacationMode ? '#f59e0b' : 'var(--accent)' }} />
+              Tatil Modu
+              {profile?.vacationMode && (
+                <span style={{ fontSize: 11, fontWeight: 700, fontFamily: 'var(--font-mono)', padding: '2px 8px', borderRadius: 20, background: 'color-mix(in oklch, #f59e0b 15%, transparent)', color: '#f59e0b' }}>AÇIK</span>
+              )}
+            </p>
+            <p style={{ fontSize: 13, color: 'var(--ink-3)', lineHeight: 1.5 }}>
+              {profile?.vacationMode
+                ? 'Tatil modundasın. Tüm aktif ilanlarına pasife çekildi; alıcılar seni bulamıyor.'
+                : 'Kargo gönderemeyeceğin dönemde tatil modunu aç. Tüm aktif ilanların otomatik olarak pasife çekilir, döndüğünde tek tıkla geri açılır.'}
+            </p>
+          </div>
+          <button
+            onClick={() => vacationMutation.mutate(!profile?.vacationMode)}
+            disabled={vacationMutation.isPending || !profile}
+            style={{
+              flexShrink: 0, height: 40, padding: '0 18px', borderRadius: 10, border: 0, cursor: 'pointer',
+              fontSize: 13, fontWeight: 700, fontFamily: 'var(--font-display)', transition: 'all .15s',
+              background: profile?.vacationMode ? 'color-mix(in oklch, var(--good) 15%, transparent)' : 'color-mix(in oklch, #f59e0b 15%, transparent)',
+              color: profile?.vacationMode ? 'var(--good)' : '#b45309',
+              border: `1px solid ${profile?.vacationMode ? 'color-mix(in oklch, var(--good) 30%, transparent)' : 'color-mix(in oklch, #f59e0b 30%, transparent)'}`,
+            }}
+          >
+            {vacationMutation.isPending
+              ? <span style={{ width: 14, height: 14, border: '2px solid currentColor', borderTopColor: 'transparent', borderRadius: '50%', animation: 'spin .7s linear infinite', display: 'inline-block' }} />
+              : profile?.vacationMode ? 'Tatilden Dön' : 'Tatile Git'}
+          </button>
+        </div>
       </div>
 
       {/* Şifre değiştir */}

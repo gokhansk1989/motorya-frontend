@@ -3,7 +3,7 @@ import { useState } from 'react';
 import Link from 'next/link';
 import { useMyListings } from '@/hooks/useListings';
 import { formatPrice } from '@/lib/utils';
-import { Plus, Trash2, Eye, Package } from 'lucide-react';
+import { Plus, Trash2, Eye, Package, Pencil, PauseCircle, PlayCircle } from 'lucide-react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { api } from '@/lib/api';
 import toast from 'react-hot-toast';
@@ -14,6 +14,7 @@ const STATUS: Record<string, { label: string; bg: string; color: string }> = {
   REJECTED:       { label: 'Reddedildi',    bg: 'color-mix(in oklch, var(--bad) 15%, transparent)',  color: 'var(--bad)' },
   SOLD:           { label: 'Satıldı',       bg: 'var(--bg-3)', color: 'var(--ink-3)' },
   RESERVED:       { label: 'Rezerve',       bg: 'color-mix(in oklch, var(--accent-2) 15%, transparent)', color: 'var(--accent-2)' },
+  ARCHIVED:       { label: 'Pasif',         bg: 'var(--bg-3)', color: 'var(--ink-3)' },
 };
 
 export default function MyListingsPage() {
@@ -27,14 +28,21 @@ export default function MyListingsPage() {
     onError: () => toast.error('İlan silinemedi'),
   });
 
+  const toggleMutation = useMutation({
+    mutationFn: (id: string) => api.patch(`/listings/${id}/toggle-status`),
+    onSuccess: (_, id) => { toast.success('İlan durumu güncellendi'); qc.invalidateQueries({ queryKey: ['myListings'] }); },
+    onError: () => toast.error('Durum güncellenemedi'),
+  });
+
   const listings = Array.isArray(data) ? data : (data?.items ?? []);
   const filtered = filter === 'ALL' ? listings : listings.filter((l: any) => l.status === filter);
 
   const tabs = [
-    { key: 'ALL', label: 'Tümü', count: listings.length },
-    { key: 'ACTIVE', label: 'Aktif', count: listings.filter((l: any) => l.status === 'ACTIVE').length },
-    { key: 'PENDING_REVIEW', label: 'Onay Bekliyor', count: listings.filter((l: any) => l.status === 'PENDING_REVIEW').length },
-    { key: 'SOLD', label: 'Satıldı', count: listings.filter((l: any) => l.status === 'SOLD').length },
+    { key: 'ALL',           label: 'Tümü',          count: listings.length },
+    { key: 'ACTIVE',        label: 'Aktif',          count: listings.filter((l: any) => l.status === 'ACTIVE').length },
+    { key: 'ARCHIVED',      label: 'Pasif',          count: listings.filter((l: any) => l.status === 'ARCHIVED').length },
+    { key: 'PENDING_REVIEW',label: 'Onay Bekliyor',  count: listings.filter((l: any) => l.status === 'PENDING_REVIEW').length },
+    { key: 'SOLD',          label: 'Satıldı',        count: listings.filter((l: any) => l.status === 'SOLD').length },
   ];
 
   return (
@@ -47,11 +55,11 @@ export default function MyListingsPage() {
       </div>
 
       {/* Tabs */}
-      <div style={{ display: 'flex', gap: 6, marginBottom: 24, background: 'var(--bg-1)', borderRadius: 12, padding: 5, border: '1px solid var(--line)' }}>
+      <div style={{ display: 'flex', gap: 4, marginBottom: 24, background: 'var(--bg-1)', borderRadius: 12, padding: 5, border: '1px solid var(--line)', overflowX: 'auto' }}>
         {tabs.map(t => (
           <button key={t.key} onClick={() => setFilter(t.key)} style={{
-            flex: 1, height: 36, borderRadius: 8, border: 0, cursor: 'pointer', fontSize: 13, fontWeight: 600,
-            fontFamily: 'var(--font-display)', transition: 'all .15s',
+            flex: 1, minWidth: 'max-content', height: 36, borderRadius: 8, border: 0, cursor: 'pointer', fontSize: 12, fontWeight: 600,
+            fontFamily: 'var(--font-display)', transition: 'all .15s', padding: '0 10px',
             background: filter === t.key ? 'var(--bg-3)' : 'transparent',
             color: filter === t.key ? 'var(--ink)' : 'var(--ink-3)',
             boxShadow: filter === t.key ? 'var(--shadow-s)' : 'none',
@@ -80,6 +88,8 @@ export default function MyListingsPage() {
         <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
           {filtered.map((l: any) => {
             const st = STATUS[l.status] ?? { label: l.status, bg: 'var(--bg-3)', color: 'var(--ink-3)' };
+            const canToggle = ['ACTIVE', 'ARCHIVED'].includes(l.status);
+            const canEdit   = !['SOLD'].includes(l.status);
             return (
               <div key={l.id} style={{ display: 'flex', alignItems: 'center', gap: 16, padding: 16, background: 'var(--bg-1)', borderRadius: 14, border: '1px solid var(--line)', transition: 'border-color .15s' }}
                 onMouseEnter={e => (e.currentTarget.style.borderColor = 'var(--line-soft)')}
@@ -95,14 +105,29 @@ export default function MyListingsPage() {
                   <p style={{ color: 'var(--accent)', fontWeight: 700, fontSize: 15, fontFamily: 'var(--font-mono)', marginTop: 4 }}>{formatPrice(l.price)}</p>
                   <p style={{ fontSize: 11, color: 'var(--ink-3)', marginTop: 3 }}>{l.viewCount ?? 0} görüntülenme · {l.favoriteCount ?? 0} favori</p>
                 </div>
-                <div style={{ display: 'flex', gap: 8, flexShrink: 0 }}>
-                  <Link href={`/ilan/${l.id}`} style={{ width: 36, height: 36, display: 'grid', placeItems: 'center', background: 'var(--bg-2)', border: '1px solid var(--line)', borderRadius: 8, color: 'var(--ink-2)', textDecoration: 'none' }}>
-                    <Eye size={16} />
+                <div style={{ display: 'flex', gap: 6, flexShrink: 0 }}>
+                  <Link href={`/ilan/${l.id}`} title="Görüntüle" style={{ width: 34, height: 34, display: 'grid', placeItems: 'center', background: 'var(--bg-2)', border: '1px solid var(--line)', borderRadius: 8, color: 'var(--ink-2)', textDecoration: 'none' }}>
+                    <Eye size={15} />
                   </Link>
+                  {canEdit && (
+                    <Link href={`/ilanlarim/duzenle/${l.id}`} title="Düzenle" style={{ width: 34, height: 34, display: 'grid', placeItems: 'center', background: 'var(--bg-2)', border: '1px solid var(--line)', borderRadius: 8, color: 'var(--ink-2)', textDecoration: 'none' }}>
+                      <Pencil size={15} />
+                    </Link>
+                  )}
+                  {canToggle && (
+                    <button
+                      onClick={() => toggleMutation.mutate(l.id)}
+                      disabled={toggleMutation.isPending}
+                      title={l.status === 'ACTIVE' ? 'Pasife çek' : 'Aktife al'}
+                      style={{ width: 34, height: 34, display: 'grid', placeItems: 'center', background: l.status === 'ACTIVE' ? 'color-mix(in oklch, #f59e0b 12%, transparent)' : 'color-mix(in oklch, var(--good) 12%, transparent)', border: `1px solid ${l.status === 'ACTIVE' ? 'color-mix(in oklch, #f59e0b 30%, transparent)' : 'color-mix(in oklch, var(--good) 30%, transparent)'}`, borderRadius: 8, color: l.status === 'ACTIVE' ? '#f59e0b' : 'var(--good)', cursor: 'pointer' }}>
+                      {l.status === 'ACTIVE' ? <PauseCircle size={15} /> : <PlayCircle size={15} />}
+                    </button>
+                  )}
                   <button
                     onClick={() => confirm('İlanı silmek istediğinizden emin misiniz?') && deleteMutation.mutate(l.id)}
-                    style={{ width: 36, height: 36, display: 'grid', placeItems: 'center', background: 'color-mix(in oklch, var(--bad) 10%, transparent)', border: '1px solid color-mix(in oklch, var(--bad) 25%, transparent)', borderRadius: 8, color: 'var(--bad)', cursor: 'pointer' }}>
-                    <Trash2 size={16} />
+                    title="Sil"
+                    style={{ width: 34, height: 34, display: 'grid', placeItems: 'center', background: 'color-mix(in oklch, var(--bad) 10%, transparent)', border: '1px solid color-mix(in oklch, var(--bad) 25%, transparent)', borderRadius: 8, color: 'var(--bad)', cursor: 'pointer' }}>
+                    <Trash2 size={15} />
                   </button>
                 </div>
               </div>
