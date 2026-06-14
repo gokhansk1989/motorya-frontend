@@ -3,7 +3,6 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { api } from '@/lib/api';
-import { useAuthStore } from '@/store/auth';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import toast from 'react-hot-toast';
@@ -59,7 +58,6 @@ function FieldWrapper({ label, icon, error, children }: { label: string; icon: R
 }
 
 export default function RegisterPage() {
-  const { setAuth } = useAuthStore();
   const router = useRouter();
   const [showPwd, setShowPwd] = useState(false);
   const [showPwd2, setShowPwd2] = useState(false);
@@ -72,16 +70,14 @@ export default function RegisterPage() {
 
   const onSubmit = async (data: FormData) => {
     try {
-      const res = await api.post('/auth/register', {
+      await api.post('/auth/register', {
         displayName: data.displayName,
         email: data.email,
         tcKimlik: data.tcKimlik,
         phone: data.phone,
         password: data.password,
       });
-      setAuth(res.data.user, res.data.accessToken);
-      toast.success('Hoş geldin! Hesabın oluşturuldu.');
-      router.push('/');
+      router.push(`/email-gonderildi?email=${encodeURIComponent(data.email)}`);
     } catch (e: any) {
       const msg = e.response?.data?.message;
       if (Array.isArray(msg)) toast.error(msg[0]);

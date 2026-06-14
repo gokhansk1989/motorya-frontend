@@ -107,6 +107,9 @@ export default function LoginPage() {
                 </button>
               </div>
               {errors.password && <p style={{ marginTop: 6, fontSize: 12, color: 'var(--bad)', fontFamily: 'var(--font-mono)' }}>{errors.password.message}</p>}
+              <div style={{ textAlign: 'right', marginTop: 6 }}>
+                <Link href="/sifremi-unuttum" style={{ fontSize: 13, color: 'var(--accent)', textDecoration: 'none' }}>Şifremi unuttum</Link>
+              </div>
             </div>
 
             <button
