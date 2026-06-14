@@ -210,11 +210,11 @@ export default function ProfilePage() {
             onClick={() => vacationMutation.mutate(!profile?.vacationMode)}
             disabled={vacationMutation.isPending || !profile}
             style={{
-              flexShrink: 0, height: 40, padding: '0 18px', borderRadius: 10, border: 0, cursor: 'pointer',
+              flexShrink: 0, height: 40, padding: '0 18px', borderRadius: 10, cursor: 'pointer',
               fontSize: 13, fontWeight: 700, fontFamily: 'var(--font-display)', transition: 'all .15s',
               background: profile?.vacationMode ? 'color-mix(in oklch, var(--good) 15%, transparent)' : 'color-mix(in oklch, #f59e0b 15%, transparent)',
               color: profile?.vacationMode ? 'var(--good)' : '#b45309',
-              border: `1px solid ${profile?.vacationMode ? 'color-mix(in oklch, var(--good) 30%, transparent)' : 'color-mix(in oklch, #f59e0b 30%, transparent)'}`,
+              border: profile?.vacationMode ? '1px solid color-mix(in oklch, var(--good) 30%, transparent)' : '1px solid color-mix(in oklch, #f59e0b 30%, transparent)',
             }}
           >
             {vacationMutation.isPending
