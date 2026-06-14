@@ -24,13 +24,21 @@ export default function MyListingsPage() {
 
   const deleteMutation = useMutation({
     mutationFn: (id: string) => api.delete(`/listings/${id}`),
-    onSuccess: () => { toast.success('İlan silindi'); qc.invalidateQueries({ queryKey: ['myListings'] }); },
+    onSuccess: () => {
+      toast.success('İlan silindi');
+      qc.invalidateQueries({ queryKey: ['myListings'] });
+      qc.invalidateQueries({ queryKey: ['listings'] });
+    },
     onError: () => toast.error('İlan silinemedi'),
   });
 
   const toggleMutation = useMutation({
     mutationFn: (id: string) => api.patch(`/listings/${id}/toggle-status`),
-    onSuccess: (_, id) => { toast.success('İlan durumu güncellendi'); qc.invalidateQueries({ queryKey: ['myListings'] }); },
+    onSuccess: () => {
+      toast.success('İlan durumu güncellendi');
+      qc.invalidateQueries({ queryKey: ['myListings'] });
+      qc.invalidateQueries({ queryKey: ['listings'] });
+    },
     onError: () => toast.error('Durum güncellenemedi'),
   });
 
