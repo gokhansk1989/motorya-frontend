@@ -92,6 +92,9 @@ export default function ProfilePage() {
 
   const vacationMutation = useMutation({
     mutationFn: (enabled: boolean) => api.patch('/users/me/vacation', { enabled }).then(r => r.data),
+    onMutate: (enabled) => {
+      qc.setQueryData(['my-profile'], (old: any) => old ? { ...old, vacationMode: enabled } : old);
+    },
     onSuccess: (data) => {
       if (data.vacationMode) {
         toast.success(`Tatil modu açıldı. ${data.pausedCount} ilan pasife çekildi.`);
@@ -102,7 +105,10 @@ export default function ProfilePage() {
       qc.invalidateQueries({ queryKey: ['myListings'] });
       qc.invalidateQueries({ queryKey: ['listings'] });
     },
-    onError: () => toast.error('Tatil modu güncellenemedi'),
+    onError: () => {
+      toast.error('Tatil modu güncellenemedi');
+      qc.invalidateQueries({ queryKey: ['my-profile'] });
+    },
   });
 
   const initials = profile?.displayName?.split(' ').map((w: string) => w[0]).join('').slice(0, 2).toUpperCase() || '?';
