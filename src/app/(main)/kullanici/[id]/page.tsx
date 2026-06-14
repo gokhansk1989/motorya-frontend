@@ -11,7 +11,7 @@ export default function PublicProfilePage({ params }: { params: Promise<{ id: st
 
   const { data: profile, isLoading } = useQuery({
     queryKey: ['public-profile', id],
-    queryFn: () => api.get(`/users/${id}/public`).then(r => r.data),
+    queryFn: () => api.get(`/users/${id}`).then(r => r.data),
   });
 
   if (isLoading) {
@@ -64,13 +64,13 @@ export default function PublicProfilePage({ params }: { params: Promise<{ id: st
       )}
 
       {/* Reviews */}
-      {profile.reviews?.length > 0 && (
+      {profile.reviewsReceived?.length > 0 && (
         <div>
           <h2 className="font-semibold text-gray-900 mb-4 flex items-center gap-2">
             <MessageCircle className="w-4 h-4"/> Değerlendirmeler
           </h2>
           <div className="space-y-3">
-            {profile.reviews.map((r: any) => (
+            {profile.reviewsReceived.map((r: any) => (
               <div key={r.id} className="bg-white rounded-xl border border-gray-100 p-4">
                 <div className="flex items-center justify-between mb-2">
                   <div className="flex items-center gap-2">
