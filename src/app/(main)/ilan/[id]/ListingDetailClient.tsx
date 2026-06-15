@@ -1,7 +1,7 @@
 'use client';
 import { useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
-import { useListing } from '@/hooks/useListings';
+import { useListing, useToggleFavorite } from '@/hooks/useListings';
 import { useCreateOrder } from '@/hooks/useOrders';
 import { useCreateOffer, useListingOffers, useRespondOffer } from '@/hooks/useOffers';
 import { useAuthStore } from '@/store/auth';
@@ -46,7 +46,8 @@ export default function ListingDetailClient() {
   const [offerMsg, setOfferMsg] = useState('');
   const [meetingNote, setMeetingNote] = useState('');
   const [deliveryMode, setDeliveryMode] = useState<'ship' | 'meet'>('ship');
-  const [favd, setFavd] = useState(false);
+  const toggleFavorite = useToggleFavorite();
+  const favd = listing?.isFavorited ?? false;
 
   if (isLoading) return (
     <div className="m-wrap" style={{ paddingTop: 32, paddingBottom: 40 }}>
@@ -181,7 +182,7 @@ export default function ListingDetailClient() {
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
               <ConditionPill condition={listing.condition} />
               <button
-                onClick={() => setFavd(f => !f)}
+                onClick={() => user && toggleFavorite.mutate(id)}
                 style={{ width: 38, height: 38, borderRadius: 8, background: 'var(--bg-1)', border: '1px solid var(--line)', display: 'grid', placeItems: 'center', color: favd ? 'var(--accent)' : 'var(--ink-2)' }}
               >
                 <Heart size={18} fill={favd ? 'currentColor' : 'none'} />

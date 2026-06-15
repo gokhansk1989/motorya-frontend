@@ -7,7 +7,7 @@ import Link from 'next/link';
 export default function FavoritesPage() {
   const { data, isLoading } = useMyFavorites();
 
-  const listings = data?.items ?? [];
+  const listings = Array.isArray(data) ? data : (data?.items ?? []);
 
   return (
     <div className="max-w-5xl mx-auto py-8 px-4">

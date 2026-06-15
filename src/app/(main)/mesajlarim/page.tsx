@@ -10,7 +10,11 @@ import Link from 'next/link';
 import { timeAgo } from '@/lib/utils';
 import { api } from '@/lib/api';
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL?.replace('/api', '') || 'http://98.93.139.51';
+// NEXT_PUBLIC_API_URL örn: https://motorya.com.tr/api-backend
+// Socket.io için origin'i ayır, path'i /api-backend/socket.io olarak ver
+const _apiBase = process.env.NEXT_PUBLIC_API_URL || 'http://98.93.139.51:3000';
+const SOCKET_ORIGIN = _apiBase.replace(/\/api-backend.*/, '').replace(/\/api.*/, '') || 'http://98.93.139.51';
+const SOCKET_PATH = _apiBase.includes('/api-backend') ? '/api-backend/socket.io' : '/socket.io';
 
 function Avatar({ user, size = 40 }: { user: { displayName: string; avatarUrl?: string } | null; size?: number }) {
   if (!user) return <div style={{ width: size, height: size, borderRadius: '50%', background: 'var(--bg-3)' }} />;
@@ -53,7 +57,7 @@ export default function MessagesPage() {
   useEffect(() => {
     if (!user) return;
     const token = localStorage.getItem('access_token');
-    const socket = io(`${API_URL}/chat`, { auth: { token }, transports: ['websocket'] });
+    const socket = io(`${SOCKET_ORIGIN}/chat`, { auth: { token }, transports: ['websocket'], path: SOCKET_PATH });
     socketRef.current = socket;
 
     socket.on('user:online', ({ userId }: { userId: string }) => {

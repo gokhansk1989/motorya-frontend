@@ -59,7 +59,27 @@ export function useToggleFavorite() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: (id: string) => api.post(`/listings/${id}/favorite`).then((r) => r.data),
+    onMutate: async (id: string) => {
+      // Optimistic update: tüm listings cache'lerinde isFavorited'ı hemen tersine çevir
+      const queries = qc.getQueriesData<any>({ queryKey: ['listings'] });
+      for (const [key, data] of queries) {
+        if (!data) continue;
+        const items: Listing[] = Array.isArray(data) ? data : (data.items ?? []);
+        const updated = items.map((l: Listing) =>
+          l.id === id ? { ...l, isFavorited: !l.isFavorited } : l
+        );
+        qc.setQueryData(key, Array.isArray(data) ? updated : { ...data, items: updated });
+      }
+      // Tekil ilan
+      qc.setQueriesData<any>({ queryKey: ['listing', id] }, (old: any) =>
+        old ? { ...old, isFavorited: !old.isFavorited } : old
+      );
+    },
     onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['favorites'] });
+    },
+    onError: () => {
+      // Hata durumunda geri al
       qc.invalidateQueries({ queryKey: ['listings'] });
       qc.invalidateQueries({ queryKey: ['listing'] });
     },

@@ -6,7 +6,10 @@ import { z } from 'zod';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { api } from '@/lib/api';
 import { useAuthStore } from '@/store/auth';
-import { User, Lock, Star, MapPin, Eye, EyeOff, ShoppingBag, ChevronDown, Palmtree } from 'lucide-react';
+import { User, Lock, Star, MapPin, Eye, EyeOff, ShoppingBag, ChevronDown, Palmtree, Heart, ChevronRight } from 'lucide-react';
+import { useMyFavorites } from '@/hooks/useListings';
+import { ListingCard } from '@/components/listings/ListingCard';
+import Link from 'next/link';
 
 const CITIES = [
   'Adana','Adıyaman','Afyonkarahisar','Ağrı','Aksaray','Amasya','Ankara','Antalya','Ardahan','Artvin',
@@ -113,6 +116,10 @@ export default function ProfilePage() {
 
   const initials = profile?.displayName?.split(' ').map((w: string) => w[0]).join('').slice(0, 2).toUpperCase() || '?';
 
+  const { data: favoritesData } = useMyFavorites();
+  const favorites = (Array.isArray(favoritesData) ? favoritesData : (favoritesData?.items ?? [])).slice(0, 4);
+  const favoritesTotal = Array.isArray(favoritesData) ? favoritesData.length : (favoritesData?.total ?? 0);
+
   return (
     <div className="m-wrap" style={{ maxWidth: 680, paddingTop: 36, paddingBottom: 60 }}>
       <h1 className="m-display" style={{ fontSize: 28, color: 'var(--ink)', marginBottom: 28 }}>Profilim</h1>
@@ -198,6 +205,38 @@ export default function ProfilePage() {
             {updateProfile.isPending ? <span style={{ width: 16, height: 16, border: '2px solid var(--accent-ink)', borderTopColor: 'transparent', borderRadius: '50%', animation: 'spin .7s linear infinite', display: 'inline-block' }} /> : 'Kaydet'}
           </button>
         </form>
+      </div>
+
+      {/* Favorilerim */}
+      <div style={card}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
+          <p style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 15, fontWeight: 700, color: 'var(--ink)', fontFamily: 'var(--font-display)', margin: 0 }}>
+            <Heart size={16} style={{ color: 'var(--accent)' }} />Favorilerim
+            {favoritesTotal > 0 && (
+              <span style={{ fontSize: 12, fontFamily: 'var(--font-mono)', background: 'color-mix(in oklch, var(--accent) 12%, transparent)', color: 'var(--accent)', padding: '2px 8px', borderRadius: 20, fontWeight: 700 }}>
+                {favoritesTotal}
+              </span>
+            )}
+          </p>
+          <Link href="/favoriler" style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 13, color: 'var(--accent)', textDecoration: 'none', fontWeight: 600 }}>
+            Tümünü gör <ChevronRight size={14} />
+          </Link>
+        </div>
+        {favorites.length === 0 ? (
+          <div style={{ textAlign: 'center', padding: '24px 0', color: 'var(--ink-3)' }}>
+            <Heart size={28} style={{ opacity: 0.2, marginBottom: 8 }} />
+            <p style={{ fontSize: 13 }}>Henüz favori eklemediniz</p>
+            <Link href="/" style={{ display: 'inline-block', marginTop: 10, fontSize: 13, color: 'var(--accent)', textDecoration: 'none', fontWeight: 600 }}>
+              İlanlara göz at →
+            </Link>
+          </div>
+        ) : (
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 12 }}>
+            {favorites.map((listing: any) => (
+              <ListingCard key={listing.id} listing={{ ...listing, isFavorited: true }} />
+            ))}
+          </div>
+        )}
       </div>
 
       {/* Tatil Modu */}
