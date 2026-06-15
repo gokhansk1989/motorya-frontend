@@ -6,7 +6,8 @@ import { useCreateOrder } from '@/hooks/useOrders';
 import { useCreateOffer, useListingOffers, useRespondOffer } from '@/hooks/useOffers';
 import { useAuthStore } from '@/store/auth';
 import { formatPrice, timeAgo } from '@/lib/utils';
-import { MapPin, Eye, Heart, Star, ChevronLeft, ChevronRight, Shield, Truck, Users, Share2, Flag, Zap } from 'lucide-react';
+import { MapPin, Eye, Heart, Star, ChevronLeft, ChevronRight, Shield, Truck, Users, Share2, Flag, Zap, MessageCircle } from 'lucide-react';
+import { useStartConversation } from '@/hooks/useMessages';
 import toast from 'react-hot-toast';
 import Link from 'next/link';
 
@@ -36,6 +37,7 @@ export default function ListingDetailClient() {
   const createOrder = useCreateOrder();
   const createOffer = useCreateOffer();
   const respondOffer = useRespondOffer();
+  const startConversation = useStartConversation();
 
   const [imgIdx, setImgIdx] = useState(0);
   const [showOfferModal, setShowOfferModal] = useState(false);
@@ -253,6 +255,20 @@ export default function ListingDetailClient() {
                     }}
                   >
                     Teklif Ver
+                  </button>
+                  <button
+                    className="m-btn m-btn-ghost"
+                    style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}
+                    onClick={async () => {
+                      if (!user) { toast.error('Mesaj göndermek için giriş yapmalısın'); router.push('/giris'); return; }
+                      try {
+                        const conv = await startConversation.mutateAsync({ otherUserId: listing.seller.id, listingId: listing.id });
+                        router.push(`/mesajlarim?conv=${conv.id}`);
+                      } catch { toast.error('Mesaj başlatılamadı'); }
+                    }}
+                  >
+                    <MessageCircle size={15} />
+                    Mesaj
                   </button>
                 </div>
                 {!user && (
