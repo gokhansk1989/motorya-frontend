@@ -4,6 +4,8 @@ import { BLOG_POSTS } from '@/data/blog';
 const BASE_URL = 'https://motorya.com.tr';
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
+  const CATEGORY_SLUGS = ['kask', 'mont', 'eldiven', 'bot', 'koruyucu', 'egzoz', 'aksesuar'];
+
   // Static pages
   const staticPages: MetadataRoute.Sitemap = [
     { url: BASE_URL, lastModified: new Date(), changeFrequency: 'daily', priority: 1 },
@@ -11,6 +13,12 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     { url: `${BASE_URL}/ilan-ver`, lastModified: new Date(), changeFrequency: 'monthly', priority: 0.7 },
     { url: `${BASE_URL}/giris`, lastModified: new Date(), changeFrequency: 'monthly', priority: 0.3 },
     { url: `${BASE_URL}/kayit`, lastModified: new Date(), changeFrequency: 'monthly', priority: 0.4 },
+    ...CATEGORY_SLUGS.map(slug => ({
+      url: `${BASE_URL}/kategori/${slug}`,
+      lastModified: new Date(),
+      changeFrequency: 'daily' as const,
+      priority: 0.85,
+    })),
   ];
 
   // Blog posts
