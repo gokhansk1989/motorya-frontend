@@ -210,6 +210,25 @@ export default async function CategoryPage({ params }: { params: { slug: string 
           </div>
         )}
 
+        {/* Şehir linkleri — iç linkleme + uzun kuyruk SEO */}
+        <div style={{ marginTop: 40, marginBottom: 32 }}>
+          <h2 style={{ fontSize: 15, fontWeight: 700, color: 'var(--ink-2)', marginBottom: 12 }}>
+            Şehre Göre {meta.label}
+          </h2>
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
+            {[
+              ['istanbul','İstanbul'],['ankara','Ankara'],['izmir','İzmir'],['bursa','Bursa'],
+              ['antalya','Antalya'],['adana','Adana'],['konya','Konya'],['gaziantep','Gaziantep'],
+              ['mersin','Mersin'],['kocaeli','Kocaeli'],['kayseri','Kayseri'],['samsun','Samsun'],
+              ['eskisehir','Eskişehir'],['denizli','Denizli'],['balikesir','Balıkesir'],
+            ].map(([slug2, name]) => (
+              <Link key={slug2} href={`/kategori/${params.slug}/${slug2}`} className="m-chip" style={{ height: 32, fontSize: 12.5, textDecoration: 'none' }}>
+                {name}
+              </Link>
+            ))}
+          </div>
+        </div>
+
         {/* CTA */}
         <div style={{ marginTop: 40, padding: '24px', background: 'var(--bg-2)', borderRadius: 'var(--radius)', border: '1px solid var(--line-soft)', textAlign: 'center' }}>
           <h2 className="m-display" style={{ fontSize: 18, margin: '0 0 8px' }}>

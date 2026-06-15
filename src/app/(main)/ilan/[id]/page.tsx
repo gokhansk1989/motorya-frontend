@@ -64,39 +64,47 @@ export async function generateMetadata({ params }: { params: { id: string } }): 
 export default async function ListingDetailPage({ params }: { params: { id: string } }) {
   const listing = await fetchListing(params.id);
 
-  const jsonLd = listing ? {
-    '@context': 'https://schema.org',
-    '@type': 'Product',
-    name: listing.title,
-    description: listing.description,
-    image: listing.images?.map(i => i.url) ?? [],
-    url: `${BASE_URL}/ilan/${listing.id}`,
-    brand: listing.brand ? { '@type': 'Brand', name: listing.brand.name } : undefined,
-    category: listing.category?.name,
-    offers: {
-      '@type': 'Offer',
-      priceCurrency: 'TRY',
-      price: Number(listing.price),
-      availability: listing.status === 'ACTIVE'
-        ? 'https://schema.org/InStock'
-        : listing.status === 'SOLD'
-        ? 'https://schema.org/SoldOut'
-        : 'https://schema.org/OutOfStock',
-      itemCondition: listing.condition === 'NEW'
-        ? 'https://schema.org/NewCondition'
-        : 'https://schema.org/UsedCondition',
-      seller: listing.seller ? { '@type': 'Person', name: listing.seller.displayName } : undefined,
+  const jsonLd = listing ? [
+    {
+      '@context': 'https://schema.org',
+      '@type': 'Product',
+      name: listing.title,
+      description: listing.description,
+      image: listing.images?.map(i => i.url) ?? [],
+      url: `${BASE_URL}/ilan/${listing.id}`,
+      brand: listing.brand ? { '@type': 'Brand', name: listing.brand.name } : undefined,
+      category: listing.category?.name,
+      offers: {
+        '@type': 'Offer',
+        priceCurrency: 'TRY',
+        price: Number(listing.price),
+        availability: listing.status === 'ACTIVE'
+          ? 'https://schema.org/InStock'
+          : listing.status === 'SOLD'
+          ? 'https://schema.org/SoldOut'
+          : 'https://schema.org/OutOfStock',
+        itemCondition: listing.condition === 'NEW'
+          ? 'https://schema.org/NewCondition'
+          : 'https://schema.org/UsedCondition',
+        seller: listing.seller ? { '@type': 'Person', name: listing.seller.displayName } : undefined,
+      },
     },
-  } : null;
+    {
+      '@context': 'https://schema.org',
+      '@type': 'BreadcrumbList',
+      itemListElement: [
+        { '@type': 'ListItem', position: 1, name: 'Anasayfa', item: BASE_URL },
+        ...(listing.category ? [{ '@type': 'ListItem', position: 2, name: listing.category.name, item: `${BASE_URL}/kategori/${listing.category.slug}` }] : []),
+        { '@type': 'ListItem', position: listing.category ? 3 : 2, name: listing.title, item: `${BASE_URL}/ilan/${listing.id}` },
+      ],
+    },
+  ] : null;
 
   return (
     <>
-      {jsonLd && (
-        <script
-          type="application/ld+json"
-          dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
-        />
-      )}
+      {jsonLd && jsonLd.map((schema, i) => (
+        <script key={i} type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(schema) }} />
+      ))}
       <ListingDetailClient />
     </>
   );

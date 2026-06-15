@@ -1,5 +1,6 @@
 'use client';
 import Link from 'next/link';
+import Image from 'next/image';
 import { Heart, MapPin, Eye } from 'lucide-react';
 import { formatPrice, timeAgo } from '@/lib/utils';
 import { useToggleFavorite } from '@/hooks/useListings';
@@ -36,7 +37,7 @@ export function ListingCard({ listing }: { listing: Listing }) {
       <Link href={`/ilan/${listing.id}`} style={{ display: 'block', textDecoration: 'none' }}>
         <div className="m-card-media">
           {thumb ? (
-            <img src={thumb} alt={listing.title} className="m-card-img" />
+            <Image src={thumb} alt={listing.title} fill sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 240px" style={{ objectFit: 'cover' }} />
           ) : (
             <div style={{
               position: 'absolute', inset: 0,

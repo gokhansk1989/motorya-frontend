@@ -5,6 +5,7 @@ const BASE_URL = 'https://motorya.com.tr';
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const CATEGORY_SLUGS = ['kask', 'mont', 'eldiven', 'bot', 'koruyucu', 'egzoz', 'aksesuar'];
+  const CITY_SLUGS = ['istanbul', 'ankara', 'izmir', 'bursa', 'antalya', 'adana', 'konya', 'gaziantep', 'mersin', 'kocaeli', 'diyarbakir', 'hatay', 'manisa', 'kayseri', 'samsun', 'balikesir', 'tekirdag', 'sakarya', 'denizli', 'eskisehir'];
 
   // Static pages
   const staticPages: MetadataRoute.Sitemap = [
@@ -19,6 +20,15 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       changeFrequency: 'daily' as const,
       priority: 0.85,
     })),
+    // Şehir × kategori sayfaları (20 şehir × 7 kategori = 140 sayfa)
+    ...CATEGORY_SLUGS.flatMap(slug =>
+      CITY_SLUGS.map(sehir => ({
+        url: `${BASE_URL}/kategori/${slug}/${sehir}`,
+        lastModified: new Date(),
+        changeFrequency: 'daily' as const,
+        priority: 0.75,
+      }))
+    ),
   ];
 
   // Blog posts
