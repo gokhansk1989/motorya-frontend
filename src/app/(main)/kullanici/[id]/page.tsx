@@ -1,13 +1,16 @@
 'use client';
 import { use, useState } from 'react';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { api } from '@/lib/api';
 import { formatPrice } from '@/lib/utils';
 import Link from 'next/link';
+import { useAuthStore } from '@/store/auth';
 import {
   Star, MapPin, ShoppingBag, Calendar, BadgeCheck,
   Phone, Mail, ShieldCheck, Package, ChevronRight,
+  UserPlus, UserMinus, UserX, Users, Zap, Award,
 } from 'lucide-react';
+import toast from 'react-hot-toast';
 
 function fmtMonthYear(d: string) {
   return new Date(d).toLocaleDateString('tr-TR', { month: 'long', year: 'numeric' });
@@ -15,6 +18,12 @@ function fmtMonthYear(d: string) {
 
 function daysSince(d: string) {
   return Math.floor((Date.now() - new Date(d).getTime()) / 86400000);
+}
+
+function monthsSince(d: string) {
+  const start = new Date(d);
+  const now = new Date();
+  return Math.max(0, (now.getFullYear() - start.getFullYear()) * 12 + (now.getMonth() - start.getMonth()));
 }
 
 function StarBar({ rating, count }: { rating: number; count: number }) {
@@ -33,7 +42,32 @@ function StarBar({ rating, count }: { rating: number; count: number }) {
 
 export default function PublicProfilePage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
+  const { user: me } = useAuthStore();
+  const qc = useQueryClient();
   const [listingTab, setListingTab] = useState<'ACTIVE' | 'SOLD'>('ACTIVE');
+
+  const { data: relation } = useQuery({
+    queryKey: ['user-relation', id],
+    queryFn: () => api.get(`/users/${id}/relation`).then(r => r.data),
+    enabled: !!me && me.id !== id,
+  });
+
+  const followMutation = useMutation({
+    mutationFn: () => api.post(`/users/${id}/follow`).then(r => r.data),
+    onSuccess: (data) => {
+      qc.invalidateQueries({ queryKey: ['user-relation', id] });
+      toast.success(data.following ? 'Takip edildi' : 'Takipten çıkıldı');
+    },
+  });
+
+  const blockMutation = useMutation({
+    mutationFn: () => api.post(`/users/${id}/block`).then(r => r.data),
+    onSuccess: (data) => {
+      qc.invalidateQueries({ queryKey: ['user-relation', id] });
+      qc.invalidateQueries({ queryKey: ['listings'] });
+      toast.success(data.blocked ? 'Kullanıcı engellendi' : 'Engel kaldırıldı');
+    },
+  });
 
   const { data: user, isLoading, isError } = useQuery({
     queryKey: ['public-user', id],
@@ -75,12 +109,17 @@ export default function PublicProfilePage({ params }: { params: Promise<{ id: st
     count: reviews.filter((r: any) => r.rating === s).length,
   }));
 
-  // Doğrulama rozetleri
+  // Doğrulama + aktivite rozetleri
+  const fullyVerified = !!user.emailVerifiedAt && !!user.phoneVerifiedAt && !!user.identityVerifiedAt;
+  const months = monthsSince(user.createdAt);
   const badges = [
-    { label: 'E-posta Doğrulı', icon: <Mail size={12} />, active: !!user.emailVerifiedAt },
-    { label: 'Telefon Doğrulı', icon: <Phone size={12} />, active: !!user.phoneVerifiedAt },
-    { label: 'Kimlik Doğrulı', icon: <ShieldCheck size={12} />, active: !!user.identityVerifiedAt },
-    { label: 'Kurucu Üye', icon: <BadgeCheck size={12} />, active: !!user.isFounder },
+    { label: 'Doğrulanmış Satıcı', icon: <ShieldCheck size={12} />, active: fullyVerified },
+    { label: 'E-posta Doğrulı', icon: <Mail size={12} />, active: !fullyVerified && !!user.emailVerifiedAt },
+    { label: 'Telefon Doğrulı', icon: <Phone size={12} />, active: !fullyVerified && !!user.phoneVerifiedAt },
+    { label: 'Kimlik Doğrulı', icon: <BadgeCheck size={12} />, active: !fullyVerified && !!user.identityVerifiedAt },
+    { label: 'Hızlı Yanıt Verir', icon: <Zap size={12} />, active: !!user.fastResponder },
+    { label: months >= 1 ? `${months} Aydır Üye` : 'Yeni Üye', icon: <Calendar size={12} />, active: true },
+    { label: 'Kurucu Üye', icon: <Award size={12} />, active: !!user.isFounder },
   ].filter(b => b.active);
 
   const displayedListings = listingTab === 'ACTIVE' ? activeListings : soldListings;
@@ -144,19 +183,52 @@ export default function PublicProfilePage({ params }: { params: Promise<{ id: st
             )}
           </div>
 
-          {/* Puan özeti */}
-          <div style={{
-            flexShrink: 0, textAlign: 'center',
-            background: 'var(--bg-2)', borderRadius: 14, padding: '14px 20px',
-            minWidth: 110,
-          }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 4, justifyContent: 'center', marginBottom: 2 }}>
-              <Star size={22} fill="var(--accent)" color="var(--accent)" />
-              <span className="m-display" style={{ fontSize: 30, lineHeight: 1 }}>
-                {user.ratingAvg ? Number(user.ratingAvg).toFixed(1) : '—'}
-              </span>
+          {/* Puan özeti + aksiyonlar */}
+          <div style={{ flexShrink: 0, display: 'flex', flexDirection: 'column', gap: 10, alignItems: 'center' }}>
+            <div style={{
+              textAlign: 'center', background: 'var(--bg-2)', borderRadius: 14, padding: '14px 20px', minWidth: 110,
+            }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 4, justifyContent: 'center', marginBottom: 2 }}>
+                <Star size={22} fill="var(--accent)" color="var(--accent)" />
+                <span className="m-display" style={{ fontSize: 30, lineHeight: 1 }}>
+                  {user.ratingAvg ? Number(user.ratingAvg).toFixed(1) : '—'}
+                </span>
+              </div>
+              <p style={{ fontSize: 12, color: 'var(--ink-3)', marginTop: 4 }}>{user.ratingCount ?? 0} değerlendirme</p>
             </div>
-            <p style={{ fontSize: 12, color: 'var(--ink-3)', marginTop: 4 }}>{user.ratingCount ?? 0} değerlendirme</p>
+
+            {me && me.id !== id && (
+              <div style={{ display: 'flex', gap: 8, width: '100%' }}>
+                <button
+                  onClick={() => followMutation.mutate()}
+                  disabled={followMutation.isPending}
+                  style={{
+                    flex: 1, height: 36, borderRadius: 8, border: '1px solid var(--line)',
+                    background: relation?.isFollowing ? 'var(--bg-2)' : 'var(--accent)',
+                    color: relation?.isFollowing ? 'var(--ink-2)' : '#fff',
+                    fontSize: 12.5, fontWeight: 600, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 5,
+                  }}
+                >
+                  {relation?.isFollowing ? <><UserMinus size={13} /> Takipten Çık</> : <><UserPlus size={13} /> Takip Et</>}
+                </button>
+                <button
+                  onClick={() => {
+                    if (!relation?.isBlocked && !confirm('Bu kullanıcıyı engellemek istediğinizden emin misiniz?')) return;
+                    blockMutation.mutate();
+                  }}
+                  disabled={blockMutation.isPending}
+                  title={relation?.isBlocked ? 'Engeli kaldır' : 'Engelle'}
+                  style={{
+                    width: 36, height: 36, borderRadius: 8, border: '1px solid var(--line)',
+                    background: relation?.isBlocked ? 'color-mix(in oklch, var(--bad) 15%, transparent)' : 'var(--bg-1)',
+                    color: relation?.isBlocked ? 'var(--bad)' : 'var(--ink-3)',
+                    cursor: 'pointer', display: 'grid', placeItems: 'center', flexShrink: 0,
+                  }}
+                >
+                  <UserX size={15} />
+                </button>
+              </div>
+            )}
           </div>
         </div>
       </div>

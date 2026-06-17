@@ -5,10 +5,11 @@ import { useConversations, useMessages, useSendMessage, type Conversation, type 
 import { useAuthStore } from '@/store/auth';
 import { useQueryClient } from '@tanstack/react-query';
 import { io, Socket } from 'socket.io-client';
-import { Send, MessageCircle, Lock, Check, CheckCheck, Circle } from 'lucide-react';
+import { Send, MessageCircle, Lock, Check, CheckCheck, Circle, ArrowLeft } from 'lucide-react';
 import Link from 'next/link';
 import { timeAgo } from '@/lib/utils';
 import { api } from '@/lib/api';
+import toast from 'react-hot-toast';
 
 // NEXT_PUBLIC_API_URL örn: https://motorya.com.tr/api-backend
 // Socket.io için origin'i ayır, path'i /api-backend/socket.io olarak ver
@@ -37,6 +38,7 @@ export default function MessagesPage() {
   const [typing, setTyping] = useState(false);
   const socketRef = useRef<Socket | null>(null);
   const bottomRef = useRef<HTMLDivElement>(null);
+  const msgsContainerRef = useRef<HTMLDivElement>(null);
   const typingTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const { data: conversations = [] } = useConversations();
@@ -97,13 +99,20 @@ export default function MessagesPage() {
 
   // Yeni mesajda aşağı kaydır
   useEffect(() => {
-    bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
+    const el = msgsContainerRef.current;
+    if (el) el.scrollTop = el.scrollHeight;
   }, [messages.length]);
 
   const handleSend = () => {
     if (!input.trim() || !activeId) return;
-    sendMessage.mutate({ conversationId: activeId, body: input.trim() });
+    const body = input.trim();
     setInput('');
+    sendMessage.mutate({ conversationId: activeId, body }, {
+      onError: (err: any) => {
+        toast.error(err?.response?.data?.message ?? 'Mesaj gönderilemedi');
+        setInput(body);
+      },
+    });
     socketRef.current?.emit('message:typing', { conversationId: activeId, typing: false });
   };
 
@@ -125,10 +134,10 @@ export default function MessagesPage() {
 
   return (
     <div className="m-wrap" style={{ paddingBottom: 0 }}>
-      <div style={{ display: 'grid', gridTemplateColumns: '320px 1fr', height: 'calc(100vh - 72px)', gap: 0, borderRadius: 'var(--radius)', overflow: 'hidden', border: '1px solid var(--line-soft)', marginTop: 16 }}>
+      <div className="m-msg-grid">
 
         {/* SOL — Konuşma listesi */}
-        <div style={{ borderRight: '1px solid var(--line-soft)', display: 'flex', flexDirection: 'column', background: 'var(--bg-1)' }}>
+        <div className={activeId ? 'm-msg-list--hidden' : ''} style={{ borderRight: '1px solid var(--line-soft)', display: 'flex', flexDirection: 'column', background: 'var(--bg-1)' }}>
           <div style={{ padding: '16px 18px', borderBottom: '1px solid var(--line-soft)' }}>
             <h1 className="m-display" style={{ fontSize: 18, margin: 0 }}>Mesajlar</h1>
             <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginTop: 4, fontSize: 11.5, color: 'var(--ink-3)' }}>
@@ -198,7 +207,7 @@ export default function MessagesPage() {
 
         {/* SAĞ — Mesaj alanı */}
         {!activeId ? (
-          <div style={{ display: 'grid', placeItems: 'center', background: 'var(--bg-0)', color: 'var(--ink-3)' }}>
+          <div className="m-msg-chat--hidden" style={{ display: 'grid', placeItems: 'center', background: 'var(--bg-0)', color: 'var(--ink-3)' }}>
             <div style={{ textAlign: 'center' }}>
               <MessageCircle size={48} style={{ opacity: 0.2, marginBottom: 12 }} />
               <p style={{ fontSize: 15 }}>Bir konuşma seç</p>
@@ -208,9 +217,18 @@ export default function MessagesPage() {
           <div style={{ display: 'flex', flexDirection: 'column', background: 'var(--bg-0)' }}>
             {/* Header */}
             <div style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '12px 18px', borderBottom: '1px solid var(--line-soft)', background: 'var(--bg-1)' }}>
+              <button className="m-hide-desktop" onClick={() => setActiveId(null)} style={{ width: 36, height: 36, background: 'none', border: 0, display: 'grid', placeItems: 'center', color: 'var(--ink-2)', cursor: 'pointer', flexShrink: 0 }}>
+                <ArrowLeft size={20} />
+              </button>
               <Avatar user={activeConv?.otherUser ?? null} size={38} />
               <div>
-                <div style={{ fontWeight: 600, fontSize: 14 }}>{activeConv?.otherUser?.displayName ?? 'Kullanıcı'}</div>
+                <div style={{ fontWeight: 600, fontSize: 14 }}>
+                  {activeConv?.otherUser ? (
+                    <Link href={`/kullanici/${activeConv.otherUser.id}`} style={{ color: 'var(--ink)', textDecoration: 'none' }}>
+                      {activeConv.otherUser.displayName}
+                    </Link>
+                  ) : 'Kullanıcı'}
+                </div>
                 <div style={{ fontSize: 11.5, color: 'var(--ink-3)' }}>
                   {activeConv?.otherUser && onlineUsers.has(activeConv.otherUser.id) ? (
                     <span style={{ color: 'var(--good)' }}>● Çevrimiçi</span>
@@ -228,7 +246,7 @@ export default function MessagesPage() {
             </div>
 
             {/* Mesajlar */}
-            <div style={{ flex: 1, overflowY: 'auto', padding: '16px 18px', display: 'flex', flexDirection: 'column', gap: 6 }}>
+            <div ref={msgsContainerRef} style={{ flex: 1, overflowY: 'auto', padding: '16px 18px', display: 'flex', flexDirection: 'column', gap: 6 }}>
               {messages.map((msg, i) => {
                 const isMine = msg.sender.id === user.id;
                 const showAvatar = !isMine && (i === 0 || messages[i - 1]?.sender.id !== msg.sender.id);

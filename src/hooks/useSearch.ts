@@ -24,7 +24,17 @@ export function useSearch(query: SearchQuery, enabled = true) {
   return useQuery({
     queryKey: ['search', query],
     queryFn: () =>
-      api.get('/search', { params: query }).then((r): SearchResult => r.data),
+      api.get('/search', { params: query }).then((r): SearchResult => {
+        const data = r.data;
+        return {
+          ...data,
+          items: (data.items ?? []).map((item: any) => ({
+            ...item,
+            images: item.images ?? (item.imageUrl ? [{ url: item.imageUrl }] : []),
+            brand: item.brand ?? (item.brandName ? { name: item.brandName } : undefined),
+          })),
+        };
+      }),
     enabled,
     staleTime: 30_000,
   });

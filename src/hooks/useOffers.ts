@@ -8,6 +8,13 @@ export function useMyOffers() {
   });
 }
 
+export function useReceivedOffers() {
+  return useQuery({
+    queryKey: ['offers-received'],
+    queryFn: () => api.get('/offers/received').then((r) => r.data),
+  });
+}
+
 export function useListingOffers(listingId: string) {
   return useQuery({
     queryKey: ['listing-offers', listingId],
@@ -32,6 +39,7 @@ export function useRespondOffer() {
       api.patch(`/offers/${id}/respond`, { action }).then((r) => r.data),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['offers'] });
+      qc.invalidateQueries({ queryKey: ['offers-received'] });
       qc.invalidateQueries({ queryKey: ['listing-offers'] });
     },
   });

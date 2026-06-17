@@ -1,15 +1,33 @@
 'use client';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
-import { useListing, useToggleFavorite } from '@/hooks/useListings';
+import { useListing, useToggleFavorite, useSimilarListings, useListingsByIds } from '@/hooks/useListings';
 import { useCreateOrder } from '@/hooks/useOrders';
 import { useCreateOffer, useListingOffers, useRespondOffer } from '@/hooks/useOffers';
 import { useAuthStore } from '@/store/auth';
 import { formatPrice, timeAgo } from '@/lib/utils';
 import { MapPin, Eye, Heart, Star, ChevronLeft, ChevronRight, Shield, Truck, Users, Share2, Flag, Zap, MessageCircle } from 'lucide-react';
 import { useStartConversation } from '@/hooks/useMessages';
+import { trackListingView, useRecentlyViewedIds } from '@/hooks/useRecentlyViewed';
+import { ListingCard } from '@/components/listings/ListingCard';
 import toast from 'react-hot-toast';
 import Link from 'next/link';
+
+function ListingRow({ title, listings }: { title: string; listings: any[] }) {
+  if (!listings || listings.length === 0) return null;
+  return (
+    <div style={{ marginTop: 32 }}>
+      <h2 className="m-display" style={{ fontSize: 18, marginBottom: 14 }}>{title}</h2>
+      <div style={{ display: 'flex', gap: 14, overflowX: 'auto', paddingBottom: 6, alignItems: 'flex-start' }}>
+        {listings.map((l) => (
+          <div key={l.id} style={{ width: 220, minWidth: 220, maxWidth: 220, flexShrink: 0 }}>
+            <ListingCard listing={l} />
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
 
 function ConditionPill({ condition }: { condition: string }) {
   const map: Record<string, { label: string; tone: string }> = {
@@ -34,16 +52,27 @@ export default function ListingDetailClient() {
   const { user } = useAuthStore();
   const { data: listing, isLoading } = useListing(id);
   const { data: offers } = useListingOffers(id);
+  const { data: similarListings } = useSimilarListings(id);
+  const recentIds = useRecentlyViewedIds(id);
+  const { data: recentlyViewed } = useListingsByIds(recentIds);
   const createOrder = useCreateOrder();
   const createOffer = useCreateOffer();
   const respondOffer = useRespondOffer();
   const startConversation = useStartConversation();
 
+  useEffect(() => {
+    if (listing?.id) trackListingView(listing.id);
+  }, [listing?.id]);
+
   const [imgIdx, setImgIdx] = useState(0);
   const [showOfferModal, setShowOfferModal] = useState(false);
   const [showOrderModal, setShowOrderModal] = useState(false);
+  const [showReportModal, setShowReportModal] = useState(false);
+  const [reportReason, setReportReason] = useState('');
+  const [reportDesc, setReportDesc] = useState('');
+  const [reportSent, setReportSent] = useState(false);
+  const [reportLoading, setReportLoading] = useState(false);
   const [offerAmount, setOfferAmount] = useState('');
-  const [offerMsg, setOfferMsg] = useState('');
   const [meetingNote, setMeetingNote] = useState('');
   const [deliveryMode, setDeliveryMode] = useState<'ship' | 'meet'>('ship');
   const toggleFavorite = useToggleFavorite();
@@ -51,7 +80,7 @@ export default function ListingDetailClient() {
 
   if (isLoading) return (
     <div className="m-wrap" style={{ paddingTop: 32, paddingBottom: 40 }}>
-      <div style={{ display: 'grid', gridTemplateColumns: '1.25fr 0.95fr', gap: 36 }}>
+      <div className="m-detail-grid">
         <div className="m-surface-2" style={{ aspectRatio: '4/3' }} />
         <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
           <div style={{ height: 24, background: 'var(--bg-3)', borderRadius: 8, width: '60%' }} />
@@ -86,7 +115,7 @@ export default function ListingDetailClient() {
   const handleOffer = async () => {
     if (!user) { toast.error('Teklif vermek için giriş yapmalısın'); router.push('/giris'); return; }
     try {
-      await createOffer.mutateAsync({ listingId: listing.id, amount: parseFloat(offerAmount), message: offerMsg });
+      await createOffer.mutateAsync({ listingId: listing.id, amount: parseFloat(offerAmount) });
       toast.success('Teklifiniz gönderildi!');
       setShowOfferModal(false);
     } catch (e: any) {
@@ -103,7 +132,7 @@ export default function ListingDetailClient() {
   ].filter(Boolean) as [string, string][];
 
   return (
-    <div className="m-wrap" style={{ paddingBottom: 40 }}>
+    <div className={`m-wrap has-mobile-bar`} style={{ paddingBottom: 40 }}>
       {/* Breadcrumb */}
       <div style={{ display: 'flex', alignItems: 'center', gap: 8, color: 'var(--ink-3)', fontSize: 12.5, padding: '20px 0 4px', flexWrap: 'wrap' }}>
         <Link href="/" style={{ color: 'var(--ink-3)' }}>Keşfet</Link>
@@ -113,13 +142,13 @@ export default function ListingDetailClient() {
         <span style={{ color: 'var(--ink-2)' }}>{listing.title}</span>
       </div>
 
-      <div style={{ display: 'grid', gridTemplateColumns: '1.25fr 0.95fr', gap: 36, alignItems: 'start' }}>
+      <div className="m-detail-grid">
         {/* LEFT */}
         <div>
           {/* Gallery */}
           <div className="m-surface-2" style={{ position: 'relative', aspectRatio: '4/3', overflow: 'hidden', borderRadius: 'var(--radius)' }}>
             {images.length > 0 ? (
-              <img src={images[imgIdx].url} alt={listing.title} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+              <img src={images[imgIdx].url} alt={listing.title} style={{ width: '100%', height: '100%', objectFit: 'contain' }} />
             ) : (
               <div style={{
                 position: 'absolute', inset: 0,
@@ -139,7 +168,21 @@ export default function ListingDetailClient() {
                 </button>
               </>
             )}
-            <button style={{ position: 'absolute', top: 12, right: 12, width: 36, height: 36, borderRadius: 8, background: 'oklch(0 0 0 / 0.5)', border: '1px solid oklch(1 0 0 / 0.12)', display: 'grid', placeItems: 'center', color: '#fff', backdropFilter: 'blur(6px)' }}>
+            <button
+              onClick={async () => {
+                const url = `${window.location.origin}/ilan/${id}`;
+                const shareText = `${listing.title} — ${formatPrice(listing.price)} ₺`;
+                if (navigator.share) {
+                  try {
+                    await navigator.share({ title: shareText, url });
+                  } catch {
+                    /* kullanıcı paylaşımı iptal etti */
+                  }
+                } else {
+                  window.open(`https://wa.me/?text=${encodeURIComponent(`${shareText}\n${url}`)}`, '_blank');
+                }
+              }}
+              style={{ position: 'absolute', top: 12, right: 12, width: 36, height: 36, borderRadius: 8, background: 'oklch(0 0 0 / 0.5)', border: '1px solid oklch(1 0 0 / 0.12)', display: 'grid', placeItems: 'center', color: '#fff', backdropFilter: 'blur(6px)', cursor: 'pointer' }}>
               <Share2 size={18} />
             </button>
           </div>
@@ -177,7 +220,7 @@ export default function ListingDetailClient() {
         </div>
 
         {/* RIGHT — buy box (sticky) */}
-        <div style={{ position: 'sticky', top: 88 }}>
+        <div className="m-detail-sticky" style={{ position: 'sticky', top: 88 }}>
           <div className="m-surface-2" style={{ padding: '22px 24px' }}>
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
               <ConditionPill condition={listing.condition} />
@@ -234,7 +277,7 @@ export default function ListingDetailClient() {
 
             {/* Actions */}
             {!isMine && listing.status === 'ACTIVE' && (
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 12, marginTop: 20 }}>
+              <div className="m-buy-desktop-actions" style={{ display: 'flex', flexDirection: 'column', gap: 12, marginTop: 20 }}>
                 <button
                   className="m-btn m-btn-primary lg block"
                   onClick={() => {
@@ -323,12 +366,62 @@ export default function ListingDetailClient() {
             <ChevronRight size={18} style={{ color: 'var(--ink-3)' }} />
           </Link>
 
-          <div style={{ display: 'flex', alignItems: 'center', gap: 6, justifyContent: 'center', marginTop: 12, fontSize: 12, color: 'var(--ink-3)' }}>
-            <Flag size={13} />
-            <button style={{ background: 'none', border: 0, color: 'inherit', cursor: 'pointer', fontSize: 12 }}>Bu ilanı bildir</button>
-          </div>
+          {!isMine && (
+            <div style={{ display: 'flex', alignItems: 'center', gap: 6, justifyContent: 'center', marginTop: 12, fontSize: 12, color: 'var(--ink-3)' }}>
+              <Flag size={13} />
+              <button
+                onClick={() => { if (!user) { toast.error('Şikayet etmek için giriş yapmalısın'); return; } setShowReportModal(true); }}
+                style={{ background: 'none', border: 0, color: 'inherit', cursor: 'pointer', fontSize: 12 }}>
+                Bu ilanı şikayet et
+              </button>
+            </div>
+          )}
         </div>
       </div>
+
+      <ListingRow title="Benzer ilanlar" listings={similarListings ?? []} />
+      <ListingRow title="Son baktıkların" listings={recentlyViewed ?? []} />
+
+      {/* Mobile bottom action bar */}
+      {!isMine && listing.status === 'ACTIVE' && (
+        <div className="m-mobile-bar">
+          <button
+            className="m-btn m-btn-primary lg"
+            style={{ flex: 2, display: 'flex', justifyContent: 'center', gap: 6 }}
+            onClick={() => {
+              if (!user) { toast.error('Satın almak için giriş yapmalısın'); router.push('/giris'); return; }
+              setShowOrderModal(true);
+            }}
+          >
+            <Zap size={17} fill="currentColor" strokeWidth={0} />
+            Hemen Al
+          </button>
+          <button
+            className="m-btn m-btn-ghost lg"
+            style={{ flex: 1 }}
+            onClick={() => {
+              if (!user) { toast.error('Teklif vermek için giriş yapmalısın'); router.push('/giris'); return; }
+              setShowOfferModal(true);
+            }}
+          >
+            Teklif
+          </button>
+          <button
+            className="m-btn m-btn-ghost lg"
+            style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 5 }}
+            onClick={async () => {
+              if (!user) { toast.error('Mesaj göndermek için giriş yapmalısın'); router.push('/giris'); return; }
+              try {
+                const conv = await startConversation.mutateAsync({ otherUserId: listing.seller.id, listingId: listing.id });
+                router.push(`/mesajlarim?conv=${conv.id}`);
+              } catch { toast.error('Mesaj başlatılamadı'); }
+            }}
+          >
+            <MessageCircle size={15} />
+            Mesaj
+          </button>
+        </div>
+      )}
 
       {/* Seller's incoming offers */}
       {isMine && offers?.length > 0 && (
@@ -366,8 +459,6 @@ export default function ListingDetailClient() {
             <h3 className="m-display" style={{ fontSize: 20, margin: '0 0 20px' }}>Teklif Ver</h3>
             <label className="m-label">Teklif tutarı (₺)</label>
             <input className="m-field" type="number" value={offerAmount} onChange={e => setOfferAmount(e.target.value)} placeholder={`Max: ${formatPrice(listing.price)}`} style={{ marginBottom: 12 }} />
-            <label className="m-label">Mesaj (isteğe bağlı)</label>
-            <textarea className="m-field" rows={3} value={offerMsg} onChange={e => setOfferMsg(e.target.value)} placeholder="Açıklama..." />
             <div style={{ display: 'flex', gap: 12, marginTop: 20 }}>
               <button className="m-btn m-btn-ghost" style={{ flex: 1 }} onClick={() => setShowOfferModal(false)}>Vazgeç</button>
               <button className="m-btn m-btn-primary" style={{ flex: 1 }} disabled={createOffer.isPending} onClick={handleOffer}>Teklif Gönder</button>
@@ -392,6 +483,81 @@ export default function ListingDetailClient() {
               <button className="m-btn m-btn-ghost" style={{ flex: 1 }} onClick={() => setShowOrderModal(false)}>Vazgeç</button>
               <button className="m-btn m-btn-primary" style={{ flex: 1 }} disabled={createOrder.isPending} onClick={handleBuyNow}>Siparişi Oluştur</button>
             </div>
+          </div>
+        </div>
+      )}
+      {/* Report Modal */}
+      {showReportModal && (
+        <div style={{ position: 'fixed', inset: 0, background: 'oklch(0 0 0 / 0.7)', zIndex: 50, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 16 }}>
+          <div className="m-surface-2" style={{ padding: 24, width: '100%', maxWidth: 440 }}>
+            {reportSent ? (
+              <div style={{ textAlign: 'center', padding: '20px 0' }}>
+                <div style={{ width: 56, height: 56, borderRadius: '50%', background: 'color-mix(in oklch, var(--good) 12%, transparent)', display: 'grid', placeItems: 'center', margin: '0 auto 16px' }}>
+                  <Flag size={24} style={{ color: 'var(--good)' }} />
+                </div>
+                <h3 className="m-display" style={{ fontSize: 18, margin: '0 0 8px' }}>Şikayet Alındı</h3>
+                <p style={{ fontSize: 13.5, color: 'var(--ink-3)', lineHeight: 1.6 }}>Ekibimiz en kısa sürede inceleyecek. Katkın için teşekkürler.</p>
+                <button className="m-btn m-btn-ghost" style={{ marginTop: 20, width: '100%' }} onClick={() => { setShowReportModal(false); setReportSent(false); setReportReason(''); setReportDesc(''); }}>Kapat</button>
+              </div>
+            ) : (
+              <>
+                <h3 className="m-display" style={{ fontSize: 20, margin: '0 0 6px' }}>İlanı Şikayet Et</h3>
+                <p style={{ fontSize: 13, color: 'var(--ink-3)', marginBottom: 20 }}>Şikayet nedeninizi seçin, ekibimiz inceleyecek.</p>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginBottom: 16 }}>
+                  {[
+                    'Sahte veya yanıltıcı ilan',
+                    'Yasadışı ürün/hizmet',
+                    'Kural ihlali (fiyat, kategori)',
+                    'Dolandırıcılık şüphesi',
+                    'Müstehcen içerik',
+                    'Diğer',
+                  ].map(r => (
+                    <label key={r} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 14px', border: `1px solid ${reportReason === r ? 'var(--accent)' : 'var(--line)'}`, borderRadius: 8, cursor: 'pointer', background: reportReason === r ? 'color-mix(in oklch, var(--accent) 7%, var(--bg-0))' : 'var(--bg-0)', transition: 'all .12s', fontSize: 13.5, color: 'var(--ink)' }}>
+                      <span style={{ width: 16, height: 16, borderRadius: '50%', border: `2px solid ${reportReason === r ? 'var(--accent)' : 'var(--line)'}`, flexShrink: 0, display: 'grid', placeItems: 'center' }}>
+                        {reportReason === r && <span style={{ width: 8, height: 8, borderRadius: '50%', background: 'var(--accent)' }} />}
+                      </span>
+                      <input type="radio" name="reportReason" value={r} checked={reportReason === r} onChange={() => setReportReason(r)} style={{ display: 'none' }} />
+                      {r}
+                    </label>
+                  ))}
+                </div>
+                <textarea
+                  value={reportDesc}
+                  onChange={e => setReportDesc(e.target.value)}
+                  rows={3}
+                  placeholder="Açıklama ekleyin (opsiyonel)…"
+                  style={{ width: '100%', padding: '10px 14px', background: 'var(--bg-0)', border: '1px solid var(--line)', borderRadius: 8, color: 'var(--ink)', fontSize: 13.5, outline: 'none', resize: 'vertical', fontFamily: 'inherit' }}
+                />
+                <div style={{ display: 'flex', gap: 12, marginTop: 16 }}>
+                  <button className="m-btn m-btn-ghost" style={{ flex: 1 }} onClick={() => setShowReportModal(false)}>Vazgeç</button>
+                  <button
+                    className="m-btn m-btn-primary"
+                    style={{ flex: 1 }}
+                    disabled={!reportReason || reportLoading}
+                    onClick={async () => {
+                      if (!reportReason) return;
+                      setReportLoading(true);
+                      try {
+                        const { api } = await import('@/lib/api');
+                        const res = await api.post(`/listings/${id}/report`, { reason: reportReason, description: reportDesc || undefined });
+                        if (res.data?.alreadyReported) {
+                          toast.error('Bu ilanı daha önce şikayet ettiniz');
+                          setShowReportModal(false);
+                        } else {
+                          setReportSent(true);
+                        }
+                      } catch {
+                        toast.error('Şikayet gönderilemedi');
+                      } finally {
+                        setReportLoading(false);
+                      }
+                    }}
+                  >
+                    {reportLoading ? 'Gönderiliyor…' : 'Şikayet Gönder'}
+                  </button>
+                </div>
+              </>
+            )}
           </div>
         </div>
       )}

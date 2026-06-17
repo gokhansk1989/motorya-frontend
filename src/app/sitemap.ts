@@ -1,5 +1,4 @@
 import { MetadataRoute } from 'next';
-import { BLOG_POSTS } from '@/data/blog';
 
 const BASE_URL = 'https://motorya.com.tr';
 
@@ -31,13 +30,21 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     ),
   ];
 
-  // Blog posts
-  const blogPages: MetadataRoute.Sitemap = BLOG_POSTS.map(post => ({
-    url: `${BASE_URL}/blog/${post.slug}`,
-    lastModified: new Date(post.date),
-    changeFrequency: 'monthly' as const,
-    priority: 0.8,
-  }));
+  // Blog posts from API
+  let blogPages: MetadataRoute.Sitemap = [];
+  try {
+    const API = process.env.NEXT_PUBLIC_API_URL || 'https://motorya.com.tr/api-backend';
+    const res = await fetch(`${API}/blog?limit=100`, { next: { revalidate: 3600 } });
+    if (res.ok) {
+      const data = await res.json();
+      blogPages = (data.items || []).map((p: { slug: string; publishedAt?: string; createdAt: string }) => ({
+        url: `${BASE_URL}/blog/${p.slug}`,
+        lastModified: new Date(p.publishedAt || p.createdAt),
+        changeFrequency: 'monthly' as const,
+        priority: 0.8,
+      }));
+    }
+  } catch {}
 
   // Listings from API (best effort)
   let listingPages: MetadataRoute.Sitemap = [];

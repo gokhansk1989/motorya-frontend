@@ -100,3 +100,19 @@ export function useMyFavorites() {
     queryFn: () => api.get('/listings/favorites/mine').then((r) => r.data),
   });
 }
+
+export function useSimilarListings(id: string) {
+  return useQuery({
+    queryKey: ['listing-similar', id],
+    queryFn: () => api.get(`/listings/${id}/similar`).then((r) => r.data),
+    enabled: !!id,
+  });
+}
+
+export function useListingsByIds(ids: string[]) {
+  return useQuery({
+    queryKey: ['listings-by-ids', ids],
+    queryFn: () => api.get('/listings/by-ids', { params: { ids: ids.join(',') } }).then((r) => r.data),
+    enabled: ids.length > 0,
+  });
+}

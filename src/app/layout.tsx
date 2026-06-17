@@ -1,4 +1,5 @@
 import type { Metadata, Viewport } from 'next';
+import Script from 'next/script';
 import './globals.css';
 import { Providers } from './providers';
 
@@ -46,6 +47,13 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     <html lang="tr" className="h-full">
       <body className="min-h-full antialiased">
         <Providers>{children}</Providers>
+        <Script src="https://www.googletagmanager.com/gtag/js?id=G-S0BXZLVQ26" strategy="afterInteractive" />
+        <Script id="gtag-init" strategy="afterInteractive">{`
+          window.dataLayer = window.dataLayer || [];
+          function gtag(){dataLayer.push(arguments);}
+          gtag('js', new Date());
+          gtag('config', 'G-S0BXZLVQ26');
+        `}</Script>
       </body>
     </html>
   );

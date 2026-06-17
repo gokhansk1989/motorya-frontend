@@ -37,7 +37,7 @@ export function ListingCard({ listing }: { listing: Listing }) {
       <Link href={`/ilan/${listing.id}`} style={{ display: 'block', textDecoration: 'none' }}>
         <div className="m-card-media">
           {thumb ? (
-            <Image src={thumb} alt={listing.title} fill sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 240px" style={{ objectFit: 'cover' }} />
+            <Image src={thumb} alt={listing.title} fill sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 240px" className="m-card-img-contain" style={{ objectFit: 'contain' }} />
           ) : (
             <div style={{
               position: 'absolute', inset: 0,
@@ -90,18 +90,18 @@ export function ListingCard({ listing }: { listing: Listing }) {
             <span className="m-price-old">{formatPrice(listing.originalPrice)}</span>
           )}
         </div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 9, color: 'var(--ink-3)', fontSize: 12 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginTop: 9, color: 'var(--ink-3)', fontSize: 12, whiteSpace: 'nowrap', overflow: 'hidden' }}>
           {listing.city && (
             <>
-              <MapPin size={13} />
-              <span>{listing.city}</span>
-              <span style={{ width: 3, height: 3, borderRadius: '50%', background: 'currentColor', opacity: 0.6 }} />
+              <MapPin size={13} style={{ flexShrink: 0 }} />
+              <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: 72 }}>{listing.city}</span>
+              <span style={{ width: 3, height: 3, borderRadius: '50%', background: 'currentColor', opacity: 0.6, flexShrink: 0 }} />
             </>
           )}
-          <Eye size={13} />
-          <span>{(listing as any).viewCount ?? 0}</span>
+          <Eye size={13} style={{ flexShrink: 0 }} />
+          <span style={{ flexShrink: 0 }}>{(listing as any).viewCount ?? 0}</span>
           <div style={{ flex: 1 }} />
-          <span>{timeAgo(listing.createdAt)}</span>
+          <span style={{ flexShrink: 0 }}>{timeAgo(listing.createdAt)}</span>
         </div>
       </div>
     </article>

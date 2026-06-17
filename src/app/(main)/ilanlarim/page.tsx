@@ -3,7 +3,7 @@ import { useState } from 'react';
 import Link from 'next/link';
 import { useMyListings } from '@/hooks/useListings';
 import { formatPrice } from '@/lib/utils';
-import { Plus, Trash2, Eye, Package, Pencil, PauseCircle, PlayCircle } from 'lucide-react';
+import { Plus, Trash2, Package, Pencil, PauseCircle, PlayCircle } from 'lucide-react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { api } from '@/lib/api';
 import toast from 'react-hot-toast';
@@ -126,21 +126,20 @@ export default function MyListingsPage() {
               <div key={l.id} style={{ display: 'flex', alignItems: 'center', gap: 16, padding: 16, background: 'var(--bg-1)', borderRadius: 14, border: '1px solid var(--line)', transition: 'border-color .15s' }}
                 onMouseEnter={e => (e.currentTarget.style.borderColor = 'var(--line-soft)')}
                 onMouseLeave={e => (e.currentTarget.style.borderColor = 'var(--line)')}>
-                <div style={{ width: 72, height: 72, borderRadius: 10, background: 'var(--bg-2)', overflow: 'hidden', flexShrink: 0, border: '1px solid var(--line)' }}>
-                  {l.images?.[0] && <img src={l.images[0].url} style={{ width: '100%', height: '100%', objectFit: 'cover' }} alt="" />}
-                </div>
-                <div style={{ flex: 1, minWidth: 0 }}>
-                  <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 10 }}>
-                    <p style={{ fontWeight: 600, color: 'var(--ink)', fontSize: 14, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{l.title}</p>
-                    <span style={{ flexShrink: 0, fontSize: 11, fontWeight: 700, fontFamily: 'var(--font-mono)', padding: '3px 9px', borderRadius: 20, background: st.bg, color: st.color }}>{st.label}</span>
+                <Link href={`/ilan/${l.id}`} style={{ display: 'flex', alignItems: 'center', gap: 16, flex: 1, minWidth: 0, textDecoration: 'none' }}>
+                  <div style={{ width: 72, height: 72, borderRadius: 10, background: 'var(--bg-2)', overflow: 'hidden', flexShrink: 0, border: '1px solid var(--line)' }}>
+                    {l.images?.[0] && <img src={l.images[0].url} style={{ width: '100%', height: '100%', objectFit: 'cover' }} alt="" />}
                   </div>
-                  <p style={{ color: 'var(--accent)', fontWeight: 700, fontSize: 15, fontFamily: 'var(--font-mono)', marginTop: 4 }}>{formatPrice(l.price)}</p>
-                  <p style={{ fontSize: 11, color: 'var(--ink-3)', marginTop: 3 }}>{l.viewCount ?? 0} görüntülenme · {l.favoriteCount ?? 0} favori</p>
-                </div>
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 10 }}>
+                      <p style={{ fontWeight: 600, color: 'var(--ink)', fontSize: 14, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{l.title}</p>
+                      <span style={{ flexShrink: 0, fontSize: 11, fontWeight: 700, fontFamily: 'var(--font-mono)', padding: '3px 9px', borderRadius: 20, background: st.bg, color: st.color }}>{st.label}</span>
+                    </div>
+                    <p style={{ color: 'var(--accent)', fontWeight: 700, fontSize: 15, fontFamily: 'var(--font-mono)', marginTop: 4 }}>{formatPrice(l.price)}</p>
+                    <p style={{ fontSize: 11, color: 'var(--ink-3)', marginTop: 3 }}>{l.viewCount ?? 0} görüntülenme · {l.favoriteCount ?? 0} favori</p>
+                  </div>
+                </Link>
                 <div style={{ display: 'flex', gap: 6, flexShrink: 0 }}>
-                  <Link href={`/ilan/${l.id}`} title="Görüntüle" style={{ width: 34, height: 34, display: 'grid', placeItems: 'center', background: 'var(--bg-2)', border: '1px solid var(--line)', borderRadius: 8, color: 'var(--ink-2)', textDecoration: 'none' }}>
-                    <Eye size={15} />
-                  </Link>
                   {canEdit && (
                     <Link href={`/ilanlarim/duzenle/${l.id}`} title="Düzenle" style={{ width: 34, height: 34, display: 'grid', placeItems: 'center', background: 'var(--bg-2)', border: '1px solid var(--line)', borderRadius: 8, color: 'var(--ink-2)', textDecoration: 'none' }}>
                       <Pencil size={15} />

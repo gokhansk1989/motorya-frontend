@@ -2,10 +2,13 @@
 import { Suspense, useState, useCallback } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useSearch } from '@/hooks/useSearch';
+import { useCreateSavedSearch } from '@/hooks/useSavedSearches';
 import { ListingCard } from '@/components/listings/ListingCard';
 import { useQuery } from '@tanstack/react-query';
 import { api } from '@/lib/api';
-import { Search, SlidersHorizontal, X, ChevronDown, ChevronUp } from 'lucide-react';
+import { useAuthStore } from '@/store/auth';
+import { Search, SlidersHorizontal, X, ChevronDown, ChevronUp, BellPlus } from 'lucide-react';
+import toast from 'react-hot-toast';
 
 const CONDITIONS = [
   { value: '', label: 'Tümü' },
@@ -25,6 +28,8 @@ const SORT_OPTIONS = [
 function SearchPageInner() {
   const router = useRouter();
   const sp = useSearchParams();
+  const { user } = useAuthStore();
+  const createSavedSearch = useCreateSavedSearch();
 
   const q = sp.get('q') ?? '';
   const categoryId = sp.get('categoryId') ?? '';
@@ -114,6 +119,30 @@ function SearchPageInner() {
             <span style={{ position: 'absolute', top: 6, right: 6, width: 7, height: 7, borderRadius: '50%', background: 'var(--accent)' }} />
           )}
         </button>
+        {(q || categoryId || brandId || condition || city || minPrice || maxPrice) && (
+          <button
+            type="button"
+            disabled={createSavedSearch.isPending}
+            onClick={() => {
+              if (!user) { toast.error('Aramayı kaydetmek için giriş yapmalısın'); return; }
+              const categoryName = (categories ?? []).find((c: any) => c.id === categoryId)?.name;
+              const brandName = (brands ?? []).find((b: any) => b.id === brandId)?.name;
+              const label = [q, brandName, categoryName, city].filter(Boolean).join(' · ') || 'Tüm ilanlar';
+              createSavedSearch.mutate(
+                { label, search: q || undefined, categoryId: categoryId || undefined, brandId: brandId || undefined, condition: condition || undefined, city: city || undefined, minPrice, maxPrice },
+                {
+                  onSuccess: () => toast.success('Arama kaydedildi — uyan yeni ilan girince haber vereceğiz'),
+                  onError: (err: any) => toast.error(err?.response?.data?.message ?? 'Arama kaydedilemedi'),
+                }
+              );
+            }}
+            className="m-btn"
+            style={{ gap: 6 }}
+          >
+            <BellPlus size={16} />
+            Bu aramayı kaydet
+          </button>
+        )}
       </form>
 
       {/* Filter panel */}

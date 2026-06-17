@@ -9,6 +9,7 @@ import { useCreateListing } from '@/hooks/useListings';
 import { Upload, X, ChevronDown, Zap, Camera, ImagePlus } from 'lucide-react';
 import { useRef, useState } from 'react';
 import toast from 'react-hot-toast';
+import { CoverCropModal } from '@/components/listings/CoverCropModal';
 
 const schema = z.object({
   title: z.string().min(5, 'En az 5 karakter'),
@@ -71,19 +72,16 @@ export default function CreateListingPage() {
   const router = useRouter();
   const [imageUrls, setImageUrls] = useState<string[]>([]);
   const [uploading, setUploading] = useState(false);
+  const [cropQueue, setCropQueue] = useState<{ coverFile: File; rest: File[] } | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const cameraInputRef = useRef<HTMLInputElement>(null);
   const createListing = useCreateListing();
 
-  const handleFiles = async (files: FileList | null) => {
-    if (!files || files.length === 0) return;
-    const remaining = MAX_IMAGES - imageUrls.length;
-    if (remaining <= 0) { toast.error(`En fazla ${MAX_IMAGES} fotoğraf ekleyebilirsiniz`); return; }
-    const selected = Array.from(files).slice(0, remaining);
+  const uploadFiles = async (toUpload: File[]) => {
     setUploading(true);
     try {
       const form = new FormData();
-      selected.forEach(f => form.append('files', f));
+      toUpload.forEach(f => form.append('files', f));
       const res = await api.post('/upload/images', form, {
         headers: { 'Content-Type': 'multipart/form-data' },
       });
@@ -95,6 +93,36 @@ export default function CreateListingPage() {
       if (fileInputRef.current) fileInputRef.current.value = '';
       if (cameraInputRef.current) cameraInputRef.current.value = '';
     }
+  };
+
+  const handleFiles = async (files: FileList | null) => {
+    if (!files || files.length === 0) return;
+    const remaining = MAX_IMAGES - imageUrls.length;
+    if (remaining <= 0) { toast.error(`En fazla ${MAX_IMAGES} fotoğraf ekleyebilirsiniz`); return; }
+    const selected = Array.from(files).slice(0, remaining);
+
+    // İlk (kapak) fotoğraf seçiliyorsa önce kırpma fırsatı ver
+    if (imageUrls.length === 0) {
+      const [coverFile, ...rest] = selected;
+      setCropQueue({ coverFile, rest });
+      return;
+    }
+
+    await uploadFiles(selected);
+  };
+
+  const handleCropConfirm = async (cropped: File) => {
+    if (!cropQueue) return;
+    const { rest } = cropQueue;
+    setCropQueue(null);
+    await uploadFiles([cropped, ...rest]);
+  };
+
+  const handleCropSkip = async () => {
+    if (!cropQueue) return;
+    const { coverFile, rest } = cropQueue;
+    setCropQueue(null);
+    await uploadFiles([coverFile, ...rest]);
   };
 
   const { data: categories } = useQuery({
@@ -115,11 +143,18 @@ export default function CreateListingPage() {
   const onSubmit = async (data: FormData) => {
     if (imageUrls.length === 0) { toast.error('En az bir fotoğraf ekleyin'); return; }
     try {
-      const listing = await createListing.mutateAsync({ ...data, imageUrls });
+      const listing = await createListing.mutateAsync({
+        ...data,
+        brandId: data.brandId || undefined,
+        city: data.city || undefined,
+        sizeLabel: data.sizeLabel || undefined,
+        imageUrls,
+      });
       toast.success('İlanınız oluşturuldu, onay bekleniyor');
       router.push(`/ilan/${listing.id}`);
-    } catch {
-      toast.error('İlan oluşturulamadı');
+    } catch (err: any) {
+      const msg = err?.response?.data?.message;
+      toast.error(Array.isArray(msg) ? msg.join(', ') : (msg ?? 'İlan oluşturulamadı'));
     }
   };
 
@@ -332,6 +367,14 @@ export default function CreateListingPage() {
         </button>
       </form>
       <style>{`@keyframes spin { to { transform: rotate(360deg); } } option { background: var(--bg-1); color: var(--ink); }`}</style>
+
+      {cropQueue && (
+        <CoverCropModal
+          file={cropQueue.coverFile}
+          onConfirm={handleCropConfirm}
+          onSkip={handleCropSkip}
+        />
+      )}
     </div>
   );
 }

@@ -38,7 +38,6 @@ export async function generateMetadata({ params }: { params: { id: string } }): 
   const description = listing.description
     ? listing.description.slice(0, 155) + (listing.description.length > 155 ? '…' : '')
     : `${listing.title} ilanı Motorya'da. ${price} TL fiyatıyla satışta.`;
-  const image = listing.images?.[0]?.url;
   const canonical = `${BASE_URL}/ilan/${listing.id}`;
 
   return {
@@ -50,13 +49,11 @@ export async function generateMetadata({ params }: { params: { id: string } }): 
       description,
       url: canonical,
       type: 'website',
-      ...(image ? { images: [{ url: image, width: 1200, height: 900, alt: listing.title }] } : {}),
     },
     twitter: {
       card: 'summary_large_image',
       title,
       description,
-      ...(image ? { images: [image] } : {}),
     },
   };
 }
