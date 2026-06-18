@@ -83,9 +83,13 @@ export default async function ListingDetailPage({ params }: { params: Promise<{ 
     return <ListingDetailClient />;
   }
 
-  // Canonical slug kontrolü: farklıysa 301 redirect
   const canonicalSlug = listing.slug ?? listing.id;
-  if (slug !== canonicalSlug) {
+
+  // Yalnızca bare ID (slug kısmı hiç olmayan eski linkler) redirect alır.
+  // Slug'un içindeki herhangi bir kelime yanlışsa redirect YOK — canonical meta tag SEO'yu halleder.
+  // Bu Amazon/Sahibinden davranışı: ID doğruysa sayfayı serve et.
+  const isBareId = slug === listing.id;
+  if (isBareId && canonicalSlug !== slug) {
     redirect(`/ilan/${canonicalSlug}`);
   }
 
