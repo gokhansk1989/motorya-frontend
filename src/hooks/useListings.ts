@@ -24,7 +24,9 @@ export interface Listing {
 export interface ListingsQuery {
   search?: string;
   categoryId?: string;
+  categorySlug?: string;
   condition?: string;
+  gender?: string;
   city?: string;
   minPrice?: number;
   maxPrice?: number;

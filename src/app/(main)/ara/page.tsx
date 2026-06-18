@@ -8,6 +8,7 @@ import { useQuery } from '@tanstack/react-query';
 import { api } from '@/lib/api';
 import { useAuthStore } from '@/store/auth';
 import { Search, SlidersHorizontal, X, ChevronDown, ChevronUp, BellPlus } from 'lucide-react';
+import { AdSlot } from '@/components/ui/AdSlot';
 import toast from 'react-hot-toast';
 
 const CONDITIONS = [
@@ -16,6 +17,14 @@ const CONDITIONS = [
   { value: 'LIKE_NEW', label: 'Sıfır gibi' },
   { value: 'GOOD', label: 'İyi' },
   { value: 'FAIR', label: 'Kabul edilebilir' },
+];
+
+const GENDERS = [
+  { value: '', label: 'Tümü' },
+  { value: 'ERKEK', label: 'Erkek' },
+  { value: 'KADIN', label: 'Kadın' },
+  { value: 'UNISEX', label: 'Unisex' },
+  { value: 'COCUK', label: 'Çocuk' },
 ];
 
 const SORT_OPTIONS = [
@@ -35,6 +44,7 @@ function SearchPageInner() {
   const categoryId = sp.get('categoryId') ?? '';
   const brandId = sp.get('brandId') ?? '';
   const condition = sp.get('condition') ?? '';
+  const gender = sp.get('gender') ?? '';
   const city = sp.get('city') ?? '';
   const minPrice = sp.get('minPrice') ? Number(sp.get('minPrice')) : undefined;
   const maxPrice = sp.get('maxPrice') ? Number(sp.get('maxPrice')) : undefined;
@@ -71,13 +81,13 @@ function SearchPageInner() {
 
   const push = useCallback((overrides: Record<string, string | number | undefined>) => {
     const params = new URLSearchParams();
-    const merged = { q, categoryId, brandId, condition, city, sort, page: 1, ...overrides };
+    const merged = { q, categoryId, brandId, condition, gender, city, sort, page: 1, ...overrides };
     Object.entries(merged).forEach(([k, v]) => {
       if (v !== undefined && v !== '' && v !== 1) params.set(k, String(v));
       else if (k === 'page' && v === 1) {} // skip page=1
     });
     router.push(`/ara?${params.toString()}`);
-  }, [q, categoryId, brandId, condition, city, sort, page, router]);
+  }, [q, categoryId, brandId, condition, gender, city, sort, page, router]);
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
@@ -193,6 +203,19 @@ function SearchPageInner() {
             </select>
           </div>
 
+          {/* Gender */}
+          <div>
+            <label className="m-label">Cinsiyet</label>
+            <select
+              value={gender}
+              onChange={e => push({ gender: e.target.value, page: 1 })}
+              className="m-field"
+              style={{ height: 38 }}
+            >
+              {GENDERS.map(g => <option key={g.value} value={g.value}>{g.label}</option>)}
+            </select>
+          </div>
+
           {/* Price range */}
           <div>
             <label className="m-label">Min Fiyat (₺)</label>
@@ -253,7 +276,7 @@ function SearchPageInner() {
       </div>
 
       {/* Active filter chips */}
-      {(categoryId || brandId || condition || city) && (
+      {(categoryId || brandId || condition || gender || city) && (
         <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginBottom: 16 }}>
           {categoryId && (
             <span className="m-chip active" onClick={() => push({ categoryId: '', page: 1 })}>
@@ -268,6 +291,11 @@ function SearchPageInner() {
           {condition && (
             <span className="m-chip active" onClick={() => push({ condition: '', page: 1 })}>
               {CONDITIONS.find(c => c.value === condition)?.label} <X size={13} />
+            </span>
+          )}
+          {gender && (
+            <span className="m-chip active" onClick={() => push({ gender: '', page: 1 })}>
+              {GENDERS.find(g => g.value === gender)?.label} <X size={13} />
             </span>
           )}
         </div>
@@ -289,8 +317,15 @@ function SearchPageInner() {
       ) : (
         <>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(clamp(155px, 42vw, 240px), 1fr))', gap: 12 }}>
-            {items.map((item: any) => (
-              <ListingCard key={item.id} listing={item} />
+            {items.map((item: any, i: number) => (
+              <>
+                <ListingCard key={item.id} listing={item} />
+                {(i + 1) % 6 === 0 && (
+                  <div key={`ad-${i}`} style={{ gridColumn: '1/-1' }}>
+                    <AdSlot slot={process.env.NEXT_PUBLIC_ADSENSE_SLOT_LISTING ?? ''} format="auto" />
+                  </div>
+                )}
+              </>
             ))}
           </div>
 

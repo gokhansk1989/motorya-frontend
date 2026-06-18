@@ -86,10 +86,10 @@ export default function CreateListingPage() {
   const cameraInputRef = useRef<HTMLInputElement>(null);
   const createListing = useCreateListing();
 
-  // Cascading category state
+  // Cascading category state (2-level)
   const [selL1, setSelL1] = useState('');
   const [selL2, setSelL2] = useState('');
-  const [selL3, setSelL3] = useState('');
+  const [gender, setGender] = useState('');
 
   const uploadFiles = async (toUpload: File[]) => {
     setUploading(true);
@@ -148,7 +148,11 @@ export default function CreateListingPage() {
   // Derive tree levels from flat list
   const l1Cats = useMemo(() => allCategories.filter(c => !c.parentId), [allCategories]);
   const l2Cats = useMemo(() => allCategories.filter(c => c.parentId === selL1), [allCategories, selL1]);
-  const l3Cats = useMemo(() => allCategories.filter(c => c.parentId === selL2), [allCategories, selL2]);
+
+  // Show gender selector only for clothing categories
+  const GENDER_CATS = new Set(['mont', 'pantolon', 'eldiven', 'bot-cizme', 'koruma', 'casual-giyim', 'kask', 'mx-off-road']);
+  const l1Slug = useMemo(() => allCategories.find(c => c.id === selL1)?.slug ?? '', [allCategories, selL1]);
+  const showGender = GENDER_CATS.has(l1Slug);
 
   const { register, handleSubmit, setValue, formState: { errors, isSubmitting } } = useForm<any>({
     resolver: zodResolver(schema),
@@ -157,15 +161,12 @@ export default function CreateListingPage() {
 
   // Sync most-specific selected category to form field
   useEffect(() => {
-    const finalId = selL3 || selL2 || selL1 || '';
+    const finalId = selL2 || selL1 || '';
     setValue('categoryId', finalId, { shouldValidate: !!finalId });
-  }, [selL1, selL2, selL3, setValue]);
+  }, [selL1, selL2, setValue]);
 
   function handleL1Change(id: string) {
-    setSelL1(id); setSelL2(''); setSelL3('');
-  }
-  function handleL2Change(id: string) {
-    setSelL2(id); setSelL3('');
+    setSelL1(id); setSelL2(''); setGender('');
   }
 
   const onSubmit = async (data: FormData) => {
@@ -176,6 +177,7 @@ export default function CreateListingPage() {
         brandId: data.brandId || undefined,
         city: data.city || undefined,
         sizeLabel: data.sizeLabel || undefined,
+        gender: gender || undefined,
         imageUrls,
       });
       toast.success('İlanınız oluşturuldu, onay bekleniyor');
@@ -319,10 +321,9 @@ export default function CreateListingPage() {
         {/* Kategori */}
         <div style={card}>
           <p style={{ ...label, fontSize: 15, marginBottom: 16 }}>Kategori *</p>
-          {/* hidden field for validation */}
           <input type="hidden" {...register('categoryId')} />
 
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 12 }}>
+          <div style={{ display: 'grid', gridTemplateColumns: showGender ? '1fr 1fr 1fr' : '1fr 1fr', gap: 12 }}>
             {/* L1 — Ana Kategori */}
             <div>
               <label style={label}>Ana Kategori</label>
@@ -339,16 +340,16 @@ export default function CreateListingPage() {
               </div>
             </div>
 
-            {/* L2 — Orta Kategori */}
+            {/* L2 — Alt Kategori */}
             <div style={{ opacity: l2Cats.length === 0 ? 0.35 : 1, transition: 'opacity .2s' }}>
               <label style={label}>
-                Orta Kategori
+                Alt Kategori
                 {selL1 && l2Cats.length === 0 && <span style={{ fontWeight: 400, color: 'var(--ink-3)', marginLeft: 6 }}>(yok)</span>}
               </label>
               <div style={{ position: 'relative' }}>
                 <select
                   value={selL2}
-                  onChange={e => handleL2Change(e.target.value)}
+                  onChange={e => setSelL2(e.target.value)}
                   disabled={l2Cats.length === 0}
                   style={{ ...selectSt, cursor: l2Cats.length === 0 ? 'not-allowed' : 'pointer' }}
                 >
@@ -359,36 +360,34 @@ export default function CreateListingPage() {
               </div>
             </div>
 
-            {/* L3 — Alt Kategori */}
-            <div style={{ opacity: l3Cats.length === 0 ? 0.35 : 1, transition: 'opacity .2s' }}>
-              <label style={label}>
-                Alt Kategori
-                {selL2 && l3Cats.length === 0 && <span style={{ fontWeight: 400, color: 'var(--ink-3)', marginLeft: 6 }}>(yok)</span>}
-              </label>
-              <div style={{ position: 'relative' }}>
-                <select
-                  value={selL3}
-                  onChange={e => setSelL3(e.target.value)}
-                  disabled={l3Cats.length === 0}
-                  style={{ ...selectSt, cursor: l3Cats.length === 0 ? 'not-allowed' : 'pointer' }}
-                >
-                  <option value="">Seçin…</option>
-                  {l3Cats.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
-                </select>
-                <ChevronDown size={15} style={{ position: 'absolute', right: 12, top: '50%', transform: 'translateY(-50%)', color: 'var(--ink-3)', pointerEvents: 'none' }} />
+            {/* Cinsiyet — yalnızca giyim kategorilerinde */}
+            {showGender && (
+              <div>
+                <label style={label}>Cinsiyet</label>
+                <div style={{ position: 'relative' }}>
+                  <select value={gender} onChange={e => setGender(e.target.value)} style={selectSt}>
+                    <option value="">Belirtme</option>
+                    <option value="ERKEK">Erkek</option>
+                    <option value="KADIN">Kadın</option>
+                    <option value="UNISEX">Unisex</option>
+                    <option value="COCUK">Çocuk</option>
+                  </select>
+                  <ChevronDown size={15} style={{ position: 'absolute', right: 12, top: '50%', transform: 'translateY(-50%)', color: 'var(--ink-3)', pointerEvents: 'none' }} />
+                </div>
               </div>
-            </div>
+            )}
           </div>
 
           {/* Seçilen kategori path göstergesi */}
           {selL1 && (
             <div style={{ marginTop: 10, fontSize: 12, color: 'var(--ink-3)', fontFamily: 'var(--font-mono)', display: 'flex', alignItems: 'center', gap: 6 }}>
               <span style={{ color: 'var(--accent)', fontSize: 10 }}>●</span>
-              {[selL1, selL2, selL3]
+              {[selL1, selL2]
                 .filter(Boolean)
                 .map(id => allCategories.find(c => c.id === id)?.name)
                 .filter(Boolean)
                 .join(' › ')}
+              {gender && ` · ${gender === 'ERKEK' ? 'Erkek' : gender === 'KADIN' ? 'Kadın' : gender === 'COCUK' ? 'Çocuk' : 'Unisex'}`}
             </div>
           )}
 
