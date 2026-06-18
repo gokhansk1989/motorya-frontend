@@ -205,9 +205,18 @@ export default function ListingDetailClient() {
             <h3 className="m-display" style={{ fontSize: 18, margin: '0 0 12px' }}>Açıklama</h3>
             <p style={{ lineHeight: 1.65, fontSize: 14.5, color: 'var(--ink-2)', whiteSpace: 'pre-wrap' }}>{listing.description}</p>
             <div style={{ display: 'flex', gap: 8, marginTop: 16, flexWrap: 'wrap' }}>
-              {[listing.brand?.name, listing.sizeLabel, listing.category?.name, listing.city].filter(Boolean).map(t => (
-                <span key={t} className="m-chip" style={{ height: 30, fontSize: 12.5 }}>#{t}</span>
-              ))}
+              {listing.brand && (
+                <Link href={`/ara?brandId=${listing.brand.id}`} className="m-chip" style={{ height: 30, fontSize: 12.5, textDecoration: 'none' }}>#{listing.brand.name}</Link>
+              )}
+              {listing.category && (
+                <Link href={`/ara?categoryId=${listing.category.id}`} className="m-chip" style={{ height: 30, fontSize: 12.5, textDecoration: 'none' }}>#{listing.category.name}</Link>
+              )}
+              {listing.sizeLabel && (
+                <Link href={`/ara?q=${encodeURIComponent(listing.sizeLabel)}`} className="m-chip" style={{ height: 30, fontSize: 12.5, textDecoration: 'none' }}>#{listing.sizeLabel}</Link>
+              )}
+              {listing.city && (
+                <Link href={`/ara?city=${encodeURIComponent(listing.city)}`} className="m-chip" style={{ height: 30, fontSize: 12.5, textDecoration: 'none' }}>#{listing.city}</Link>
+              )}
             </div>
           </div>
 
