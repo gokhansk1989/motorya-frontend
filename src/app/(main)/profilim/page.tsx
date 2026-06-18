@@ -9,8 +9,20 @@ import { useAuthStore } from '@/store/auth';
 import {
   User, Lock, Star, MapPin, Eye, EyeOff, ShoppingBag,
   ChevronDown, Palmtree, Heart, ChevronRight, Users, UserX,
-  UserMinus, Camera, Bell, BellOff, Settings, Layers, Search, Trash2,
+  UserMinus, Camera, Bell, BellOff, Settings, Layers, Search, Trash2, ExternalLink,
 } from 'lucide-react';
+
+function savedSearchToUrl(s: { search?: string; categoryId?: string; city?: string; condition?: string; minPrice?: string; maxPrice?: string }) {
+  const p = new URLSearchParams();
+  if (s.search) p.set('q', s.search);
+  if (s.categoryId) p.set('categoryId', s.categoryId);
+  if (s.city) p.set('city', s.city);
+  if (s.condition) p.set('condition', s.condition);
+  if (s.minPrice) p.set('minPrice', s.minPrice);
+  if (s.maxPrice) p.set('maxPrice', s.maxPrice);
+  const qs = p.toString();
+  return `/ara${qs ? `?${qs}` : ''}`;
+}
 import { useSavedSearches, useDeleteSavedSearch } from '@/hooks/useSavedSearches';
 import { useMyFavorites } from '@/hooks/useListings';
 import { ListingCard } from '@/components/listings/ListingCard';
@@ -504,12 +516,15 @@ export default function ProfilePage() {
               <div style={{ display: 'flex', flexDirection: 'column', gap: 0 }}>
                 {savedSearches.map(s => (
                   <div key={s.id} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, padding: '12px 0', borderBottom: '1px solid var(--line-soft)' }}>
-                    <div style={{ minWidth: 0 }}>
-                      <p style={{ fontSize: 13.5, fontWeight: 600, color: 'var(--ink)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{s.label}</p>
+                    <Link href={savedSearchToUrl(s)} style={{ flex: 1, minWidth: 0, textDecoration: 'none', color: 'inherit' }}>
+                      <p style={{ fontSize: 13.5, fontWeight: 600, color: 'var(--ink)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', display: 'flex', alignItems: 'center', gap: 5 }}>
+                        {s.label}
+                        <ExternalLink size={11} style={{ opacity: 0.35, flexShrink: 0 }} />
+                      </p>
                       <p style={{ fontSize: 11.5, color: 'var(--ink-3)', marginTop: 2 }}>
                         {s.lastNotifiedAt ? `Son eşleşme: ${new Date(s.lastNotifiedAt).toLocaleDateString('tr-TR')}` : 'Henüz eşleşme yok'}
                       </p>
-                    </div>
+                    </Link>
                     <button
                       onClick={() => deleteSavedSearch.mutate(s.id)}
                       disabled={deleteSavedSearch.isPending}
