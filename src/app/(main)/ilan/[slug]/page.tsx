@@ -40,8 +40,9 @@ async function fetchListing(id: string): Promise<ListingData | null> {
   }
 }
 
-export async function generateMetadata({ params }: { params: { slug: string } }): Promise<Metadata> {
-  const id = extractId(params.slug);
+export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }): Promise<Metadata> {
+  const { slug } = await params;
+  const id = extractId(slug);
   if (!id) return { title: 'İlan Bulunamadı' };
 
   const listing = await fetchListing(id);
@@ -83,10 +84,10 @@ export async function generateMetadata({ params }: { params: { slug: string } })
   };
 }
 
-export default async function ListingDetailPage({ params }: { params: { slug: string } }) {
-  const id = extractId(params.slug);
+export default async function ListingDetailPage({ params }: { params: Promise<{ slug: string }> }) {
+  const { slug } = await params;
+  const id = extractId(slug);
 
-  // Eğer slug sadece bare CUID ise (eski link) → canonical slug'a yönlendir
   if (!id) notFound();
 
   const listing = await fetchListing(id!);
@@ -94,7 +95,7 @@ export default async function ListingDetailPage({ params }: { params: { slug: st
 
   // Canonical slug kontrolü: farklıysa 301 redirect
   const canonicalSlug = listing.slug ?? listing.id;
-  if (params.slug !== canonicalSlug) {
+  if (slug !== canonicalSlug) {
     redirect(`/ilan/${canonicalSlug}`);
   }
 
