@@ -3,10 +3,25 @@ import { Logo } from './Header';
 import { Shield, Lock } from 'lucide-react';
 
 export function Footer() {
-  const cols = [
-    ['Motorya', ['Hakkımızda', 'Nasıl çalışır', 'Güvenli alışveriş', 'Kariyer']],
-    ['Kategoriler', ['Kask', 'Mont & Koruma', 'Egzoz', 'Yedek Parça']],
-    ['Destek', ['Yardım merkezi', 'Kargo & iade', 'İletişim', 'KVKK']],
+  const cols: [string, { label: string; href: string }[]][] = [
+    ['Motorya', [
+      { label: 'Hakkımızda', href: '/sayfa/hakkimizda' },
+      { label: 'Nasıl çalışır', href: '/sayfa/nasil-calisir' },
+      { label: 'Güvenli alışveriş', href: '/sayfa/guvenli-alisveris' },
+      { label: 'Kariyer', href: '/sayfa/kariyer' },
+    ]],
+    ['Kategoriler', [
+      { label: 'Kask', href: '/ilanlar?kategori=kask' },
+      { label: 'Mont & Koruma', href: '/ilanlar?kategori=mont-koruma' },
+      { label: 'Egzoz', href: '/ilanlar?kategori=egzoz' },
+      { label: 'Yedek Parça', href: '/ilanlar?kategori=yedek-parca' },
+    ]],
+    ['Destek', [
+      { label: 'Yardım merkezi', href: '/sayfa/yardim-merkezi' },
+      { label: 'Kargo & iade', href: '/sayfa/kargo-iade' },
+      { label: 'İletişim', href: '/sayfa/iletisim' },
+      { label: 'KVKK', href: '/sayfa/gizlilik-politikasi' },
+    ]],
   ];
 
   return (
@@ -32,11 +47,13 @@ export function Footer() {
           </div>
         </div>
         {cols.map(([h, items]) => (
-          <div key={h as string}>
+          <div key={h}>
             <div className="m-kicker" style={{ marginBottom: 14 }}>{h}</div>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-              {(items as string[]).map(i => (
-                <a key={i} href="#" style={{ fontSize: 13.5, color: 'var(--ink-3)' }}>{i}</a>
+              {items.map(item => (
+                <Link key={item.href} href={item.href} style={{ fontSize: 13.5, color: 'var(--ink-3)' }}>
+                  {item.label}
+                </Link>
               ))}
             </div>
           </div>
