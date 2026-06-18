@@ -1,6 +1,7 @@
 import { notFound } from 'next/navigation';
 import Link from 'next/link';
 import { Clock, ChevronLeft, Tag, ArrowRight } from 'lucide-react';
+import { AdSlot } from '@/components/ui/AdSlot';
 
 const API = process.env.NEXT_PUBLIC_API_URL || 'https://motorya.com.tr/api-backend';
 
@@ -138,6 +139,7 @@ export default async function BlogPostPage({ params }: Props) {
             <h1 className="m-display" style={{ fontSize: 'clamp(24px, 3.5vw, 36px)', margin: '0 0 16px', lineHeight: 1.15 }}>{post.title}</h1>
             <p style={{ fontSize: 16, color: 'var(--ink-2)', lineHeight: 1.6, marginBottom: 32, paddingBottom: 32, borderBottom: '1px solid var(--line-soft)' }}>{post.excerpt}</p>
             <div>{renderMarkdown(post.content)}</div>
+            <AdSlot slot={process.env.NEXT_PUBLIC_ADSENSE_SLOT_BLOG ?? ''} format="fluid" style={{ margin: '28px 0' }} />
             <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginTop: 40, paddingTop: 28, borderTop: '1px solid var(--line-soft)' }}>
               <Tag size={15} style={{ color: 'var(--ink-3)' }} />
               {(post.tags ?? []).map((tag: string) => <span key={tag} className="m-chip" style={{ height: 30, fontSize: 12 }}>#{tag}</span>)}

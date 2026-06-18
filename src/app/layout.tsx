@@ -45,6 +45,14 @@ export const metadata: Metadata = {
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="tr" className="h-full">
+      <head>
+        {/* Google AdSense — head içinde olmalı, Google botu bu şekilde doğrular */}
+        <script
+          async
+          src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-4400330012095219"
+          crossOrigin="anonymous"
+        />
+      </head>
       <body className="min-h-full antialiased">
         <Providers>{children}</Providers>
         <Script src="https://www.googletagmanager.com/gtag/js?id=G-S0BXZLVQ26" strategy="afterInteractive" />

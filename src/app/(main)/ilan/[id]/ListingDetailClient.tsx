@@ -6,10 +6,12 @@ import { useCreateOrder } from '@/hooks/useOrders';
 import { useCreateOffer, useListingOffers, useRespondOffer } from '@/hooks/useOffers';
 import { useAuthStore } from '@/store/auth';
 import { formatPrice, timeAgo } from '@/lib/utils';
-import { MapPin, Eye, Heart, Star, ChevronLeft, ChevronRight, Shield, Truck, Users, Share2, Flag, Zap, MessageCircle } from 'lucide-react';
+import { MapPin, Eye, Heart, Star, ChevronLeft, ChevronRight, Shield, Truck, Users, Share2, Flag, Zap, MessageCircle, BellPlus } from 'lucide-react';
 import { useStartConversation } from '@/hooks/useMessages';
 import { trackListingView, useRecentlyViewedIds } from '@/hooks/useRecentlyViewed';
 import { ListingCard } from '@/components/listings/ListingCard';
+import { AdSlot } from '@/components/ui/AdSlot';
+import { useCreateSavedSearch } from '@/hooks/useSavedSearches';
 import toast from 'react-hot-toast';
 import Link from 'next/link';
 
@@ -53,6 +55,7 @@ export default function ListingDetailClient() {
   const { data: listing, isLoading } = useListing(id);
   const { data: offers } = useListingOffers(id);
   const { data: similarListings } = useSimilarListings(id);
+  const createAlarm = useCreateSavedSearch();
   const recentIds = useRecentlyViewedIds(id);
   const { data: recentlyViewed } = useListingsByIds(recentIds);
   const createOrder = useCreateOrder();
@@ -378,6 +381,39 @@ export default function ListingDetailClient() {
           )}
         </div>
       </div>
+
+      {/* Fiyat Alarmı */}
+      {!isMine && listing.category && (
+        <div style={{ margin: '16px 0', padding: '14px 18px', background: 'var(--bg-2)', borderRadius: 12, border: '1px solid var(--line-soft)', display: 'flex', alignItems: 'center', gap: 14 }}>
+          <BellPlus size={20} style={{ color: 'var(--accent)', flexShrink: 0 }} />
+          <div style={{ flex: 1 }}>
+            <p style={{ fontWeight: 600, fontSize: 13.5, margin: '0 0 2px' }}>Bu kategoride benzer ilan çıkınca haber ver</p>
+            <p style={{ fontSize: 12, color: 'var(--ink-3)', margin: 0 }}>{listing.category.name} kategorisinde yeni ilan yayınlandığında bildirim al.</p>
+          </div>
+          <button
+            onClick={() => {
+              if (!user) { toast.error('Alarm kurmak için giriş yapmalısın'); return; }
+              createAlarm.mutate(
+                { label: `${listing.category.name} Alarmı`, categoryId: listing.category.id },
+                {
+                  onSuccess: () => toast.success('Alarm kuruldu!'),
+                  onError: (e: any) => toast.error(e?.response?.data?.message ?? 'Alarm kurulamadı'),
+                }
+              );
+            }}
+            disabled={createAlarm.isPending}
+            className="m-btn m-btn-primary"
+            style={{ fontSize: 13, padding: '0 14px', height: 36, flexShrink: 0 }}>
+            Alarm Kur
+          </button>
+        </div>
+      )}
+
+      <AdSlot
+        slot={process.env.NEXT_PUBLIC_ADSENSE_SLOT_DETAIL ?? ''}
+        format="horizontal"
+        style={{ margin: '16px 0' }}
+      />
 
       <ListingRow title="Benzer ilanlar" listings={similarListings ?? []} />
       <ListingRow title="Son baktıkların" listings={recentlyViewed ?? []} />
