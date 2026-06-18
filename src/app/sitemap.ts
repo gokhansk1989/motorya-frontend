@@ -1,65 +1,125 @@
 import { MetadataRoute } from 'next';
 
 const BASE_URL = 'https://motorya.com.tr';
+const API = process.env.NEXT_PUBLIC_API_URL || 'https://motorya.com.tr/api-backend';
+
+const CITY_SLUGS = [
+  'istanbul', 'ankara', 'izmir', 'bursa', 'antalya', 'adana', 'konya',
+  'gaziantep', 'mersin', 'kocaeli', 'diyarbakir', 'hatay', 'manisa',
+  'kayseri', 'samsun', 'balikesir', 'tekirdag', 'sakarya', 'denizli', 'eskisehir',
+];
+
+async function fetchAllListings() {
+  const items: { id: string; slug?: string; updatedAt?: string; createdAt: string }[] = [];
+  let page = 1;
+  const limit = 500;
+  try {
+    while (true) {
+      const res = await fetch(`${API}/listings?limit=${limit}&page=${page}&status=ACTIVE`, {
+        next: { revalidate: 1800 },
+      });
+      if (!res.ok) break;
+      const data = await res.json();
+      const batch = data.items ?? [];
+      items.push(...batch);
+      if (batch.length < limit || items.length >= (data.meta?.total ?? 0)) break;
+      page++;
+    }
+  } catch {}
+  return items;
+}
+
+async function fetchCategories() {
+  try {
+    const res = await fetch(`${API}/listings/meta/categories`, { next: { revalidate: 86400 } });
+    if (!res.ok) return [];
+    const cats: { id: string; slug: string; parentId: string | null }[] = await res.json();
+    return cats;
+  } catch {
+    return [];
+  }
+}
+
+async function fetchBlogPosts() {
+  try {
+    const res = await fetch(`${API}/blog?limit=500`, { next: { revalidate: 3600 } });
+    if (!res.ok) return [];
+    const data = await res.json();
+    return (data.items ?? []) as { slug: string; publishedAt?: string; createdAt: string }[];
+  } catch {
+    return [];
+  }
+}
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
-  const CATEGORY_SLUGS = ['kask', 'mont', 'eldiven', 'bot', 'koruyucu', 'egzoz', 'aksesuar'];
-  const CITY_SLUGS = ['istanbul', 'ankara', 'izmir', 'bursa', 'antalya', 'adana', 'konya', 'gaziantep', 'mersin', 'kocaeli', 'diyarbakir', 'hatay', 'manisa', 'kayseri', 'samsun', 'balikesir', 'tekirdag', 'sakarya', 'denizli', 'eskisehir'];
+  const [listings, categories, blogPosts] = await Promise.all([
+    fetchAllListings(),
+    fetchCategories(),
+    fetchBlogPosts(),
+  ]);
+
+  const l1Cats = categories.filter(c => !c.parentId);
+  const l2Cats = categories.filter(c => c.parentId);
 
   // Static pages
   const staticPages: MetadataRoute.Sitemap = [
-    { url: BASE_URL, lastModified: new Date(), changeFrequency: 'daily', priority: 1 },
-    { url: `${BASE_URL}/blog`, lastModified: new Date(), changeFrequency: 'daily', priority: 0.9 },
-    { url: `${BASE_URL}/ilan-ver`, lastModified: new Date(), changeFrequency: 'monthly', priority: 0.7 },
-    { url: `${BASE_URL}/giris`, lastModified: new Date(), changeFrequency: 'monthly', priority: 0.3 },
-    { url: `${BASE_URL}/kayit`, lastModified: new Date(), changeFrequency: 'monthly', priority: 0.4 },
-    ...CATEGORY_SLUGS.map(slug => ({
-      url: `${BASE_URL}/kategori/${slug}`,
-      lastModified: new Date(),
-      changeFrequency: 'daily' as const,
-      priority: 0.85,
-    })),
-    // Şehir × kategori sayfaları (20 şehir × 7 kategori = 140 sayfa)
-    ...CATEGORY_SLUGS.flatMap(slug =>
-      CITY_SLUGS.map(sehir => ({
-        url: `${BASE_URL}/kategori/${slug}/${sehir}`,
-        lastModified: new Date(),
-        changeFrequency: 'daily' as const,
-        priority: 0.75,
-      }))
-    ),
+    { url: BASE_URL,                   lastModified: new Date(), changeFrequency: 'daily',   priority: 1.0 },
+    { url: `${BASE_URL}/ara`,          lastModified: new Date(), changeFrequency: 'daily',   priority: 0.9 },
+    { url: `${BASE_URL}/blog`,         lastModified: new Date(), changeFrequency: 'daily',   priority: 0.85 },
+    { url: `${BASE_URL}/ilan-ver`,     lastModified: new Date(), changeFrequency: 'monthly', priority: 0.7 },
+    { url: `${BASE_URL}/fiyat-alarm`,  lastModified: new Date(), changeFrequency: 'monthly', priority: 0.5 },
+    { url: `${BASE_URL}/giris`,        lastModified: new Date(), changeFrequency: 'monthly', priority: 0.3 },
+    { url: `${BASE_URL}/kayit`,        lastModified: new Date(), changeFrequency: 'monthly', priority: 0.4 },
   ];
 
-  // Blog posts from API
-  let blogPages: MetadataRoute.Sitemap = [];
-  try {
-    const API = process.env.NEXT_PUBLIC_API_URL || 'https://motorya.com.tr/api-backend';
-    const res = await fetch(`${API}/blog?limit=100`, { next: { revalidate: 3600 } });
-    if (res.ok) {
-      const data = await res.json();
-      blogPages = (data.items || []).map((p: { slug: string; publishedAt?: string; createdAt: string }) => ({
-        url: `${BASE_URL}/blog/${p.slug}`,
-        lastModified: new Date(p.publishedAt || p.createdAt),
-        changeFrequency: 'monthly' as const,
-        priority: 0.8,
-      }));
-    }
-  } catch {}
+  // L1 kategori sayfaları (API'den, hardcoded değil)
+  const l1Pages: MetadataRoute.Sitemap = l1Cats.map(c => ({
+    url: `${BASE_URL}/kategori/${c.slug}`,
+    lastModified: new Date(),
+    changeFrequency: 'daily' as const,
+    priority: 0.85,
+  }));
 
-  // Listings from API (best effort)
-  let listingPages: MetadataRoute.Sitemap = [];
-  try {
-    const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000'}/listings?limit=200&page=1`, { next: { revalidate: 3600 } });
-    if (res.ok) {
-      const data = await res.json();
-      listingPages = (data.items || []).map((l: { id: string; slug?: string; updatedAt?: string; createdAt: string }) => ({
-        url: `${BASE_URL}/ilan/${l.slug ?? l.id}`,
-        lastModified: new Date(l.updatedAt || l.createdAt),
-        changeFrequency: 'weekly' as const,
-        priority: 0.6,
-      }));
-    }
-  } catch {}
+  // L2 kategori sayfaları
+  const l2Pages: MetadataRoute.Sitemap = l2Cats.map(c => ({
+    url: `${BASE_URL}/kategori/${c.slug}`,
+    lastModified: new Date(),
+    changeFrequency: 'daily' as const,
+    priority: 0.75,
+  }));
 
-  return [...staticPages, ...blogPages, ...listingPages];
+  // Şehir × L1 kategori sayfaları (en önemli long-tail)
+  const cityPages: MetadataRoute.Sitemap = l1Cats.flatMap(c =>
+    CITY_SLUGS.map(sehir => ({
+      url: `${BASE_URL}/kategori/${c.slug}/${sehir}`,
+      lastModified: new Date(),
+      changeFrequency: 'daily' as const,
+      priority: 0.7,
+    }))
+  );
+
+  // Blog yazıları
+  const blogPages: MetadataRoute.Sitemap = blogPosts.map(p => ({
+    url: `${BASE_URL}/blog/${p.slug}`,
+    lastModified: new Date(p.publishedAt || p.createdAt),
+    changeFrequency: 'monthly' as const,
+    priority: 0.8,
+  }));
+
+  // İlan sayfaları (slug ile, yeni ilanlar her 30dk güncellenir)
+  const listingPages: MetadataRoute.Sitemap = listings.map(l => ({
+    url: `${BASE_URL}/ilan/${l.slug ?? l.id}`,
+    lastModified: new Date(l.updatedAt || l.createdAt),
+    changeFrequency: 'weekly' as const,
+    priority: 0.65,
+  }));
+
+  return [
+    ...staticPages,
+    ...l1Pages,
+    ...l2Pages,
+    ...cityPages,
+    ...blogPages,
+    ...listingPages,
+  ];
 }
