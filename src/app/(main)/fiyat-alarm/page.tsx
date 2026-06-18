@@ -4,9 +4,21 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useSavedSearches, useCreateSavedSearch } from '@/hooks/useSavedSearches';
 import { useAuthStore } from '@/store/auth';
 import { api } from '@/lib/api';
-import { BellPlus, Bell, Trash2, Loader2, ChevronRight, Tag } from 'lucide-react';
+import { BellPlus, Bell, Trash2, Loader2, ExternalLink } from 'lucide-react';
 import Link from 'next/link';
 import toast from 'react-hot-toast';
+
+function savedSearchToUrl(alarm: import('@/hooks/useSavedSearches').SavedSearch) {
+  const p = new URLSearchParams();
+  if (alarm.search) p.set('q', alarm.search);
+  if (alarm.categoryId) p.set('categoryId', alarm.categoryId);
+  if (alarm.city) p.set('city', alarm.city);
+  if (alarm.condition) p.set('condition', alarm.condition);
+  if (alarm.minPrice) p.set('minPrice', alarm.minPrice);
+  if (alarm.maxPrice) p.set('maxPrice', alarm.maxPrice);
+  const qs = p.toString();
+  return `/ara${qs ? `?${qs}` : ''}`;
+}
 
 const CONDITION_LABELS: Record<string, string> = {
   NEW: 'Sıfır', LIKE_NEW: 'Sıfır Gibi', GOOD: 'İyi', FAIR: 'Makul', POOR: 'Kullanılmış',
@@ -161,8 +173,11 @@ export default function FiyatAlarmPage() {
               <div style={{ width: 40, height: 40, borderRadius: 10, background: 'color-mix(in oklch, var(--accent) 15%, var(--bg-2))', display: 'grid', placeItems: 'center', flexShrink: 0 }}>
                 <Bell size={18} style={{ color: 'var(--accent)' }} />
               </div>
-              <div style={{ flex: 1, minWidth: 0 }}>
-                <p style={{ fontWeight: 600, fontSize: 14, margin: '0 0 4px', color: 'var(--ink)' }}>{alarm.label}</p>
+              <Link href={savedSearchToUrl(alarm)} style={{ flex: 1, minWidth: 0, textDecoration: 'none', color: 'inherit' }}>
+                <p style={{ fontWeight: 600, fontSize: 14, margin: '0 0 4px', color: 'var(--ink)', display: 'flex', alignItems: 'center', gap: 6 }}>
+                  {alarm.label}
+                  <ExternalLink size={12} style={{ opacity: 0.4, flexShrink: 0 }} />
+                </p>
                 <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
                   {alarm.search && <span className="m-chip" style={{ height: 22, fontSize: 11 }}>🔍 {alarm.search}</span>}
                   {alarm.minPrice && <span className="m-chip" style={{ height: 22, fontSize: 11 }}>Min {Number(alarm.minPrice).toLocaleString('tr-TR')}₺</span>}
@@ -175,7 +190,7 @@ export default function FiyatAlarmPage() {
                     Son bildirim: {timeAgo(alarm.lastNotifiedAt)}
                   </p>
                 )}
-              </div>
+              </Link>
               <button onClick={() => deleteMut.mutate(alarm.id)} disabled={deleteMut.isPending}
                 style={{ padding: 8, background: 'none', border: 'none', color: 'var(--ink-3)', cursor: 'pointer', borderRadius: 8 }}
                 className="hover:text-red-400">
