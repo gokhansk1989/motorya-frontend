@@ -32,7 +32,7 @@ interface CategoryData {
 }
 
 interface Listing {
-  id: string; title: string; price: string | number;
+  id: string; slug?: string; title: string; price: string | number;
   images?: { url: string }[]; city?: string; condition: string;
 }
 
@@ -126,7 +126,7 @@ export default async function CategoryPage({ params }: { params: Promise<{ slug:
         itemListElement: listings.slice(0, 10).map((l, i) => ({
           '@type': 'ListItem',
           position: i + 1,
-          url: `${BASE_URL}/ilan/${l.id}`,
+          url: `${BASE_URL}/ilan/${l.slug ?? l.id}`,
           name: l.title,
         })),
       },
@@ -198,7 +198,7 @@ export default async function CategoryPage({ params }: { params: Promise<{ slug:
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(clamp(155px, 42vw, 240px), 1fr))', gap: 14 }}>
               {listings.map((listing, i) => (
                 <>
-                  <Link key={listing.id} href={`/ilan/${listing.id}`} style={{ textDecoration: 'none' }}>
+                  <Link key={listing.id} href={`/ilan/${listing.slug ?? listing.id}`} style={{ textDecoration: 'none' }}>
                     <div className="m-surface" style={{ overflow: 'hidden', borderRadius: 'var(--radius)', cursor: 'pointer' }}>
                       <div style={{ aspectRatio: '4/3', background: 'var(--bg-3)', overflow: 'hidden' }}>
                         {listing.images?.[0] ? (

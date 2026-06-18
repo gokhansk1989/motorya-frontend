@@ -51,7 +51,7 @@ function SentOffers() {
         <div key={o.id} style={{ display: 'flex', alignItems: 'center', gap: 14, padding: 16, background: 'var(--bg-1)', borderRadius: 14, border: '1px solid var(--line)' }}>
           <ListingThumb listing={o.listing} />
           <div style={{ flex: 1, minWidth: 0 }}>
-            <Link href={`/ilan/${o.listing?.id}`} style={{ fontWeight: 600, fontSize: 14, color: 'var(--ink)', textDecoration: 'none', display: 'block', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+            <Link href={`/ilan/${(o.listing as any)?.slug ?? o.listing?.id}`} style={{ fontWeight: 600, fontSize: 14, color: 'var(--ink)', textDecoration: 'none', display: 'block', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
               {o.listing?.title}
             </Link>
             <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 4, flexWrap: 'wrap' }}>
@@ -95,7 +95,7 @@ function SentOffers() {
               </button>
             )}
             {o.status === 'REJECTED' && o.listing?.status === 'ACTIVE' && (
-              <Link href={`/ilan/${o.listing.id}`} style={{ fontSize: 12, color: 'var(--accent)', textDecoration: 'none', fontFamily: 'var(--font-display)', fontWeight: 600, display: 'flex', alignItems: 'center', gap: 3 }}>
+              <Link href={`/ilan/${(o.listing as any)?.slug ?? o.listing.id}`} style={{ fontSize: 12, color: 'var(--accent)', textDecoration: 'none', fontFamily: 'var(--font-display)', fontWeight: 600, display: 'flex', alignItems: 'center', gap: 3 }}>
                 <Plus size={12} /> Yeni Teklif Ver
               </Link>
             )}
@@ -121,7 +121,7 @@ function ReceivedOffers() {
         <div key={o.id} style={{ display: 'flex', alignItems: 'center', gap: 14, padding: 16, background: 'var(--bg-1)', borderRadius: 14, border: '1px solid var(--line)' }}>
           <ListingThumb listing={o.listing} />
           <div style={{ flex: 1, minWidth: 0 }}>
-            <Link href={`/ilan/${o.listing?.id}`} style={{ fontWeight: 600, fontSize: 14, color: 'var(--ink)', textDecoration: 'none', display: 'block', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+            <Link href={`/ilan/${(o.listing as any)?.slug ?? o.listing?.id}`} style={{ fontWeight: 600, fontSize: 14, color: 'var(--ink)', textDecoration: 'none', display: 'block', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
               {o.listing?.title}
             </Link>
             <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 4, flexWrap: 'wrap' }}>

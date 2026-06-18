@@ -273,7 +273,7 @@ export default function PublicProfilePage({ params }: { params: Promise<{ id: st
           ) : (
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(175px, 1fr))', gap: 12 }}>
               {displayedListings.map((l: any) => (
-                <Link key={l.id} href={`/ilan/${l.id}`}
+                <Link key={l.id} href={`/ilan/${l.slug ?? l.id}`}
                   style={{ textDecoration: 'none', display: 'block', borderRadius: 12, overflow: 'hidden', border: '1px solid var(--line)', background: 'var(--bg-1)' }}>
                   <div style={{ height: 130, background: 'var(--bg-2)', overflow: 'hidden', position: 'relative' }}>
                     {l.images?.[0]
@@ -385,7 +385,7 @@ export default function PublicProfilePage({ params }: { params: Promise<{ id: st
 
                   {/* İlan thumbnail */}
                   {r.order?.listing && (
-                    <Link href={`/ilan/${r.order.listing.id}`}
+                    <Link href={`/ilan/${(r.order.listing as any).slug ?? r.order.listing.id}`}
                       style={{
                         display: 'flex', alignItems: 'center', gap: 8, textDecoration: 'none',
                         background: 'var(--bg-2)', borderRadius: 8, padding: '6px 10px',

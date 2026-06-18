@@ -49,7 +49,7 @@ export async function generateMetadata({ params }: { params: { slug: string; seh
 }
 
 interface Listing {
-  id: string; title: string; price: string | number;
+  id: string; slug?: string; title: string; price: string | number;
   images?: { url: string }[]; city?: string; condition: string;
 }
 
@@ -123,7 +123,7 @@ export default async function CityListingPage({ params }: { params: { slug: stri
         ) : (
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: 16 }}>
             {listings.map(l => (
-              <Link key={l.id} href={`/ilan/${l.id}`} style={{ textDecoration: 'none' }}>
+              <Link key={l.id} href={`/ilan/${(l as any).slug ?? l.id}`} style={{ textDecoration: 'none' }}>
                 <article className="m-card">
                   <div className="m-card-media">
                     {l.images?.[0] ? (

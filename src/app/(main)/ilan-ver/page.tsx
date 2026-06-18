@@ -181,7 +181,7 @@ export default function CreateListingPage() {
         imageUrls,
       });
       toast.success('İlanınız oluşturuldu, onay bekleniyor');
-      router.push(`/ilan/${listing.id}`);
+      router.push(`/ilan/${listing.slug ?? listing.id}`);
     } catch (err: any) {
       const msg = err?.response?.data?.message;
       toast.error(Array.isArray(msg) ? msg.join(', ') : (msg ?? 'İlan oluşturulamadı'));

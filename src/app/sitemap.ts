@@ -52,8 +52,8 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000'}/listings?limit=200&page=1`, { next: { revalidate: 3600 } });
     if (res.ok) {
       const data = await res.json();
-      listingPages = (data.items || []).map((l: { id: string; updatedAt?: string; createdAt: string }) => ({
-        url: `${BASE_URL}/ilan/${l.id}`,
+      listingPages = (data.items || []).map((l: { id: string; slug?: string; updatedAt?: string; createdAt: string }) => ({
+        url: `${BASE_URL}/ilan/${l.slug ?? l.id}`,
         lastModified: new Date(l.updatedAt || l.createdAt),
         changeFrequency: 'weekly' as const,
         priority: 0.6,

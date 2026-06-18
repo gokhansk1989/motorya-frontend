@@ -3,6 +3,7 @@ import { api } from '@/lib/api';
 
 export interface Listing {
   id: string;
+  slug: string;
   title: string;
   description: string;
   price: string;
@@ -17,7 +18,7 @@ export interface Listing {
   createdAt: string;
   images: { url: string; sortOrder: number }[];
   seller: { id: string; displayName: string; avatarUrl?: string; ratingAvg: number };
-  category: { id: string; name: string; slug: string };
+  category: { id: string; name: string; slug: string; parentId?: string | null; parent?: { slug: string } | null };
   brand?: { id: string; name: string };
 }
 

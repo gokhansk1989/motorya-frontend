@@ -34,7 +34,7 @@ export function ListingCard({ listing }: { listing: Listing }) {
 
   return (
     <article className="m-card m-fade-up">
-      <Link href={`/ilan/${listing.id}`} style={{ display: 'block', textDecoration: 'none' }}>
+      <Link href={`/ilan/${listing.slug ?? listing.id}`} style={{ display: 'block', textDecoration: 'none' }}>
         <div className="m-card-media">
           {thumb ? (
             <Image src={thumb} alt={listing.title} fill sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 240px" className="m-card-img-contain" style={{ objectFit: 'contain' }} />
@@ -79,7 +79,7 @@ export function ListingCard({ listing }: { listing: Listing }) {
             <span className="m-kicker" style={{ letterSpacing: '0.12em' }}>{listing.brand.name}</span>
           )}
         </div>
-        <Link href={`/ilan/${listing.id}`} style={{ textDecoration: 'none' }}>
+        <Link href={`/ilan/${listing.slug ?? listing.id}`} style={{ textDecoration: 'none' }}>
           <h3 className="m-card-title">{listing.title}</h3>
         </Link>
         <div style={{ display: 'flex', alignItems: 'baseline', gap: 8 }}>

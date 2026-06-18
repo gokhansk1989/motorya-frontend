@@ -126,7 +126,7 @@ export default function MyListingsPage() {
               <div key={l.id} style={{ display: 'flex', alignItems: 'center', gap: 16, padding: 16, background: 'var(--bg-1)', borderRadius: 14, border: '1px solid var(--line)', transition: 'border-color .15s' }}
                 onMouseEnter={e => (e.currentTarget.style.borderColor = 'var(--line-soft)')}
                 onMouseLeave={e => (e.currentTarget.style.borderColor = 'var(--line)')}>
-                <Link href={`/ilan/${l.id}`} style={{ display: 'flex', alignItems: 'center', gap: 16, flex: 1, minWidth: 0, textDecoration: 'none' }}>
+                <Link href={`/ilan/${l.slug ?? l.id}`} style={{ display: 'flex', alignItems: 'center', gap: 16, flex: 1, minWidth: 0, textDecoration: 'none' }}>
                   <div style={{ width: 72, height: 72, borderRadius: 10, background: 'var(--bg-2)', overflow: 'hidden', flexShrink: 0, border: '1px solid var(--line)' }}>
                     {l.images?.[0] && <img src={l.images[0].url} style={{ width: '100%', height: '100%', objectFit: 'cover' }} alt="" />}
                   </div>

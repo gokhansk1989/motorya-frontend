@@ -238,7 +238,7 @@ export default function MessagesPage() {
                 </div>
               </div>
               {activeConv?.listing && (
-                <Link href={`/ilan/${activeConv.listing.id}`} style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: 8, padding: '6px 10px', background: 'var(--bg-2)', borderRadius: 8, textDecoration: 'none', fontSize: 12.5, color: 'var(--ink-2)' }}>
+                <Link href={`/ilan/${(activeConv.listing as any).slug ?? activeConv.listing.id}`} style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: 8, padding: '6px 10px', background: 'var(--bg-2)', borderRadius: 8, textDecoration: 'none', fontSize: 12.5, color: 'var(--ink-2)' }}>
                   {activeConv.listing.images?.[0] && <img src={activeConv.listing.images[0].url} style={{ width: 28, height: 28, borderRadius: 4, objectFit: 'cover' }} alt="" />}
                   <span style={{ maxWidth: 140, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{activeConv.listing.title}</span>
                 </Link>
