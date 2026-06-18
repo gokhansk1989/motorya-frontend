@@ -56,6 +56,13 @@ function SearchPageInner() {
   const [priceTo, setPriceTo] = useState(maxPrice?.toString() ?? '');
   const [showFilters, setShowFilters] = useState(false);
 
+  // Derive selected L1 from current categoryId
+  const selectedL1Id = (cats: any[]) => {
+    const cat = cats.find((c: any) => c.id === categoryId);
+    if (!cat) return '';
+    return cat.parentId ? cat.parentId : cat.id;
+  };
+
   const { data: categories } = useQuery({
     queryKey: ['categories'],
     queryFn: () => api.get('/listings/meta/categories').then((r) => r.data),
@@ -158,21 +165,44 @@ function SearchPageInner() {
       {/* Filter panel */}
       {showFilters && (
         <div style={{ background: 'var(--bg-1)', border: '1px solid var(--line)', borderRadius: 12, padding: '18px 20px', marginBottom: 20, display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(180px, 1fr))', gap: 16 }}>
-          {/* Category */}
+          {/* Category L1 */}
           <div>
-            <label className="m-label">Kategori</label>
+            <label className="m-label">Ana Kategori</label>
             <select
-              value={categoryId}
-              onChange={e => push({ categoryId: e.target.value, brandId: '', page: 1 })}
+              value={selectedL1Id(categories ?? [])}
+              onChange={e => push({ categoryId: e.target.value, page: 1 })}
               className="m-field"
               style={{ height: 38 }}
             >
               <option value="">Tümü</option>
-              {(categories ?? []).map((c: any) => (
+              {(categories ?? []).filter((c: any) => !c.parentId).map((c: any) => (
                 <option key={c.id} value={c.id}>{c.name}</option>
               ))}
             </select>
           </div>
+
+          {/* Category L2 — shown only when L1 is selected */}
+          {(() => {
+            const l1id = selectedL1Id(categories ?? []);
+            const l2cats = (categories ?? []).filter((c: any) => c.parentId === l1id);
+            if (!l1id || l2cats.length === 0) return null;
+            return (
+              <div>
+                <label className="m-label">Alt Kategori</label>
+                <select
+                  value={categoryId && (categories ?? []).find((c: any) => c.id === categoryId)?.parentId ? categoryId : ''}
+                  onChange={e => push({ categoryId: e.target.value || l1id, page: 1 })}
+                  className="m-field"
+                  style={{ height: 38 }}
+                >
+                  <option value="">Tümü</option>
+                  {l2cats.map((c: any) => (
+                    <option key={c.id} value={c.id}>{c.name}</option>
+                  ))}
+                </select>
+              </div>
+            );
+          })()}
 
           {/* Brand */}
           <div>
@@ -278,11 +308,16 @@ function SearchPageInner() {
       {/* Active filter chips */}
       {(categoryId || brandId || condition || gender || city) && (
         <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginBottom: 16 }}>
-          {categoryId && (
-            <span className="m-chip active" onClick={() => push({ categoryId: '', page: 1 })}>
-              {(categories ?? []).find((c: any) => c.id === categoryId)?.name ?? categoryId} <X size={13} />
-            </span>
-          )}
+          {categoryId && (() => {
+            const cat = (categories ?? []).find((c: any) => c.id === categoryId);
+            const l1 = cat?.parentId ? (categories ?? []).find((c: any) => c.id === cat.parentId) : cat;
+            const label = cat?.parentId ? `${l1?.name} › ${cat.name}` : cat?.name ?? categoryId;
+            return (
+              <span className="m-chip active" onClick={() => push({ categoryId: '', page: 1 })}>
+                {label} <X size={13} />
+              </span>
+            );
+          })()}
           {brandId && (
             <span className="m-chip active" onClick={() => push({ brandId: '', page: 1 })}>
               {(brands ?? []).find((b: any) => b.id === brandId)?.name ?? brandId} <X size={13} />
