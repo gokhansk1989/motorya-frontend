@@ -1,7 +1,7 @@
 'use client';
 import { useEffect, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
-import { useListing, useToggleFavorite, useSimilarListings, useListingsByIds } from '@/hooks/useListings';
+import { useListingBySlug, useToggleFavorite, useSimilarListings, useListingsByIds } from '@/hooks/useListings';
 import { useCreateOrder } from '@/hooks/useOrders';
 import { useCreateOffer, useListingOffers, useRespondOffer } from '@/hooks/useOffers';
 import { useAuthStore } from '@/store/auth';
@@ -49,10 +49,11 @@ function ConditionPill({ condition }: { condition: string }) {
 }
 
 export default function ListingDetailClient() {
-  const { id } = useParams<{ id: string }>();
+  const { slug } = useParams<{ slug: string }>();
   const router = useRouter();
   const { user } = useAuthStore();
-  const { data: listing, isLoading } = useListing(id);
+  const { data: listing, isLoading } = useListingBySlug(slug);
+  const id = listing?.id ?? '';
   const { data: offers } = useListingOffers(id);
   const { data: similarListings } = useSimilarListings(id);
   const createAlarm = useCreateSavedSearch();

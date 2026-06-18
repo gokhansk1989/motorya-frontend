@@ -51,6 +51,14 @@ export function useListing(id: string) {
   });
 }
 
+export function useListingBySlug(slug: string) {
+  return useQuery({
+    queryKey: ['listing-slug', slug],
+    queryFn: () => api.get('/listings/by-slug', { params: { s: slug } }).then((r) => r.data),
+    enabled: !!slug,
+  });
+}
+
 export function useMyListings() {
   return useQuery({
     queryKey: ['my-listings'],
