@@ -77,7 +77,11 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
 export default async function ListingDetailPage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;
   const listing = await fetchListingBySlug(slug);
-  if (!listing) notFound();
+
+  // PENDING_REVIEW ilanlar SSR'da 404 döner, client-side auth ile yüklenebilir
+  if (!listing) {
+    return <ListingDetailClient />;
+  }
 
   // Canonical slug kontrolü: farklıysa 301 redirect
   const canonicalSlug = listing.slug ?? listing.id;

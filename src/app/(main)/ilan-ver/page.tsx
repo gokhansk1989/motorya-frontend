@@ -180,8 +180,8 @@ export default function CreateListingPage() {
         gender: gender || undefined,
         imageUrls,
       });
-      toast.success('İlanınız oluşturuldu, onay bekleniyor');
-      router.push(`/ilan/${listing.slug ?? listing.id}`);
+      toast.success('İlanınız oluşturuldu! Onaylandığında yayına alınacak.');
+      router.push('/ilanlarim');
     } catch (err: any) {
       const msg = err?.response?.data?.message;
       toast.error(Array.isArray(msg) ? msg.join(', ') : (msg ?? 'İlan oluşturulamadı'));
