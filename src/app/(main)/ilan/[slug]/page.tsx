@@ -23,7 +23,7 @@ interface ListingData {
 
 async function fetchListingBySlug(slug: string): Promise<ListingData | null> {
   try {
-    const res = await fetch(`${API_URL}/listings/by-slug/${encodeURIComponent(slug)}`, {
+    const res = await fetch(`${API_URL}/listings/by-slug?s=${encodeURIComponent(slug)}`, {
       next: { revalidate: 300 },
     });
     if (!res.ok) return null;
