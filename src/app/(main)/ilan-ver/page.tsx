@@ -7,9 +7,18 @@ import { useQuery } from '@tanstack/react-query';
 import { api } from '@/lib/api';
 import { useCreateListing } from '@/hooks/useListings';
 import { Upload, X, ChevronDown, Zap, Camera, ImagePlus } from 'lucide-react';
-import { useRef, useState } from 'react';
+import { useRef, useState, useMemo, useEffect } from 'react';
 import toast from 'react-hot-toast';
 import { CoverCropModal } from '@/components/listings/CoverCropModal';
+
+type Category = { id: string; name: string; slug: string; parentId: string | null; };
+
+function useCategories() {
+  return useQuery<Category[]>({
+    queryKey: ['categories'],
+    queryFn: () => api.get('/listings/meta/categories').then(r => r.data),
+  });
+}
 
 const schema = z.object({
   title: z.string().min(5, 'En az 5 karakter'),
@@ -77,6 +86,11 @@ export default function CreateListingPage() {
   const cameraInputRef = useRef<HTMLInputElement>(null);
   const createListing = useCreateListing();
 
+  // Cascading category state
+  const [selL1, setSelL1] = useState('');
+  const [selL2, setSelL2] = useState('');
+  const [selL3, setSelL3] = useState('');
+
   const uploadFiles = async (toUpload: File[]) => {
     setUploading(true);
     try {
@@ -125,20 +139,34 @@ export default function CreateListingPage() {
     await uploadFiles([coverFile, ...rest]);
   };
 
-  const { data: categories } = useQuery({
-    queryKey: ['categories'],
-    queryFn: () => api.get('/listings/meta/categories').then(r => r.data),
-  });
-
+  const { data: allCategories = [] } = useCategories();
   const { data: brands } = useQuery({
     queryKey: ['brands'],
     queryFn: () => api.get('/listings/meta/brands').then(r => r.data),
   });
 
-  const { register, handleSubmit, formState: { errors, isSubmitting } } = useForm<any>({
+  // Derive tree levels from flat list
+  const l1Cats = useMemo(() => allCategories.filter(c => !c.parentId), [allCategories]);
+  const l2Cats = useMemo(() => allCategories.filter(c => c.parentId === selL1), [allCategories, selL1]);
+  const l3Cats = useMemo(() => allCategories.filter(c => c.parentId === selL2), [allCategories, selL2]);
+
+  const { register, handleSubmit, setValue, formState: { errors, isSubmitting } } = useForm<any>({
     resolver: zodResolver(schema),
     defaultValues: { condition: 'GOOD' },
   });
+
+  // Sync most-specific selected category to form field
+  useEffect(() => {
+    const finalId = selL3 || selL2 || selL1 || '';
+    setValue('categoryId', finalId, { shouldValidate: !!finalId });
+  }, [selL1, selL2, selL3, setValue]);
+
+  function handleL1Change(id: string) {
+    setSelL1(id); setSelL2(''); setSelL3('');
+  }
+  function handleL2Change(id: string) {
+    setSelL2(id); setSelL3('');
+  }
 
   const onSubmit = async (data: FormData) => {
     if (imageUrls.length === 0) { toast.error('En az bir fotoğraf ekleyin'); return; }
@@ -288,19 +316,87 @@ export default function CreateListingPage() {
           </div>
         </div>
 
-        {/* Kategori & Marka */}
-        <div className="m-grid-1-mobile" style={{ ...card, display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
-          <div>
-            <label style={label}>Kategori *</label>
-            <div style={{ position: 'relative' }}>
-              <select {...register('categoryId')} style={selectSt}>
-                <option value="">Seçin…</option>
-                {categories?.map((c: any) => <option key={c.id} value={c.id}>{c.name}</option>)}
-              </select>
-              <ChevronDown size={15} style={{ position: 'absolute', right: 12, top: '50%', transform: 'translateY(-50%)', color: 'var(--ink-3)', pointerEvents: 'none' }} />
+        {/* Kategori */}
+        <div style={card}>
+          <p style={{ ...label, fontSize: 15, marginBottom: 16 }}>Kategori *</p>
+          {/* hidden field for validation */}
+          <input type="hidden" {...register('categoryId')} />
+
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 12 }}>
+            {/* L1 — Ana Kategori */}
+            <div>
+              <label style={label}>Ana Kategori</label>
+              <div style={{ position: 'relative' }}>
+                <select
+                  value={selL1}
+                  onChange={e => handleL1Change(e.target.value)}
+                  style={{ ...selectSt, borderColor: errors.categoryId && !selL1 ? 'var(--bad)' : 'var(--line)' }}
+                >
+                  <option value="">Seçin…</option>
+                  {l1Cats.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
+                </select>
+                <ChevronDown size={15} style={{ position: 'absolute', right: 12, top: '50%', transform: 'translateY(-50%)', color: 'var(--ink-3)', pointerEvents: 'none' }} />
+              </div>
             </div>
-            {errors.categoryId && <p style={errTxt}>{errors.categoryId.message as string}</p>}
+
+            {/* L2 — Orta Kategori */}
+            <div style={{ opacity: l2Cats.length === 0 ? 0.35 : 1, transition: 'opacity .2s' }}>
+              <label style={label}>
+                Orta Kategori
+                {selL1 && l2Cats.length === 0 && <span style={{ fontWeight: 400, color: 'var(--ink-3)', marginLeft: 6 }}>(yok)</span>}
+              </label>
+              <div style={{ position: 'relative' }}>
+                <select
+                  value={selL2}
+                  onChange={e => handleL2Change(e.target.value)}
+                  disabled={l2Cats.length === 0}
+                  style={{ ...selectSt, cursor: l2Cats.length === 0 ? 'not-allowed' : 'pointer' }}
+                >
+                  <option value="">Seçin…</option>
+                  {l2Cats.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
+                </select>
+                <ChevronDown size={15} style={{ position: 'absolute', right: 12, top: '50%', transform: 'translateY(-50%)', color: 'var(--ink-3)', pointerEvents: 'none' }} />
+              </div>
+            </div>
+
+            {/* L3 — Alt Kategori */}
+            <div style={{ opacity: l3Cats.length === 0 ? 0.35 : 1, transition: 'opacity .2s' }}>
+              <label style={label}>
+                Alt Kategori
+                {selL2 && l3Cats.length === 0 && <span style={{ fontWeight: 400, color: 'var(--ink-3)', marginLeft: 6 }}>(yok)</span>}
+              </label>
+              <div style={{ position: 'relative' }}>
+                <select
+                  value={selL3}
+                  onChange={e => setSelL3(e.target.value)}
+                  disabled={l3Cats.length === 0}
+                  style={{ ...selectSt, cursor: l3Cats.length === 0 ? 'not-allowed' : 'pointer' }}
+                >
+                  <option value="">Seçin…</option>
+                  {l3Cats.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
+                </select>
+                <ChevronDown size={15} style={{ position: 'absolute', right: 12, top: '50%', transform: 'translateY(-50%)', color: 'var(--ink-3)', pointerEvents: 'none' }} />
+              </div>
+            </div>
           </div>
+
+          {/* Seçilen kategori path göstergesi */}
+          {selL1 && (
+            <div style={{ marginTop: 10, fontSize: 12, color: 'var(--ink-3)', fontFamily: 'var(--font-mono)', display: 'flex', alignItems: 'center', gap: 6 }}>
+              <span style={{ color: 'var(--accent)', fontSize: 10 }}>●</span>
+              {[selL1, selL2, selL3]
+                .filter(Boolean)
+                .map(id => allCategories.find(c => c.id === id)?.name)
+                .filter(Boolean)
+                .join(' › ')}
+            </div>
+          )}
+
+          {errors.categoryId && !selL1 && <p style={errTxt}>Lütfen bir kategori seçin</p>}
+        </div>
+
+        {/* Marka */}
+        <div style={{ ...card, display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
           <div>
             <label style={label}>Marka</label>
             <div style={{ position: 'relative' }}>
@@ -311,6 +407,7 @@ export default function CreateListingPage() {
               <ChevronDown size={15} style={{ position: 'absolute', right: 12, top: '50%', transform: 'translateY(-50%)', color: 'var(--ink-3)', pointerEvents: 'none' }} />
             </div>
           </div>
+          <div /> {/* spacer */}
         </div>
 
         {/* Durum, Beden, Şehir */}
