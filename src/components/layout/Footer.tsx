@@ -11,10 +11,13 @@ export function Footer() {
       { label: 'Kariyer', href: '/sayfa/kariyer' },
     ]],
     ['Kategoriler', [
-      { label: 'Kask', href: '/ilanlar?kategori=kask' },
-      { label: 'Mont & Koruma', href: '/ilanlar?kategori=mont-koruma' },
-      { label: 'Egzoz', href: '/ilanlar?kategori=egzoz' },
-      { label: 'Yedek Parça', href: '/ilanlar?kategori=yedek-parca' },
+      { label: 'Kask', href: '/kategori/kask' },
+      { label: 'Mont', href: '/kategori/mont' },
+      { label: 'Eldiven', href: '/kategori/eldiven' },
+      { label: 'Koruma', href: '/kategori/koruma' },
+      { label: 'Bot & Çizme', href: '/kategori/bot-cizme' },
+      { label: 'Yedek Parça', href: '/kategori/yedek-parca' },
+      { label: 'Aksesuar', href: '/kategori/aksesuar' },
     ]],
     ['Destek', [
       { label: 'Yardım merkezi', href: '/sayfa/yardim-merkezi' },

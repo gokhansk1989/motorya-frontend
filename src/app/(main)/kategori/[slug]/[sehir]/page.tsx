@@ -6,13 +6,20 @@ const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000';
 const BASE_URL = 'https://motorya.com.tr';
 
 const CATEGORIES: Record<string, { label: string; description: string; keywords: string[] }> = {
-  kask:      { label: 'Kask',          description: 'motosiklet kaskı',    keywords: ['kask', 'full face kask', 'modüler kask', 'jet kask'] },
-  mont:      { label: 'Mont & Koruma', description: 'motosiklet montu',    keywords: ['motosiklet montu', 'deri ceket', 'koruyucu giysi'] },
-  eldiven:   { label: 'Eldiven',       description: 'motosiklet eldiveni', keywords: ['motosiklet eldiveni', 'yarış eldiveni'] },
-  bot:       { label: 'Bot',           description: 'motosiklet botu',     keywords: ['motosiklet botu', 'touring bot', 'motosiklet ayakkabısı'] },
-  koruyucu:  { label: 'Koruyucu',      description: 'vücut koruyucu',      keywords: ['sırt zırhı', 'diz koruyucu', 'vücut koruyucu'] },
-  egzoz:     { label: 'Egzoz',         description: 'motosiklet egzozu',   keywords: ['motosiklet egzozu', 'performans egzoz', 'akrapovic'] },
-  aksesuar:  { label: 'Aksesuar',      description: 'motosiklet aksesuarı',keywords: ['motosiklet aksesuar', 'interkom', 'motosiklet çantası'] },
+  kask:                 { label: 'Kask',           description: 'motosiklet kaskı',      keywords: ['kask', 'full face kask', 'modüler kask', 'jet kask'] },
+  mont:                 { label: 'Mont',            description: 'motosiklet montu',      keywords: ['motosiklet montu', 'deri mont', 'tekstil mont'] },
+  eldiven:              { label: 'Eldiven',         description: 'motosiklet eldiveni',   keywords: ['motosiklet eldiveni', 'yarış eldiveni', 'kışlık eldiven'] },
+  pantolon:             { label: 'Pantolon',        description: 'motosiklet pantolonu',  keywords: ['motosiklet pantolonu', 'deri pantolon', 'tekstil pantolon'] },
+  'bot-cizme':          { label: 'Bot & Çizme',    description: 'motosiklet botu',       keywords: ['motosiklet botu', 'touring bot', 'motosiklet ayakkabısı'] },
+  koruma:               { label: 'Koruma',          description: 'vücut koruyucu',        keywords: ['sırt zırhı', 'diz koruyucu', 'vücut koruyucu'] },
+  'mx-off-road':        { label: 'MX & Off-Road',  description: 'mx ve off-road ekipmanı', keywords: ['mx kask', 'motocross', 'off-road', 'enduro'] },
+  canta:                { label: 'Çanta',           description: 'motosiklet çantası',    keywords: ['motosiklet çantası', 'tank çantası', 'sele çantası'] },
+  aksesuar:             { label: 'Aksesuar',        description: 'motosiklet aksesuarı',  keywords: ['motosiklet aksesuar', 'interkom', 'gps'] },
+  'yedek-parca':        { label: 'Yedek Parça',    description: 'motosiklet yedek parçası', keywords: ['motosiklet parça', 'egzoz', 'yedek parça'] },
+  bakim:                { label: 'Bakım',           description: 'motosiklet bakım ürünü', keywords: ['motosiklet yağı', 'bakım seti', 'motul'] },
+  motosiklet:           { label: 'Motosiklet',      description: 'motosiklet',            keywords: ['ikinci el motosiklet', 'sıfır motosiklet', 'motor'] },
+  'casual-giyim':       { label: 'Casual Giyim',   description: 'casual motosiklet giyimi', keywords: ['rokker', 'casual ceket', 'moto casual'] },
+  'surucu-aksesuarlari':{ label: 'Sürücü Aksesuarları', description: 'sürücü aksesuarı', keywords: ['güvenlik yeleği', 'airbag yelek', 'reflektör'] },
 };
 
 // En büyük 20 şehir
@@ -30,14 +37,15 @@ export async function generateStaticParams() {
   );
 }
 
-export async function generateMetadata({ params }: { params: { slug: string; sehir: string } }): Promise<Metadata> {
-  const cat = CATEGORIES[params.slug];
-  const city = CITIES[params.sehir];
+export async function generateMetadata({ params }: { params: Promise<{ slug: string; sehir: string }> }): Promise<Metadata> {
+  const { slug, sehir } = await params;
+  const cat = CATEGORIES[slug];
+  const city = CITIES[sehir];
   if (!cat || !city) return { title: 'Sayfa Bulunamadı' };
 
   const title = `${city} İkinci El ${cat.label} | Motorya`;
   const description = `${city} ilanlarında ikinci el ${cat.description} al ya da sat. Güvenli ödeme ve kargo ile Motorya'da.`;
-  const canonical = `${BASE_URL}/kategori/${params.slug}/${params.sehir}`;
+  const canonical = `${BASE_URL}/kategori/${slug}/${sehir}`;
 
   return {
     title,
@@ -65,25 +73,26 @@ async function fetchListings(slug: string, city: string): Promise<Listing[]> {
   } catch { return []; }
 }
 
-export default async function CityListingPage({ params }: { params: { slug: string; sehir: string } }) {
-  const cat = CATEGORIES[params.slug];
-  const city = CITIES[params.sehir];
+export default async function CityListingPage({ params }: { params: Promise<{ slug: string; sehir: string }> }) {
+  const { slug: catSlug, sehir } = await params;
+  const cat = CATEGORIES[catSlug];
+  const city = CITIES[sehir];
   if (!cat || !city) notFound();
 
-  const listings = await fetchListings(params.slug, city);
+  const listings = await fetchListings(catSlug, city);
 
   const jsonLd = {
     '@context': 'https://schema.org',
     '@type': 'CollectionPage',
     name: `${city} İkinci El ${cat.label}`,
     description: `${city}'de satılık ikinci el ${cat.description} ilanları`,
-    url: `${BASE_URL}/kategori/${params.slug}/${params.sehir}`,
+    url: `${BASE_URL}/kategori/${catSlug}/${sehir}`,
     breadcrumb: {
       '@type': 'BreadcrumbList',
       itemListElement: [
         { '@type': 'ListItem', position: 1, name: 'Anasayfa', item: BASE_URL },
-        { '@type': 'ListItem', position: 2, name: cat.label, item: `${BASE_URL}/kategori/${params.slug}` },
-        { '@type': 'ListItem', position: 3, name: `${city} ${cat.label}`, item: `${BASE_URL}/kategori/${params.slug}/${params.sehir}` },
+        { '@type': 'ListItem', position: 2, name: cat.label, item: `${BASE_URL}/kategori/${catSlug}` },
+        { '@type': 'ListItem', position: 3, name: `${city} ${cat.label}`, item: `${BASE_URL}/kategori/${catSlug}/${sehir}` },
       ],
     },
   };
@@ -101,7 +110,7 @@ export default async function CityListingPage({ params }: { params: { slug: stri
         <nav style={{ fontSize: 13, color: 'var(--ink-3)', marginBottom: 20, display: 'flex', gap: 6, alignItems: 'center', flexWrap: 'wrap' }}>
           <Link href="/" style={{ color: 'var(--ink-3)', textDecoration: 'none' }}>Anasayfa</Link>
           <span>›</span>
-          <Link href={`/kategori/${params.slug}`} style={{ color: 'var(--ink-3)', textDecoration: 'none' }}>{cat.label}</Link>
+          <Link href={`/kategori/${catSlug}`} style={{ color: 'var(--ink-3)', textDecoration: 'none' }}>{cat.label}</Link>
           <span>›</span>
           <span style={{ color: 'var(--ink)' }}>{city}</span>
         </nav>
@@ -116,7 +125,7 @@ export default async function CityListingPage({ params }: { params: { slug: stri
         {listings.length === 0 ? (
           <div style={{ textAlign: 'center', padding: '80px 0', color: 'var(--ink-3)' }}>
             <p style={{ fontSize: 16, marginBottom: 12 }}>Şu an {city}&apos;de {cat.label} ilanı yok.</p>
-            <Link href={`/kategori/${params.slug}`} className="m-btn m-btn-primary" style={{ display: 'inline-flex', height: 44, alignItems: 'center', padding: '0 20px', borderRadius: 10, textDecoration: 'none', fontSize: 14 }}>
+            <Link href={`/kategori/${catSlug}`} className="m-btn m-btn-primary" style={{ display: 'inline-flex', height: 44, alignItems: 'center', padding: '0 20px', borderRadius: 10, textDecoration: 'none', fontSize: 14 }}>
               Tüm {cat.label} İlanlarına Bak
             </Link>
           </div>
@@ -149,8 +158,8 @@ export default async function CityListingPage({ params }: { params: { slug: stri
             Diğer şehirlerde {cat.label}
           </h2>
           <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
-            {Object.entries(CITIES).filter(([k]) => k !== params.sehir).map(([slug, name]) => (
-              <Link key={slug} href={`/kategori/${params.slug}/${slug}`} className="m-chip" style={{ height: 32, fontSize: 13 }}>
+            {Object.entries(CITIES).filter(([k]) => k !== sehir).map(([slug, name]) => (
+              <Link key={slug} href={`/kategori/${catSlug}/${slug}`} className="m-chip" style={{ height: 32, fontSize: 13 }}>
                 {name}
               </Link>
             ))}
@@ -163,8 +172,8 @@ export default async function CityListingPage({ params }: { params: { slug: stri
             {city}&apos;de Diğer Kategoriler
           </h2>
           <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
-            {Object.entries(CATEGORIES).filter(([k]) => k !== params.slug).map(([slug, c]) => (
-              <Link key={slug} href={`/kategori/${slug}/${params.sehir}`} className="m-chip" style={{ height: 32, fontSize: 13 }}>
+            {Object.entries(CATEGORIES).filter(([k]) => k !== catSlug).map(([slug, c]) => (
+              <Link key={slug} href={`/kategori/${slug}/${sehir}`} className="m-chip" style={{ height: 32, fontSize: 13 }}>
                 {c.label}
               </Link>
             ))}

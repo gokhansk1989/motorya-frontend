@@ -141,7 +141,7 @@ export default function ListingDetailClient() {
       <div style={{ display: 'flex', alignItems: 'center', gap: 8, color: 'var(--ink-3)', fontSize: 12.5, padding: '20px 0 4px', flexWrap: 'wrap' }}>
         <Link href="/" style={{ color: 'var(--ink-3)' }}>Keşfet</Link>
         <ChevronRight size={13} style={{ opacity: 0.5 }} />
-        {listing.category && <Link href="/" style={{ color: 'var(--ink-3)' }}>{listing.category.name}</Link>}
+        {listing.category && <Link href={`/kategori/${listing.category.slug ?? listing.category.name.toLowerCase()}`} style={{ color: 'var(--ink-3)' }}>{listing.category.name}</Link>}
         {listing.category && <ChevronRight size={13} style={{ opacity: 0.5 }} />}
         <span style={{ color: 'var(--ink-2)' }}>{listing.title}</span>
       </div>
