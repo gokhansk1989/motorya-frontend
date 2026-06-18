@@ -162,10 +162,11 @@ function SearchPageInner() {
         )}
       </form>
 
-      {/* Filter panel */}
+      {/* Filter panel — 4 col × 2 row */}
       {showFilters && (
-        <div style={{ background: 'var(--bg-1)', border: '1px solid var(--line)', borderRadius: 12, padding: '18px 20px', marginBottom: 20, display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(180px, 1fr))', gap: 16 }}>
-          {/* Category L1 */}
+        <div style={{ background: 'var(--bg-1)', border: '1px solid var(--line)', borderRadius: 12, padding: '18px 20px', marginBottom: 20, display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '12px 16px' }}>
+          {/* Row 1 */}
+          {/* Ana Kategori */}
           <div>
             <label className="m-label">Ana Kategori</label>
             <select
@@ -181,21 +182,22 @@ function SearchPageInner() {
             </select>
           </div>
 
-          {/* Category L2 — shown only when L1 is selected */}
+          {/* Alt Kategori — always visible, disabled when no L1 selected */}
           {(() => {
             const l1id = selectedL1Id(categories ?? []);
             const l2cats = (categories ?? []).filter((c: any) => c.parentId === l1id);
-            if (!l1id || l2cats.length === 0) return null;
+            const l2val = categoryId && (categories ?? []).find((c: any) => c.id === categoryId)?.parentId ? categoryId : '';
             return (
-              <div>
+              <div style={{ opacity: l1id ? 1 : 0.4, transition: 'opacity .15s' }}>
                 <label className="m-label">Alt Kategori</label>
                 <select
-                  value={categoryId && (categories ?? []).find((c: any) => c.id === categoryId)?.parentId ? categoryId : ''}
+                  value={l2val}
                   onChange={e => push({ categoryId: e.target.value || l1id, page: 1 })}
+                  disabled={!l1id}
                   className="m-field"
-                  style={{ height: 38 }}
+                  style={{ height: 38, cursor: l1id ? 'pointer' : 'not-allowed' }}
                 >
-                  <option value="">Tümü</option>
+                  <option value="">{l1id ? 'Tümü' : '—'}</option>
                   {l2cats.map((c: any) => (
                     <option key={c.id} value={c.id}>{c.name}</option>
                   ))}
@@ -204,7 +206,7 @@ function SearchPageInner() {
             );
           })()}
 
-          {/* Brand */}
+          {/* Marka */}
           <div>
             <label className="m-label">Marka</label>
             <select
@@ -220,7 +222,7 @@ function SearchPageInner() {
             </select>
           </div>
 
-          {/* Condition */}
+          {/* Durum */}
           <div>
             <label className="m-label">Durum</label>
             <select
@@ -233,7 +235,8 @@ function SearchPageInner() {
             </select>
           </div>
 
-          {/* Gender */}
+          {/* Row 2 */}
+          {/* Cinsiyet */}
           <div>
             <label className="m-label">Cinsiyet</label>
             <select
@@ -246,7 +249,7 @@ function SearchPageInner() {
             </select>
           </div>
 
-          {/* Price range */}
+          {/* Min Fiyat */}
           <div>
             <label className="m-label">Min Fiyat (₺)</label>
             <input
@@ -260,6 +263,7 @@ function SearchPageInner() {
             />
           </div>
 
+          {/* Max Fiyat */}
           <div>
             <label className="m-label">Max Fiyat (₺)</label>
             <input
