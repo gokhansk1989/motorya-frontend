@@ -5,15 +5,6 @@ import ListingDetailClient from './ListingDetailClient';
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000';
 const BASE_URL = 'https://motorya.com.tr';
 
-// CUID pattern: starts with 'c', 25 alphanumeric chars
-const CUID_RE = /c[a-z0-9]{24}/;
-
-function extractId(slug: string): string | null {
-  // Slug sonunda tam CUID varsa çıkar: "kask-kapali-kask-shoei-istanbul-cl9x3k2m..."
-  const match = slug.match(new RegExp(`(${CUID_RE.source})$`));
-  return match ? match[1] : null;
-}
-
 interface ListingData {
   id: string;
   title: string;
@@ -30,9 +21,11 @@ interface ListingData {
   seller?: { displayName: string };
 }
 
-async function fetchListing(id: string): Promise<ListingData | null> {
+async function fetchListingBySlug(slug: string): Promise<ListingData | null> {
   try {
-    const res = await fetch(`${API_URL}/listings/${id}`, { next: { revalidate: 300 } });
+    const res = await fetch(`${API_URL}/listings/by-slug/${encodeURIComponent(slug)}`, {
+      next: { revalidate: 300 },
+    });
     if (!res.ok) return null;
     return res.json();
   } catch {
@@ -42,10 +35,7 @@ async function fetchListing(id: string): Promise<ListingData | null> {
 
 export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }): Promise<Metadata> {
   const { slug } = await params;
-  const id = extractId(slug);
-  if (!id) return { title: 'İlan Bulunamadı' };
-
-  const listing = await fetchListing(id);
+  const listing = await fetchListingBySlug(slug);
   if (!listing) return { title: 'İlan Bulunamadı' };
 
   const canonicalSlug = listing.slug ?? listing.id;
@@ -86,11 +76,7 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
 
 export default async function ListingDetailPage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;
-  const id = extractId(slug);
-
-  if (!id) notFound();
-
-  const listing = await fetchListing(id!);
+  const listing = await fetchListingBySlug(slug);
   if (!listing) notFound();
 
   // Canonical slug kontrolü: farklıysa 301 redirect
