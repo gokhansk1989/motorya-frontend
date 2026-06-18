@@ -102,7 +102,7 @@ export default function OrderDetailPage() {
             : <div style={{ width: '100%', height: '100%', display: 'grid', placeItems: 'center', fontSize: 28 }}>📦</div>}
         </div>
         <div style={{ flex: 1 }}>
-          <Link href={`/ilan/${order.listingId}`} style={{ fontWeight: 600, fontSize: 14, color: 'var(--ink)', textDecoration: 'none' }}>
+          <Link href={`/ilan/${(order.listing as any)?.slug ?? order.listingId}`} style={{ fontWeight: 600, fontSize: 14, color: 'var(--ink)', textDecoration: 'none' }}>
             {order.listing?.title}
           </Link>
           <p style={{ fontFamily: 'var(--font-mono)', fontWeight: 700, fontSize: 22, color: 'var(--accent)', marginTop: 2 }}>
