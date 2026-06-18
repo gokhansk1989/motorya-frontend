@@ -39,13 +39,13 @@ function getNavTarget(n: Notif): string | null {
   const p = n.payload ?? {};
   switch (n.type) {
     case 'listing.pending':   return '/ilanlarim';
-    case 'listing.approved':  return p.listingId ? `/ilan/${p.listingId}` : '/ilanlarim';
+    case 'listing.approved':  return p.listingSlug ? `/ilan/${p.listingSlug}` : p.listingId ? `/ilan/${p.listingId}` : '/ilanlarim';
     case 'listing.rejected':  return p.listingId ? `/ilanlarim/${p.listingId}/duzenle` : '/ilanlarim';
-    case 'offer.received':    return '/tekliflerim?tab=received';
-    case 'offer.accepted':    return '/tekliflerim?tab=sent';
-    case 'offer.rejected':    return '/tekliflerim?tab=sent';
+    case 'offer.received':    return p.listingSlug ? `/ilan/${p.listingSlug}` : p.listingId ? `/ilan/${p.listingId}` : '/tekliflerim?tab=received';
+    case 'offer.accepted':    return p.listingSlug ? `/ilan/${p.listingSlug}` : p.listingId ? `/ilan/${p.listingId}` : '/tekliflerim?tab=sent';
+    case 'offer.rejected':    return p.listingSlug ? `/ilan/${p.listingSlug}` : p.listingId ? `/ilan/${p.listingId}` : '/tekliflerim?tab=sent';
     case 'message.new':       return p.conversationId ? `/mesajlarim?conv=${p.conversationId}` : '/mesajlarim';
-    case 'favorite.price_drop': return p.listingId ? `/ilan/${p.listingId}` : null;
+    case 'favorite.price_drop': return p.listingSlug ? `/ilan/${p.listingSlug}` : p.listingId ? `/ilan/${p.listingId}` : null;
     case 'favorite.listing_sold': return '/';
     case 'follow.new':        return p.followerId ? `/kullanici/${p.followerId}` : null;
     case 'order.new':         return p.orderId ? `/siparislerim/${p.orderId}` : '/siparislerim';
