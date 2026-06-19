@@ -1,12 +1,11 @@
 'use client';
 import { useEffect, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
-import { useListingBySlug, useToggleFavorite, useSimilarListings, useListingsByIds } from '@/hooks/useListings';
-import { useCreateOrder } from '@/hooks/useOrders';
+import { useListingBySlug, useToggleFavorite, useSimilarListings, useListingsByIds, useMarkSold, useReserveListing, useUnreserveListing } from '@/hooks/useListings';
 import { useCreateOffer, useListingOffers, useRespondOffer } from '@/hooks/useOffers';
 import { useAuthStore } from '@/store/auth';
 import { formatPrice, timeAgo } from '@/lib/utils';
-import { MapPin, Eye, Heart, Star, ChevronLeft, ChevronRight, Shield, Truck, Users, Share2, Flag, Zap, MessageCircle, BellPlus } from 'lucide-react';
+import { MapPin, Eye, Heart, Star, ChevronLeft, ChevronRight, Shield, Truck, Users, Share2, Flag, MessageCircle, BellPlus } from 'lucide-react';
 import { useStartConversation } from '@/hooks/useMessages';
 import { trackListingView, useRecentlyViewedIds } from '@/hooks/useRecentlyViewed';
 import { ListingCard } from '@/components/listings/ListingCard';
@@ -59,7 +58,9 @@ export default function ListingDetailClient() {
   const createAlarm = useCreateSavedSearch();
   const recentIds = useRecentlyViewedIds(id);
   const { data: recentlyViewed } = useListingsByIds(recentIds);
-  const createOrder = useCreateOrder();
+  const markSold = useMarkSold();
+  const reserveListing = useReserveListing();
+  const unreserveListing = useUnreserveListing();
   const createOffer = useCreateOffer();
   const respondOffer = useRespondOffer();
   const startConversation = useStartConversation();
@@ -70,15 +71,12 @@ export default function ListingDetailClient() {
 
   const [imgIdx, setImgIdx] = useState(0);
   const [showOfferModal, setShowOfferModal] = useState(false);
-  const [showOrderModal, setShowOrderModal] = useState(false);
   const [showReportModal, setShowReportModal] = useState(false);
   const [reportReason, setReportReason] = useState('');
   const [reportDesc, setReportDesc] = useState('');
   const [reportSent, setReportSent] = useState(false);
   const [reportLoading, setReportLoading] = useState(false);
   const [offerAmount, setOfferAmount] = useState('');
-  const [meetingNote, setMeetingNote] = useState('');
-  const [deliveryMode, setDeliveryMode] = useState<'ship' | 'meet'>('ship');
   const toggleFavorite = useToggleFavorite();
   const favd = listing?.isFavorited ?? false;
 
@@ -105,12 +103,28 @@ export default function ListingDetailClient() {
     ? Math.round((1 - Number(listing.price) / Number(listing.originalPrice)) * 100)
     : null;
 
-  const handleBuyNow = async () => {
-    if (!user) { toast.error('Satın almak için giriş yapmalısın'); router.push('/giris'); return; }
+  const handleMarkSold = async () => {
     try {
-      const order = await createOrder.mutateAsync({ listingId: listing.id, paymentMethod: 'CASH' });
-      toast.success('Sipariş oluşturuldu!');
-      router.push(`/siparislerim/${order.id}`);
+      await markSold.mutateAsync(listing.id);
+      toast.success('İlan satıldı olarak işaretlendi!');
+    } catch (e: any) {
+      toast.error(e.response?.data?.message || 'Hata oluştu');
+    }
+  };
+
+  const handleReserve = async () => {
+    try {
+      await reserveListing.mutateAsync(listing.id);
+      toast.success('İlan 48 saat rezerve edildi!');
+    } catch (e: any) {
+      toast.error(e.response?.data?.message || 'Hata oluştu');
+    }
+  };
+
+  const handleUnreserve = async () => {
+    try {
+      await unreserveListing.mutateAsync(listing.id);
+      toast.success('Rezervasyon kaldırıldı!');
     } catch (e: any) {
       toast.error(e.response?.data?.message || 'Hata oluştu');
     }
@@ -265,43 +279,27 @@ export default function ListingDetailClient() {
               <span>{timeAgo(listing.createdAt)}</span>
             </div>
 
-            {/* Delivery */}
-            <div className="m-label" style={{ marginTop: 22 }}>Teslimat yöntemi</div>
-            <div style={{ display: 'flex', gap: 8 }}>
-              {['ship', 'meet'].map(mode => (
-                <button
-                  key={mode}
-                  onClick={() => setDeliveryMode(mode as 'ship' | 'meet')}
-                  style={{
-                    flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: 4,
-                    padding: '12px 14px', borderRadius: 10, cursor: 'pointer',
-                    background: deliveryMode === mode ? 'color-mix(in oklch, var(--accent) 12%, var(--bg-1))' : 'var(--bg-1)',
-                    border: '1.5px solid ' + (deliveryMode === mode ? 'var(--accent)' : 'var(--line)'),
-                  }}
-                >
-                  <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
-                    {mode === 'ship' ? <Truck size={17} style={{ color: deliveryMode === mode ? 'var(--accent)' : 'var(--ink-2)' }} /> : <Users size={17} style={{ color: deliveryMode === mode ? 'var(--accent)' : 'var(--ink-2)' }} />}
-                    <span style={{ fontWeight: 700, fontSize: 14 }}>{mode === 'ship' ? 'Kargo' : 'Yüz yüze'}</span>
-                  </div>
-                  <span style={{ fontSize: 12, color: 'var(--ink-3)' }}>{mode === 'ship' ? '2-3 iş günü' : 'Güvenli nokta'}</span>
-                </button>
-              ))}
+            {/* Delivery info */}
+            <div style={{ display: 'flex', gap: 8, marginTop: 18 }}>
+              <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 4, padding: '12px 14px', borderRadius: 10, background: 'var(--bg-1)', border: '1.5px solid var(--line)' }}>
+                <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+                  <Truck size={17} style={{ color: 'var(--ink-2)' }} />
+                  <span style={{ fontWeight: 700, fontSize: 14 }}>Kargo</span>
+                </div>
+                <span style={{ fontSize: 12, color: 'var(--ink-3)' }}>Satıcıyla anlaşın</span>
+              </div>
+              <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 4, padding: '12px 14px', borderRadius: 10, background: 'var(--bg-1)', border: '1.5px solid var(--line)' }}>
+                <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+                  <Users size={17} style={{ color: 'var(--ink-2)' }} />
+                  <span style={{ fontWeight: 700, fontSize: 14 }}>Yüz yüze</span>
+                </div>
+                <span style={{ fontSize: 12, color: 'var(--ink-3)' }}>Güvenli buluşma</span>
+              </div>
             </div>
 
             {/* Actions */}
             {!isMine && listing.status === 'ACTIVE' && (
               <div className="m-buy-desktop-actions" style={{ display: 'flex', flexDirection: 'column', gap: 12, marginTop: 20 }}>
-                <button
-                  className="m-btn m-btn-primary lg block"
-                  onClick={() => {
-                    if (!user) { toast.error('Satın almak için giriş yapmalısın'); router.push('/giris'); return; }
-                    setShowOrderModal(true);
-                  }}
-                  style={{ width: '100%', display: 'flex', justifyContent: 'center', gap: 8 }}
-                >
-                  <Zap size={18} fill="currentColor" strokeWidth={0} />
-                  Hemen Al · {formatPrice(listing.price)} ₺
-                </button>
                 <div style={{ display: 'flex', gap: 8 }}>
                   <button
                     className="m-btn m-btn-ghost"
@@ -338,8 +336,63 @@ export default function ListingDetailClient() {
                 )}
               </div>
             )}
+            {!isMine && listing.status === 'RESERVED' && (
+              <div style={{ marginTop: 18, padding: '14px 18px', borderRadius: 12, background: 'color-mix(in oklch, var(--accent) 8%, var(--bg-1))', border: '1.5px solid color-mix(in oklch, var(--accent) 30%, transparent)', fontSize: 14, fontWeight: 600, textAlign: 'center', color: 'var(--accent)' }}>
+                🔒 Bu ilan geçici olarak rezerve edildi
+              </div>
+            )}
+            {!isMine && listing.status === 'SOLD' && (
+              <div style={{ marginTop: 18, padding: '14px 18px', borderRadius: 12, background: 'var(--bg-2)', border: '1.5px solid var(--line)', fontSize: 14, fontWeight: 600, textAlign: 'center', color: 'var(--ink-3)' }}>
+                Bu ilan satılmıştır
+              </div>
+            )}
             {isMine && (
-              <div style={{ marginTop: 20 }}>
+              <div style={{ marginTop: 20, display: 'flex', flexDirection: 'column', gap: 10 }}>
+                {listing.status === 'ACTIVE' && (
+                  <>
+                    <button
+                      className="m-btn m-btn-primary"
+                      style={{ width: '100%' }}
+                      disabled={markSold.isPending}
+                      onClick={handleMarkSold}
+                    >
+                      Satıldı İşaretle
+                    </button>
+                    <button
+                      className="m-btn m-btn-ghost"
+                      style={{ width: '100%' }}
+                      disabled={reserveListing.isPending}
+                      onClick={handleReserve}
+                    >
+                      Rezerve Et (48 saat)
+                    </button>
+                  </>
+                )}
+                {listing.status === 'RESERVED' && (
+                  <>
+                    <button
+                      className="m-btn m-btn-primary"
+                      style={{ width: '100%' }}
+                      disabled={markSold.isPending}
+                      onClick={handleMarkSold}
+                    >
+                      Satıldı İşaretle
+                    </button>
+                    <button
+                      className="m-btn m-btn-ghost"
+                      style={{ width: '100%' }}
+                      disabled={unreserveListing.isPending}
+                      onClick={handleUnreserve}
+                    >
+                      Rezervasyonu Kaldır
+                    </button>
+                  </>
+                )}
+                {listing.status === 'SOLD' && (
+                  <div style={{ padding: '12px', borderRadius: 10, background: 'var(--bg-2)', fontSize: 14, fontWeight: 600, textAlign: 'center', color: 'var(--ink-3)' }}>
+                    Bu ilan satıldı
+                  </div>
+                )}
                 <Link href={`/ilanlarim/${listing.id}/duzenle`} className="m-btn m-btn-ghost block" style={{ width: '100%', display: 'flex', justifyContent: 'center', textDecoration: 'none' }}>
                   İlanı Düzenle
                 </Link>
@@ -350,8 +403,8 @@ export default function ListingDetailClient() {
             <div style={{ display: 'flex', gap: 12, alignItems: 'flex-start', marginTop: 18, padding: 14, background: 'var(--bg-1)', borderRadius: 10, border: '1px solid var(--line-soft)' }}>
               <Shield size={20} style={{ color: 'var(--accent-2)', flexShrink: 0 }} />
               <div>
-                <div style={{ fontSize: 13, fontWeight: 700 }}>Alıcı koruması aktif</div>
-                <div style={{ fontSize: 12, color: 'var(--ink-3)' }}>Ürün eline geçene kadar ödemen güvende tutulur.</div>
+                <div style={{ fontSize: 13, fontWeight: 700 }}>Güvenli alışveriş</div>
+                <div style={{ fontSize: 12, color: 'var(--ink-3)' }}>Satıcıyla mesajlaşarak anlaşın, güvenli bir buluşma noktası seçin.</div>
               </div>
             </div>
           </div>
@@ -432,17 +485,6 @@ export default function ListingDetailClient() {
       {!isMine && listing.status === 'ACTIVE' && (
         <div className="m-mobile-bar">
           <button
-            className="m-btn m-btn-primary lg"
-            style={{ flex: 2, display: 'flex', justifyContent: 'center', gap: 6 }}
-            onClick={() => {
-              if (!user) { toast.error('Satın almak için giriş yapmalısın'); router.push('/giris'); return; }
-              setShowOrderModal(true);
-            }}
-          >
-            <Zap size={17} fill="currentColor" strokeWidth={0} />
-            Hemen Al
-          </button>
-          <button
             className="m-btn m-btn-ghost lg"
             style={{ flex: 1 }}
             onClick={() => {
@@ -450,11 +492,11 @@ export default function ListingDetailClient() {
               setShowOfferModal(true);
             }}
           >
-            Teklif
+            Teklif Ver
           </button>
           <button
-            className="m-btn m-btn-ghost lg"
-            style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 5 }}
+            className="m-btn m-btn-primary lg"
+            style={{ flex: 2, display: 'flex', justifyContent: 'center', gap: 6 }}
             onClick={async () => {
               if (!user) { toast.error('Mesaj göndermek için giriş yapmalısın'); router.push('/giris'); return; }
               try {
@@ -464,7 +506,7 @@ export default function ListingDetailClient() {
             }}
           >
             <MessageCircle size={15} />
-            Mesaj
+            Mesaj Gönder
           </button>
         </div>
       )}
@@ -513,25 +555,7 @@ export default function ListingDetailClient() {
         </div>
       )}
 
-      {/* Order Modal */}
-      {showOrderModal && (
-        <div style={{ position: 'fixed', inset: 0, background: 'oklch(0 0 0 / 0.7)', zIndex: 50, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 16 }}>
-          <div className="m-surface-2" style={{ padding: 24, width: '100%', maxWidth: 440 }}>
-            <h3 className="m-display" style={{ fontSize: 20, margin: '0 0 8px' }}>Satın Al</h3>
-            <p style={{ fontSize: 14, color: 'var(--ink-3)', marginBottom: 18 }}>Satıcı ile buluşarak nakit veya EFT ile ödeme yapacaksın.</p>
-            <div style={{ background: 'color-mix(in oklch, var(--accent) 10%, var(--bg-1))', borderRadius: 10, padding: 16, marginBottom: 18, border: '1px solid color-mix(in oklch, var(--accent) 30%, transparent)' }}>
-              <p style={{ fontSize: 14, fontWeight: 600 }}>{listing.title}</p>
-              <p className="m-price m-accent" style={{ fontSize: 22, marginTop: 4 }}>{formatPrice(listing.price)} ₺</p>
-            </div>
-            <label className="m-label">Buluşma notu (opsiyonel)</label>
-            <input className="m-field" value={meetingNote} onChange={e => setMeetingNote(e.target.value)} placeholder="İstanbul / Pazar 15:00 gibi…" />
-            <div style={{ display: 'flex', gap: 12, marginTop: 20 }}>
-              <button className="m-btn m-btn-ghost" style={{ flex: 1 }} onClick={() => setShowOrderModal(false)}>Vazgeç</button>
-              <button className="m-btn m-btn-primary" style={{ flex: 1 }} disabled={createOrder.isPending} onClick={handleBuyNow}>Siparişi Oluştur</button>
-            </div>
-          </div>
-        </div>
-      )}
+
       {/* Report Modal */}
       {showReportModal && (
         <div style={{ position: 'fixed', inset: 0, background: 'oklch(0 0 0 / 0.7)', zIndex: 50, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 16 }}>

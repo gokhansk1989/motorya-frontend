@@ -74,6 +74,7 @@ export default function MyListingsPage() {
     { key: 'ACTIVE',        label: 'Aktif',          count: listings.filter((l: any) => l.status === 'ACTIVE').length },
     { key: 'ARCHIVED',      label: 'Pasif',          count: listings.filter((l: any) => l.status === 'ARCHIVED').length },
     { key: 'PENDING_REVIEW',label: 'Onay Bekliyor',  count: listings.filter((l: any) => l.status === 'PENDING_REVIEW').length },
+    { key: 'RESERVED',      label: 'Rezerve',        count: listings.filter((l: any) => l.status === 'RESERVED').length },
     { key: 'SOLD',          label: 'Satıldı',        count: listings.filter((l: any) => l.status === 'SOLD').length },
   ];
 

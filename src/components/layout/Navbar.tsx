@@ -54,7 +54,6 @@ export function Navbar() {
                 <div className="absolute right-0 top-full mt-1 w-48 bg-white rounded-xl shadow-lg border border-gray-100 py-1 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all">
                   <Link href="/profilim" className="flex items-center gap-2 px-4 py-2 text-sm hover:bg-gray-50"><User className="w-4 h-4" /> Profilim</Link>
                   <Link href="/ilanlarim" className="block px-4 py-2 text-sm hover:bg-gray-50">İlanlarım</Link>
-                  <Link href="/siparislerim" className="block px-4 py-2 text-sm hover:bg-gray-50">Siparişlerim</Link>
                   <Link href="/tekliflerim" className="block px-4 py-2 text-sm hover:bg-gray-50">Tekliflerim</Link>
                   <hr className="my-1" />
                   <button onClick={logout} className="w-full text-left px-4 py-2 text-sm text-red-500 hover:bg-gray-50">Çıkış Yap</button>

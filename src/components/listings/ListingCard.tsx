@@ -53,6 +53,12 @@ export function ListingCard({ listing }: { listing: Listing }) {
             {discountPct && discountPct > 0 && (
               <span className="m-badge new">%{discountPct} İNDİRİM</span>
             )}
+            {(listing as any).status === 'RESERVED' && (
+              <span className="m-badge warn">REZERVE</span>
+            )}
+            {(listing as any).status === 'SOLD' && (
+              <span style={{ fontSize: 11, fontWeight: 700, padding: '3px 8px', borderRadius: 6, background: 'oklch(0 0 0 / 0.55)', color: '#fff' }}>SATILDI</span>
+            )}
           </div>
           {user && (
             <button

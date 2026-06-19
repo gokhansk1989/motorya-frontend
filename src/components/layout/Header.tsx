@@ -6,7 +6,7 @@ import { useAuthStore } from '@/store/auth';
 import { useThemeStore } from '@/store/theme';
 import {
   Search, Bell, MessageSquare, User, Plus, Zap, LogOut,
-  Menu, X, Home, Tag, Newspaper, Heart, ShoppingBag, ListPlus,
+  Menu, X, Home, Tag, Newspaper, Heart, ListPlus,
   Moon, Sun, BellPlus,
 } from 'lucide-react';
 import { useNotifications } from '@/hooks/useNotifications';
@@ -72,7 +72,6 @@ export function Header() {
       { href: '/ilanlarim', label: 'İlanlarım', icon: <Tag size={19} /> },
       { href: '/favoriler', label: 'Favorilerim', icon: <Heart size={19} /> },
       { href: '/tekliflerim', label: 'Tekliflerim', icon: <ListPlus size={19} /> },
-      { href: '/siparislerim', label: 'Siparişlerim', icon: <ShoppingBag size={19} /> },
       { href: '/mesajlarim', label: 'Mesajlarım', icon: <MessageSquare size={19} /> },
       { href: '/fiyat-alarm', label: 'Fiyat Alarmları', icon: <BellPlus size={19} /> },
       { href: '/profilim', label: 'Profilim', icon: <User size={19} /> },

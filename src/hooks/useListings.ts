@@ -127,3 +127,27 @@ export function useListingsByIds(ids: string[]) {
     enabled: ids.length > 0,
   });
 }
+
+export function useMarkSold() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (id: string) => api.patch(`/listings/${id}/sold`).then((r) => r.data),
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ['listing'] }); qc.invalidateQueries({ queryKey: ['my-listings'] }); },
+  });
+}
+
+export function useReserveListing() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (id: string) => api.patch(`/listings/${id}/reserve`).then((r) => r.data),
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ['listing'] }); qc.invalidateQueries({ queryKey: ['my-listings'] }); },
+  });
+}
+
+export function useUnreserveListing() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (id: string) => api.patch(`/listings/${id}/unreserve`).then((r) => r.data),
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ['listing'] }); qc.invalidateQueries({ queryKey: ['my-listings'] }); },
+  });
+}
