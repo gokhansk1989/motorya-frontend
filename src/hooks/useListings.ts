@@ -151,3 +151,12 @@ export function useUnreserveListing() {
     onSuccess: () => { qc.invalidateQueries({ queryKey: ['listing'] }); qc.invalidateQueries({ queryKey: ['my-listings'] }); },
   });
 }
+
+export function usePriceGuide(categoryId?: string, brandId?: string) {
+  return useQuery({
+    queryKey: ['price-guide', categoryId, brandId],
+    queryFn: () => api.get('/listings/price-guide', { params: { categoryId, brandId } }).then((r) => r.data),
+    enabled: !!categoryId,
+    staleTime: 5 * 60 * 1000,
+  });
+}

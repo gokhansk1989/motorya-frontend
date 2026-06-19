@@ -1,7 +1,7 @@
 'use client';
 import { useEffect, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
-import { useListingBySlug, useToggleFavorite, useSimilarListings, useListingsByIds, useMarkSold, useReserveListing, useUnreserveListing } from '@/hooks/useListings';
+import { useListingBySlug, useToggleFavorite, useSimilarListings, useListingsByIds, useMarkSold, useReserveListing, useUnreserveListing, usePriceGuide } from '@/hooks/useListings';
 import { useCreateOffer, useListingOffers, useRespondOffer, useCounterOffer } from '@/hooks/useOffers';
 import { useAuthStore } from '@/store/auth';
 import { formatPrice, timeAgo } from '@/lib/utils';
@@ -58,6 +58,7 @@ export default function ListingDetailClient() {
   const createAlarm = useCreateSavedSearch();
   const recentIds = useRecentlyViewedIds(id);
   const { data: recentlyViewed } = useListingsByIds(recentIds);
+  const { data: priceGuide } = usePriceGuide(listing?.categoryId, listing?.brandId ?? undefined);
   const markSold = useMarkSold();
   const reserveListing = useReserveListing();
   const unreserveListing = useUnreserveListing();
@@ -282,6 +283,24 @@ export default function ListingDetailClient() {
               <span style={{ width: 3, height: 3, borderRadius: '50%', background: 'currentColor', alignSelf: 'center', opacity: 0.6 }} />
               <span>{timeAgo(listing.createdAt)}</span>
             </div>
+
+            {/* Piyasa fiyatı */}
+            {priceGuide && priceGuide.totalCount >= 3 && (priceGuide.sold?.avg || priceGuide.active?.avg) && (
+              <div style={{ marginTop: 10, padding: '8px 12px', borderRadius: 8, background: 'var(--bg-1)', border: '1px solid var(--line-soft)', display: 'flex', gap: 16, alignItems: 'center', flexWrap: 'wrap' }}>
+                <span style={{ fontSize: 11, color: 'var(--ink-3)', fontWeight: 600 }}>📊 Piyasa</span>
+                {priceGuide.sold?.avg && (
+                  <span style={{ fontSize: 12, color: 'var(--ink-2)' }}>
+                    Satış ort. <strong style={{ color: 'var(--good)' }}>{Math.round(priceGuide.sold.avg).toLocaleString('tr-TR')} ₺</strong>
+                  </span>
+                )}
+                {priceGuide.active?.avg && (
+                  <span style={{ fontSize: 12, color: 'var(--ink-2)' }}>
+                    Aktif ort. <strong>{Math.round(priceGuide.active.avg).toLocaleString('tr-TR')} ₺</strong>
+                  </span>
+                )}
+                <span style={{ fontSize: 11, color: 'var(--ink-3)' }}>{priceGuide.totalCount} ilan</span>
+              </div>
+            )}
 
             {/* Delivery info */}
             <div style={{ display: 'flex', gap: 8, marginTop: 18 }}>

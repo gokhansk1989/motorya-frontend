@@ -5,7 +5,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { useQuery } from '@tanstack/react-query';
 import { api } from '@/lib/api';
-import { useCreateListing } from '@/hooks/useListings';
+import { useCreateListing, usePriceGuide } from '@/hooks/useListings';
 import { Upload, X, ChevronDown, Zap, Camera, ImagePlus } from 'lucide-react';
 import { useRef, useState, useMemo, useEffect } from 'react';
 import toast from 'react-hot-toast';
@@ -154,10 +154,13 @@ export default function CreateListingPage() {
   const l1Slug = useMemo(() => allCategories.find(c => c.id === selL1)?.slug ?? '', [allCategories, selL1]);
   const showGender = GENDER_CATS.has(l1Slug);
 
-  const { register, handleSubmit, setValue, formState: { errors, isSubmitting } } = useForm<any>({
+  const { register, handleSubmit, setValue, watch, formState: { errors, isSubmitting } } = useForm<any>({
     resolver: zodResolver(schema),
     defaultValues: { condition: 'GOOD' },
   });
+  const watchedCategoryId = watch('categoryId');
+  const watchedBrandId = watch('brandId');
+  const { data: priceGuide } = usePriceGuide(watchedCategoryId, watchedBrandId || undefined);
 
   // Sync most-specific selected category to form field
   useEffect(() => {
@@ -437,16 +440,50 @@ export default function CreateListingPage() {
         </div>
 
         {/* Fiyat */}
-        <div className="m-grid-1-mobile" style={{ ...card, display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
-          <div>
-            <label style={label}>Fiyat (₺) *</label>
-            <input {...register('price')} type="number" style={inputSt(!!errors.price)} placeholder="0" />
-            {errors.price && <p style={errTxt}>{errors.price.message as string}</p>}
+        <div style={card}>
+          <div className="m-grid-1-mobile" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
+            <div>
+              <label style={label}>Fiyat (₺) *</label>
+              <input {...register('price')} type="number" style={inputSt(!!errors.price)} placeholder="0" />
+              {errors.price && <p style={errTxt}>{errors.price.message as string}</p>}
+            </div>
+            <div>
+              <label style={label}>Orijinal Fiyat (₺) <span style={{ fontWeight: 400, opacity: 0.5 }}>opsiyonel</span></label>
+              <input {...register('originalPrice')} type="number" style={inputSt()} placeholder="0" />
+            </div>
           </div>
-          <div>
-            <label style={label}>Orijinal Fiyat (₺) <span style={{ fontWeight: 400, opacity: 0.5 }}>opsiyonel</span></label>
-            <input {...register('originalPrice')} type="number" style={inputSt()} placeholder="0" />
-          </div>
+          {/* Fiyat Rehberi */}
+          {priceGuide && priceGuide.totalCount >= 3 && (
+            <div style={{ marginTop: 14, padding: '12px 16px', borderRadius: 10, background: 'color-mix(in oklch, var(--accent) 6%, var(--bg-1))', border: '1px solid color-mix(in oklch, var(--accent) 20%, transparent)' }}>
+              <div style={{ fontSize: 12, fontWeight: 700, color: 'var(--accent)', marginBottom: 8 }}>
+                📊 Bu kategoride fiyat rehberi ({priceGuide.totalCount} ilan)
+              </div>
+              <div style={{ display: 'flex', gap: 20, flexWrap: 'wrap' }}>
+                {priceGuide.sold?.avg && (
+                  <div>
+                    <div style={{ fontSize: 11, color: 'var(--ink-3)', marginBottom: 2 }}>Satılan ort.</div>
+                    <div style={{ fontWeight: 800, fontFamily: 'var(--font-mono)', fontSize: 16, color: 'var(--good)' }}>
+                      {Math.round(priceGuide.sold.avg).toLocaleString('tr-TR')} ₺
+                    </div>
+                  </div>
+                )}
+                {priceGuide.active?.avg && (
+                  <div>
+                    <div style={{ fontSize: 11, color: 'var(--ink-3)', marginBottom: 2 }}>Aktif ort.</div>
+                    <div style={{ fontWeight: 800, fontFamily: 'var(--font-mono)', fontSize: 16, color: 'var(--ink)' }}>
+                      {Math.round(priceGuide.active.avg).toLocaleString('tr-TR')} ₺
+                    </div>
+                  </div>
+                )}
+                <div>
+                  <div style={{ fontSize: 11, color: 'var(--ink-3)', marginBottom: 2 }}>Aralık</div>
+                  <div style={{ fontWeight: 700, fontFamily: 'var(--font-mono)', fontSize: 13, color: 'var(--ink-2)' }}>
+                    {Math.round(priceGuide.all.min).toLocaleString('tr-TR')} – {Math.round(priceGuide.all.max).toLocaleString('tr-TR')} ₺
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
         </div>
 
         <button
