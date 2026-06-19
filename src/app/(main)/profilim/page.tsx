@@ -209,7 +209,7 @@ export default function ProfilePage() {
               </p>
             )}
           </div>
-          <div style={{ display: 'flex', gap: 20, textAlign: 'center' }}>
+          <div style={{ display: 'flex', gap: 20, textAlign: 'center', flexWrap: 'wrap' }}>
             <div>
               <div style={{ display: 'flex', alignItems: 'center', gap: 4, justifyContent: 'center' }}>
                 <Star size={13} style={{ color: '#f59e0b' }} />
@@ -224,7 +224,37 @@ export default function ProfilePage() {
               </div>
               <p style={{ fontSize: 11, color: 'var(--ink-3)', marginTop: 2 }}>satış</p>
             </div>
+            {(profile.trustScore ?? 0) > 0 && (
+              <div style={{ minWidth: 80 }}>
+                <span style={{ fontWeight: 700, fontSize: 15, fontFamily: 'var(--font-mono)', color: (profile.trustScore ?? 0) >= 70 ? 'var(--good)' : (profile.trustScore ?? 0) >= 40 ? '#f59e0b' : 'var(--ink-3)' }}>
+                  {profile.trustScore}
+                </span>
+                <p style={{ fontSize: 11, color: 'var(--ink-3)', marginTop: 2 }}>güven skoru</p>
+              </div>
+            )}
           </div>
+          {/* Rozetler */}
+          {(profile.badges ?? []).length > 0 && (
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginTop: 12 }}>
+              {(profile.badges as any[]).map((b: any) => {
+                const colors = b.tier === 'gold'
+                  ? { color: '#b45309', bg: 'color-mix(in oklch, #f59e0b 12%, transparent)', border: 'color-mix(in oklch, #f59e0b 30%, transparent)' }
+                  : b.tier === 'silver'
+                  ? { color: 'var(--good)', bg: 'color-mix(in oklch, var(--good) 10%, transparent)', border: 'color-mix(in oklch, var(--good) 25%, transparent)' }
+                  : { color: 'var(--accent)', bg: 'color-mix(in oklch, var(--accent) 10%, transparent)', border: 'color-mix(in oklch, var(--accent) 25%, transparent)' };
+                return (
+                  <span key={b.key} style={{
+                    display: 'inline-flex', alignItems: 'center', gap: 5,
+                    fontSize: 11, fontWeight: 700, color: colors.color,
+                    background: colors.bg, border: `1px solid ${colors.border}`,
+                    borderRadius: 99, padding: '3px 9px',
+                  }}>
+                    {b.icon} {b.label}
+                  </span>
+                );
+              })}
+            </div>
+          )}
         </div>
       )}
 

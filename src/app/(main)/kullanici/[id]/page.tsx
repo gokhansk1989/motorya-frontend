@@ -109,18 +109,10 @@ export default function PublicProfilePage({ params }: { params: Promise<{ id: st
     count: reviews.filter((r: any) => r.rating === s).length,
   }));
 
-  // Doğrulama + aktivite rozetleri
-  const fullyVerified = !!user.emailVerifiedAt && !!user.phoneVerifiedAt && !!user.identityVerifiedAt;
+  // Backend'den gelen rozetler
+  const badges: { key: string; label: string; icon: string; tier: 'gold' | 'silver' | 'blue' }[] = user.badges ?? [];
+  const trustScore: number = user.trustScore ?? 0;
   const months = monthsSince(user.createdAt);
-  const badges = [
-    { label: 'Doğrulanmış Satıcı', icon: <ShieldCheck size={12} />, active: fullyVerified },
-    { label: 'E-posta Doğrulı', icon: <Mail size={12} />, active: !fullyVerified && !!user.emailVerifiedAt },
-    { label: 'Telefon Doğrulı', icon: <Phone size={12} />, active: !fullyVerified && !!user.phoneVerifiedAt },
-    { label: 'Kimlik Doğrulı', icon: <BadgeCheck size={12} />, active: !fullyVerified && !!user.identityVerifiedAt },
-    { label: 'Hızlı Yanıt Verir', icon: <Zap size={12} />, active: !!user.fastResponder },
-    { label: months >= 1 ? `${months} Aydır Üye` : 'Yeni Üye', icon: <Calendar size={12} />, active: true },
-    { label: 'Kurucu Üye', icon: <Award size={12} />, active: !!user.isFounder },
-  ].filter(b => b.active);
 
   const displayedListings = listingTab === 'ACTIVE' ? activeListings : soldListings;
 
@@ -161,20 +153,26 @@ export default function PublicProfilePage({ params }: { params: Promise<{ id: st
               </span>
             </div>
 
-            {/* Doğrulama rozetleri */}
+            {/* Rozetler */}
             {badges.length > 0 && (
               <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginBottom: 10 }}>
-                {badges.map(b => (
-                  <span key={b.label} style={{
-                    display: 'inline-flex', alignItems: 'center', gap: 4,
-                    fontSize: 11, fontWeight: 600, color: 'var(--good)',
-                    background: 'color-mix(in oklch, var(--good) 10%, transparent)',
-                    border: '1px solid color-mix(in oklch, var(--good) 25%, transparent)',
-                    borderRadius: 99, padding: '3px 9px',
-                  }}>
-                    {b.icon} {b.label}
-                  </span>
-                ))}
+                {badges.map((b: any) => {
+                  const colors = b.tier === 'gold'
+                    ? { color: '#b45309', bg: 'color-mix(in oklch, #f59e0b 12%, transparent)', border: 'color-mix(in oklch, #f59e0b 30%, transparent)' }
+                    : b.tier === 'silver'
+                    ? { color: 'var(--good)', bg: 'color-mix(in oklch, var(--good) 10%, transparent)', border: 'color-mix(in oklch, var(--good) 25%, transparent)' }
+                    : { color: 'var(--accent)', bg: 'color-mix(in oklch, var(--accent) 10%, transparent)', border: 'color-mix(in oklch, var(--accent) 25%, transparent)' };
+                  return (
+                    <span key={b.key} style={{
+                      display: 'inline-flex', alignItems: 'center', gap: 5,
+                      fontSize: 11, fontWeight: 700, color: colors.color,
+                      background: colors.bg, border: `1px solid ${colors.border}`,
+                      borderRadius: 99, padding: '3px 9px',
+                    }}>
+                      {b.icon} {b.label}
+                    </span>
+                  );
+                })}
               </div>
             )}
 
@@ -185,16 +183,28 @@ export default function PublicProfilePage({ params }: { params: Promise<{ id: st
 
           {/* Puan özeti + aksiyonlar */}
           <div style={{ flexShrink: 0, display: 'flex', flexDirection: 'column', gap: 10, alignItems: 'center' }}>
-            <div style={{
-              textAlign: 'center', background: 'var(--bg-2)', borderRadius: 14, padding: '14px 20px', minWidth: 110,
-            }}>
+            <div style={{ background: 'var(--bg-2)', borderRadius: 14, padding: '14px 20px', minWidth: 120, textAlign: 'center' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: 4, justifyContent: 'center', marginBottom: 2 }}>
                 <Star size={22} fill="var(--accent)" color="var(--accent)" />
                 <span className="m-display" style={{ fontSize: 30, lineHeight: 1 }}>
                   {user.ratingAvg ? Number(user.ratingAvg).toFixed(1) : '—'}
                 </span>
               </div>
-              <p style={{ fontSize: 12, color: 'var(--ink-3)', marginTop: 4 }}>{user.ratingCount ?? 0} değerlendirme</p>
+              <p style={{ fontSize: 12, color: 'var(--ink-3)', marginTop: 4, marginBottom: 12 }}>{user.ratingCount ?? 0} değerlendirme</p>
+              {/* Güven Skoru */}
+              <div style={{ borderTop: '1px solid var(--line)', paddingTop: 10 }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 5 }}>
+                  <span style={{ fontSize: 10, fontWeight: 700, color: 'var(--ink-3)', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Güven Skoru</span>
+                  <span style={{ fontSize: 13, fontWeight: 800, color: trustScore >= 70 ? 'var(--good)' : trustScore >= 40 ? '#f59e0b' : 'var(--ink-3)' }}>{trustScore}</span>
+                </div>
+                <div style={{ height: 6, background: 'var(--bg-3)', borderRadius: 99, overflow: 'hidden' }}>
+                  <div style={{
+                    height: '100%', borderRadius: 99, transition: 'width .6s ease',
+                    width: `${trustScore}%`,
+                    background: trustScore >= 70 ? 'var(--good)' : trustScore >= 40 ? '#f59e0b' : 'var(--bad)',
+                  }} />
+                </div>
+              </div>
             </div>
 
             {me && me.id !== id && (
