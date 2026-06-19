@@ -2,7 +2,7 @@
 import { useEffect, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { useListingBySlug, useToggleFavorite, useSimilarListings, useListingsByIds, useMarkSold, useReserveListing, useUnreserveListing } from '@/hooks/useListings';
-import { useCreateOffer, useListingOffers, useRespondOffer } from '@/hooks/useOffers';
+import { useCreateOffer, useListingOffers, useRespondOffer, useCounterOffer } from '@/hooks/useOffers';
 import { useAuthStore } from '@/store/auth';
 import { formatPrice, timeAgo } from '@/lib/utils';
 import { MapPin, Eye, Heart, Star, ChevronLeft, ChevronRight, Shield, Truck, Users, Share2, Flag, MessageCircle, BellPlus } from 'lucide-react';
@@ -63,7 +63,11 @@ export default function ListingDetailClient() {
   const unreserveListing = useUnreserveListing();
   const createOffer = useCreateOffer();
   const respondOffer = useRespondOffer();
+  const counterOffer = useCounterOffer();
   const startConversation = useStartConversation();
+  const [counterModal, setCounterModal] = useState<{ offerId: string; buyerAmount: number } | null>(null);
+  const [counterAmount, setCounterAmount] = useState('');
+  const [counterMessage, setCounterMessage] = useState('');
 
   useEffect(() => {
     if (listing?.id) trackListingView(listing.id);
@@ -518,20 +522,32 @@ export default function ListingDetailClient() {
           <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
             {offers.map((o: any) => (
               <div key={o.id} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '14px 16px', background: 'var(--bg-2)', borderRadius: 10, border: '1px solid var(--line-soft)' }}>
-                <div>
+                <div style={{ flex: 1 }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}>
                     <span style={{ fontWeight: 600, fontSize: 14 }}>{o.buyer.displayName}</span>
-                    <span className={'m-badge ' + (o.status === 'PENDING' ? 'warn' : o.status === 'ACCEPTED' ? 'good' : 'bad')}>
-                      {o.status === 'PENDING' ? 'Bekliyor' : o.status === 'ACCEPTED' ? 'Kabul' : 'Reddedildi'}
+                    <span className={'m-badge ' + (o.status === 'PENDING' ? 'warn' : o.status === 'COUNTER_OFFERED' ? '' : o.status === 'ACCEPTED' ? 'good' : 'bad')}
+                      style={o.status === 'COUNTER_OFFERED' ? { background: 'color-mix(in oklch, #8b5cf6 14%, transparent)', color: '#8b5cf6' } : {}}>
+                      {o.status === 'PENDING' ? 'Bekliyor' : o.status === 'COUNTER_OFFERED' ? 'Karşı Teklif' : o.status === 'ACCEPTED' ? 'Kabul' : 'Reddedildi'}
                     </span>
                   </div>
                   <span className="m-accent" style={{ fontFamily: 'var(--font-display)', fontWeight: 800, fontSize: 16 }}>{formatPrice(o.amount)} ₺</span>
+                  {o.counterAmount && (
+                    <div style={{ fontSize: 12, color: '#8b5cf6', fontWeight: 600, marginTop: 2 }}>Karşı teklifiniz: {formatPrice(o.counterAmount)} ₺</div>
+                  )}
                   {o.message && <p style={{ fontSize: 12, color: 'var(--ink-3)', marginTop: 4 }}>{o.message}</p>}
                 </div>
                 {o.status === 'PENDING' && (
-                  <div style={{ display: 'flex', gap: 8 }}>
-                    <button className="m-btn sm m-btn-primary" style={{ height: 36, padding: '0 14px', fontSize: 13 }} onClick={() => respondOffer.mutate({ id: o.id, action: 'ACCEPTED' })}>Kabul</button>
-                    <button className="m-btn sm m-btn-ghost" style={{ height: 36, padding: '0 14px', fontSize: 13 }} onClick={() => respondOffer.mutate({ id: o.id, action: 'REJECTED' })}>Reddet</button>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 6, alignItems: 'flex-end' }}>
+                    <div style={{ display: 'flex', gap: 8 }}>
+                      <button className="m-btn sm m-btn-primary" style={{ height: 36, padding: '0 14px', fontSize: 13 }} onClick={() => respondOffer.mutate({ id: o.id, action: 'ACCEPTED' })}>Kabul</button>
+                      <button className="m-btn sm m-btn-ghost" style={{ height: 36, padding: '0 14px', fontSize: 13 }} onClick={() => respondOffer.mutate({ id: o.id, action: 'REJECTED' })}>Reddet</button>
+                    </div>
+                    <button
+                      style={{ fontSize: 12, color: '#8b5cf6', background: 'none', border: 0, cursor: 'pointer', fontFamily: 'var(--font-display)', fontWeight: 700 }}
+                      onClick={() => { setCounterModal({ offerId: o.id, buyerAmount: Number(o.amount) }); setCounterAmount(''); setCounterMessage(''); }}
+                    >
+                      Karşı Teklif Yap
+                    </button>
                   </div>
                 )}
               </div>
@@ -555,6 +571,50 @@ export default function ListingDetailClient() {
         </div>
       )}
 
+
+      {/* Counter Offer Modal */}
+      {counterModal && (
+        <div style={{ position: 'fixed', inset: 0, background: 'oklch(0 0 0 / 0.7)', zIndex: 50, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 16 }}>
+          <div className="m-surface-2" style={{ padding: 24, width: '100%', maxWidth: 420 }}>
+            <h3 className="m-display" style={{ fontSize: 20, margin: '0 0 6px' }}>Karşı Teklif Yap</h3>
+            <p style={{ fontSize: 13, color: 'var(--ink-3)', marginBottom: 18 }}>
+              Alıcı teklifi: <strong>{formatPrice(counterModal.buyerAmount)} ₺</strong> · İlan fiyatı: <strong>{formatPrice(listing.price)} ₺</strong>
+            </p>
+            <label className="m-label">Karşı teklif tutarı (₺)</label>
+            <input
+              className="m-field"
+              type="number"
+              value={counterAmount}
+              onChange={e => setCounterAmount(e.target.value)}
+              placeholder={`${counterModal.buyerAmount + 1} – ${Number(listing.price) - 1}`}
+              style={{ marginBottom: 12 }}
+            />
+            <label className="m-label">Mesaj (opsiyonel)</label>
+            <input className="m-field" value={counterMessage} onChange={e => setCounterMessage(e.target.value)} placeholder="Bu fiyat altına inemem çünkü…" />
+            <div style={{ display: 'flex', gap: 12, marginTop: 20 }}>
+              <button className="m-btn m-btn-ghost" style={{ flex: 1 }} onClick={() => setCounterModal(null)}>Vazgeç</button>
+              <button
+                className="m-btn m-btn-primary"
+                style={{ flex: 1, background: '#8b5cf6', borderColor: '#8b5cf6' }}
+                disabled={counterOffer.isPending}
+                onClick={async () => {
+                  const amt = parseFloat(counterAmount);
+                  if (!amt || isNaN(amt)) { toast.error('Geçerli bir tutar girin'); return; }
+                  try {
+                    await counterOffer.mutateAsync({ id: counterModal.offerId, counterAmount: amt, counterMessage: counterMessage || undefined });
+                    toast.success('Karşı teklif gönderildi!');
+                    setCounterModal(null);
+                  } catch (e: any) {
+                    toast.error(e.response?.data?.message || 'Hata oluştu');
+                  }
+                }}
+              >
+                Gönder
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Report Modal */}
       {showReportModal && (

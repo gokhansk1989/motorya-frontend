@@ -52,3 +52,28 @@ export function useWithdrawOffer() {
     onSuccess: () => qc.invalidateQueries({ queryKey: ['offers'] }),
   });
 }
+
+export function useCounterOffer() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, counterAmount, counterMessage }: { id: string; counterAmount: number; counterMessage?: string }) =>
+      api.patch(`/offers/${id}/counter`, { counterAmount, counterMessage }).then((r) => r.data),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['offers-received'] });
+      qc.invalidateQueries({ queryKey: ['listing-offers'] });
+    },
+  });
+}
+
+export function useRespondCounterOffer() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, action }: { id: string; action: 'ACCEPTED' | 'REJECTED' }) =>
+      api.patch(`/offers/${id}/respond-counter`, { action }).then((r) => r.data),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['offers'] });
+      qc.invalidateQueries({ queryKey: ['offers-received'] });
+      qc.invalidateQueries({ queryKey: ['listing-offers'] });
+    },
+  });
+}

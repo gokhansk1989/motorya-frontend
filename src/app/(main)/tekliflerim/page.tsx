@@ -1,18 +1,18 @@
 'use client';
 import { useState, useEffect } from 'react';
-import { useMyOffers, useReceivedOffers, useRespondOffer, useWithdrawOffer } from '@/hooks/useOffers';
-import { useCreateOrder } from '@/hooks/useOrders';
+import { useMyOffers, useReceivedOffers, useRespondOffer, useWithdrawOffer, useCounterOffer, useRespondCounterOffer } from '@/hooks/useOffers';
 import { formatPrice, timeAgo } from '@/lib/utils';
-import { Tag, UserCheck, ChevronRight, Plus } from 'lucide-react';
+import { Tag, UserCheck, Plus } from 'lucide-react';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
 import toast from 'react-hot-toast';
 
 const STATUS_MAP: Record<string, { label: string; bg: string; color: string }> = {
-  PENDING:   { label: 'Bekliyor',      bg: 'color-mix(in oklch, #f59e0b 14%, transparent)',        color: '#f59e0b' },
-  ACCEPTED:  { label: 'Kabul Edildi',  bg: 'color-mix(in oklch, var(--good) 14%, transparent)',    color: 'var(--good)' },
-  REJECTED:  { label: 'Reddedildi',   bg: 'color-mix(in oklch, var(--bad) 14%, transparent)',     color: 'var(--bad)' },
-  WITHDRAWN: { label: 'Geri Çekildi', bg: 'var(--bg-3)',                                          color: 'var(--ink-3)' },
+  PENDING:         { label: 'Bekliyor',         bg: 'color-mix(in oklch, #f59e0b 14%, transparent)',     color: '#f59e0b' },
+  COUNTER_OFFERED: { label: 'Karşı Teklif',     bg: 'color-mix(in oklch, #8b5cf6 14%, transparent)',    color: '#8b5cf6' },
+  ACCEPTED:        { label: 'Kabul Edildi',      bg: 'color-mix(in oklch, var(--good) 14%, transparent)', color: 'var(--good)' },
+  REJECTED:        { label: 'Reddedildi',        bg: 'color-mix(in oklch, var(--bad) 14%, transparent)',  color: 'var(--bad)' },
+  WITHDRAWN:       { label: 'Geri Çekildi',      bg: 'var(--bg-3)',                                       color: 'var(--ink-3)' },
+  EXPIRED:         { label: 'Süresi Doldu',      bg: 'var(--bg-3)',                                       color: 'var(--ink-3)' },
 };
 
 function StatusBadge({ status }: { status: string }) {
@@ -35,10 +35,9 @@ function ListingThumb({ listing }: { listing: any }) {
 }
 
 function SentOffers() {
-  const router = useRouter();
   const { data: offers, isLoading } = useMyOffers();
   const withdraw = useWithdrawOffer();
-  const createOrder = useCreateOrder();
+  const respondCounter = useRespondCounterOffer();
 
   if (isLoading) return <Skeleton />;
   if (!offers?.length) return (
@@ -48,7 +47,7 @@ function SentOffers() {
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
       {offers.map((o: any) => (
-        <div key={o.id} style={{ display: 'flex', alignItems: 'center', gap: 14, padding: 16, background: 'var(--bg-1)', borderRadius: 14, border: '1px solid var(--line)' }}>
+        <div key={o.id} style={{ display: 'flex', alignItems: 'flex-start', gap: 14, padding: 16, background: 'var(--bg-1)', borderRadius: 14, border: '1px solid var(--line)' }}>
           <ListingThumb listing={o.listing} />
           <div style={{ flex: 1, minWidth: 0 }}>
             <Link href={`/ilan/${(o.listing as any)?.slug ?? o.listing?.id}`} style={{ fontWeight: 600, fontSize: 14, color: 'var(--ink)', textDecoration: 'none', display: 'block', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
@@ -60,6 +59,33 @@ function SentOffers() {
               <span style={{ fontSize: 11, color: 'var(--ink-3)' }}>{timeAgo(o.createdAt)}</span>
             </div>
             {o.message && <p style={{ fontSize: 12, color: 'var(--ink-3)', marginTop: 4, overflow: 'hidden', display: '-webkit-box', WebkitLineClamp: 1, WebkitBoxOrient: 'vertical' }}>{o.message}</p>}
+
+            {/* Karşı teklif geldi */}
+            {o.status === 'COUNTER_OFFERED' && o.counterAmount && (
+              <div style={{ marginTop: 10, padding: '10px 12px', borderRadius: 10, background: 'color-mix(in oklch, #8b5cf6 8%, var(--bg-1))', border: '1.5px solid color-mix(in oklch, #8b5cf6 25%, transparent)' }}>
+                <div style={{ fontSize: 12, fontWeight: 700, color: '#8b5cf6', marginBottom: 4 }}>Satıcının karşı teklifi</div>
+                <div style={{ fontFamily: 'var(--font-mono)', fontWeight: 800, fontSize: 17, color: '#8b5cf6' }}>{formatPrice(o.counterAmount)} ₺</div>
+                {o.counterMessage && <p style={{ fontSize: 12, color: 'var(--ink-3)', marginTop: 4 }}>{o.counterMessage}</p>}
+                <div style={{ display: 'flex', gap: 8, marginTop: 10 }}>
+                  <button
+                    className="m-btn m-btn-primary sm"
+                    style={{ height: 32, padding: '0 14px', fontSize: 12 }}
+                    disabled={respondCounter.isPending}
+                    onClick={() => respondCounter.mutate({ id: o.id, action: 'ACCEPTED' }, { onSuccess: () => toast.success('Karşı teklif kabul edildi!') })}
+                  >
+                    Kabul Et
+                  </button>
+                  <button
+                    className="m-btn m-btn-ghost sm"
+                    style={{ height: 32, padding: '0 14px', fontSize: 12 }}
+                    disabled={respondCounter.isPending}
+                    onClick={() => respondCounter.mutate({ id: o.id, action: 'REJECTED' }, { onSuccess: () => toast.success('Karşı teklif reddedildi') })}
+                  >
+                    Reddet
+                  </button>
+                </div>
+              </div>
+            )}
           </div>
           <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 8, flexShrink: 0 }}>
             <StatusBadge status={o.status} />
@@ -73,29 +99,12 @@ function SentOffers() {
               </button>
             )}
             {o.status === 'ACCEPTED' && (
-              <button
-                onClick={async () => {
-                  try {
-                    const order = await createOrder.mutateAsync({ listingId: o.listing.id, paymentMethod: 'CASH', amount: String(o.amount) });
-                    router.push(`/siparislerim/${order.id}`);
-                  } catch (e: any) {
-                    const msg = e.response?.data?.message ?? '';
-                    if (msg.includes('RESERVED') || msg.includes('not available')) {
-                      toast.error('Bu ilan için zaten bir sipariş var');
-                      router.push('/siparislerim');
-                    } else {
-                      toast.error(msg || 'Hata oluştu');
-                    }
-                  }
-                }}
-                disabled={createOrder.isPending}
-                style={{ fontSize: 12, color: 'var(--good)', background: 'none', border: 0, cursor: 'pointer', fontFamily: 'var(--font-display)', fontWeight: 600, display: 'flex', alignItems: 'center', gap: 3 }}
-              >
-                Siparişe Git <ChevronRight size={12} />
-              </button>
+              <Link href={`/ilan/${(o.listing as any)?.slug ?? o.listing?.id}`} style={{ fontSize: 12, color: 'var(--good)', textDecoration: 'none', fontFamily: 'var(--font-display)', fontWeight: 600 }}>
+                İlana Git →
+              </Link>
             )}
             {o.status === 'REJECTED' && o.listing?.status === 'ACTIVE' && (
-              <Link href={`/ilan/${(o.listing as any)?.slug ?? o.listing.id}`} style={{ fontSize: 12, color: 'var(--accent)', textDecoration: 'none', fontFamily: 'var(--font-display)', fontWeight: 600, display: 'flex', alignItems: 'center', gap: 3 }}>
+              <Link href={`/ilan/${(o.listing as any)?.slug ?? o.listing?.id}`} style={{ fontSize: 12, color: 'var(--accent)', textDecoration: 'none', fontFamily: 'var(--font-display)', fontWeight: 600, display: 'flex', alignItems: 'center', gap: 3 }}>
                 <Plus size={12} /> Yeni Teklif Ver
               </Link>
             )}
@@ -109,61 +118,129 @@ function SentOffers() {
 function ReceivedOffers() {
   const { data: offers, isLoading } = useReceivedOffers();
   const respond = useRespondOffer();
+  const counter = useCounterOffer();
+  const [counterModal, setCounterModal] = useState<{ offerId: string; buyerAmount: number; listingPrice: number } | null>(null);
+  const [counterAmount, setCounterAmount] = useState('');
+  const [counterMessage, setCounterMessage] = useState('');
 
   if (isLoading) return <Skeleton />;
   if (!offers?.length) return (
     <Empty icon={<UserCheck size={44} />} title="Henüz teklif almadınız" sub="İlanlarınıza gelen teklifler burada görünecek" />
   );
 
+  const handleCounter = async () => {
+    if (!counterModal) return;
+    const amt = parseFloat(counterAmount);
+    if (!amt || isNaN(amt)) { toast.error('Geçerli bir tutar girin'); return; }
+    try {
+      await counter.mutateAsync({ id: counterModal.offerId, counterAmount: amt, counterMessage: counterMessage || undefined });
+      toast.success('Karşı teklif gönderildi!');
+      setCounterModal(null);
+      setCounterAmount('');
+      setCounterMessage('');
+    } catch (e: any) {
+      toast.error(e.response?.data?.message || 'Hata oluştu');
+    }
+  };
+
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-      {offers.map((o: any) => (
-        <div key={o.id} style={{ display: 'flex', alignItems: 'center', gap: 14, padding: 16, background: 'var(--bg-1)', borderRadius: 14, border: '1px solid var(--line)' }}>
-          <ListingThumb listing={o.listing} />
-          <div style={{ flex: 1, minWidth: 0 }}>
-            <Link href={`/ilan/${(o.listing as any)?.slug ?? o.listing?.id}`} style={{ fontWeight: 600, fontSize: 14, color: 'var(--ink)', textDecoration: 'none', display: 'block', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-              {o.listing?.title}
-            </Link>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 4, flexWrap: 'wrap' }}>
-              <span style={{ fontFamily: 'var(--font-mono)', fontWeight: 700, fontSize: 15, color: 'var(--accent)' }}>{formatPrice(o.amount)} ₺</span>
-              <span style={{ fontFamily: 'var(--font-mono)', fontSize: 12, color: 'var(--ink-3)', textDecoration: 'line-through' }}>{formatPrice(o.listing?.price)} ₺</span>
-            </div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginTop: 5 }}>
-              {o.buyer?.avatarUrl
-                ? <img src={o.buyer.avatarUrl} style={{ width: 18, height: 18, borderRadius: '50%', objectFit: 'cover' }} alt="" />
-                : <div style={{ width: 18, height: 18, borderRadius: '50%', background: 'var(--accent)', display: 'grid', placeItems: 'center', fontSize: 9, fontWeight: 700, color: '#fff' }}>{o.buyer?.displayName?.[0]}</div>
-              }
-              <Link href={`/kullanici/${o.buyer?.id}`} style={{ fontSize: 12, color: 'var(--ink-2)', textDecoration: 'none', fontWeight: 600 }}>{o.buyer?.displayName}</Link>
-              <span style={{ fontSize: 11, color: 'var(--ink-3)', opacity: 0.7 }}>· {timeAgo(o.createdAt)}</span>
-            </div>
-            {o.message && <p style={{ fontSize: 12, color: 'var(--ink-3)', marginTop: 4, overflow: 'hidden', display: '-webkit-box', WebkitLineClamp: 1, WebkitBoxOrient: 'vertical' }}>{o.message}</p>}
-          </div>
-          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 8, flexShrink: 0 }}>
-            <StatusBadge status={o.status} />
-            {o.status === 'PENDING' && (
-              <div style={{ display: 'flex', gap: 6 }}>
-                <button
-                  className="m-btn m-btn-primary sm"
-                  style={{ height: 32, padding: '0 12px', fontSize: 12 }}
-                  disabled={respond.isPending}
-                  onClick={() => respond.mutate({ id: o.id, action: 'ACCEPTED' }, { onSuccess: () => toast.success('Teklif kabul edildi!') })}
-                >
-                  Kabul Et
-                </button>
-                <button
-                  className="m-btn m-btn-ghost sm"
-                  style={{ height: 32, padding: '0 12px', fontSize: 12 }}
-                  disabled={respond.isPending}
-                  onClick={() => respond.mutate({ id: o.id, action: 'REJECTED' }, { onSuccess: () => toast.success('Teklif reddedildi') })}
-                >
-                  Reddet
-                </button>
+    <>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+        {offers.map((o: any) => (
+          <div key={o.id} style={{ display: 'flex', alignItems: 'flex-start', gap: 14, padding: 16, background: 'var(--bg-1)', borderRadius: 14, border: '1px solid var(--line)' }}>
+            <ListingThumb listing={o.listing} />
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <Link href={`/ilan/${(o.listing as any)?.slug ?? o.listing?.id}`} style={{ fontWeight: 600, fontSize: 14, color: 'var(--ink)', textDecoration: 'none', display: 'block', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                {o.listing?.title}
+              </Link>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 4, flexWrap: 'wrap' }}>
+                <span style={{ fontFamily: 'var(--font-mono)', fontWeight: 700, fontSize: 15, color: 'var(--accent)' }}>{formatPrice(o.amount)} ₺</span>
+                <span style={{ fontFamily: 'var(--font-mono)', fontSize: 12, color: 'var(--ink-3)', textDecoration: 'line-through' }}>{formatPrice(o.listing?.price)} ₺</span>
               </div>
-            )}
+              {o.counterAmount && (
+                <div style={{ fontSize: 12, color: '#8b5cf6', fontWeight: 600, marginTop: 4 }}>
+                  Karşı teklifiniz: {formatPrice(o.counterAmount)} ₺
+                </div>
+              )}
+              <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginTop: 5 }}>
+                {o.buyer?.avatarUrl
+                  ? <img src={o.buyer.avatarUrl} style={{ width: 18, height: 18, borderRadius: '50%', objectFit: 'cover' }} alt="" />
+                  : <div style={{ width: 18, height: 18, borderRadius: '50%', background: 'var(--accent)', display: 'grid', placeItems: 'center', fontSize: 9, fontWeight: 700, color: '#fff' }}>{o.buyer?.displayName?.[0]}</div>
+                }
+                <Link href={`/kullanici/${o.buyer?.id}`} style={{ fontSize: 12, color: 'var(--ink-2)', textDecoration: 'none', fontWeight: 600 }}>{o.buyer?.displayName}</Link>
+                <span style={{ fontSize: 11, color: 'var(--ink-3)', opacity: 0.7 }}>· {timeAgo(o.createdAt)}</span>
+              </div>
+              {o.message && <p style={{ fontSize: 12, color: 'var(--ink-3)', marginTop: 4, overflow: 'hidden', display: '-webkit-box', WebkitLineClamp: 1, WebkitBoxOrient: 'vertical' }}>{o.message}</p>}
+            </div>
+            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 8, flexShrink: 0 }}>
+              <StatusBadge status={o.status} />
+              {o.status === 'PENDING' && (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                  <div style={{ display: 'flex', gap: 6 }}>
+                    <button
+                      className="m-btn m-btn-primary sm"
+                      style={{ height: 32, padding: '0 12px', fontSize: 12 }}
+                      disabled={respond.isPending}
+                      onClick={() => respond.mutate({ id: o.id, action: 'ACCEPTED' }, { onSuccess: () => toast.success('Teklif kabul edildi!') })}
+                    >
+                      Kabul Et
+                    </button>
+                    <button
+                      className="m-btn m-btn-ghost sm"
+                      style={{ height: 32, padding: '0 12px', fontSize: 12 }}
+                      disabled={respond.isPending}
+                      onClick={() => respond.mutate({ id: o.id, action: 'REJECTED' }, { onSuccess: () => toast.success('Teklif reddedildi') })}
+                    >
+                      Reddet
+                    </button>
+                  </div>
+                  <button
+                    style={{ fontSize: 12, color: '#8b5cf6', background: 'none', border: 0, cursor: 'pointer', fontFamily: 'var(--font-display)', fontWeight: 700, textAlign: 'right' }}
+                    onClick={() => { setCounterModal({ offerId: o.id, buyerAmount: Number(o.amount), listingPrice: Number(o.listing?.price) }); setCounterAmount(''); setCounterMessage(''); }}
+                  >
+                    Karşı Teklif Yap
+                  </button>
+                </div>
+              )}
+            </div>
+          </div>
+        ))}
+      </div>
+
+      {/* Counter offer modal */}
+      {counterModal && (
+        <div style={{ position: 'fixed', inset: 0, background: 'oklch(0 0 0 / 0.7)', zIndex: 50, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 16 }}>
+          <div className="m-surface-2" style={{ padding: 24, width: '100%', maxWidth: 420 }}>
+            <h3 className="m-display" style={{ fontSize: 20, margin: '0 0 6px' }}>Karşı Teklif Yap</h3>
+            <p style={{ fontSize: 13, color: 'var(--ink-3)', marginBottom: 18 }}>
+              Alıcı teklifi: <strong>{formatPrice(counterModal.buyerAmount)} ₺</strong> · İlan fiyatı: <strong>{formatPrice(counterModal.listingPrice)} ₺</strong>
+            </p>
+            <label className="m-label">Karşı teklif tutarı (₺)</label>
+            <input
+              className="m-field"
+              type="number"
+              value={counterAmount}
+              onChange={e => setCounterAmount(e.target.value)}
+              placeholder={`${counterModal.buyerAmount + 1} – ${counterModal.listingPrice - 1}`}
+              style={{ marginBottom: 12 }}
+            />
+            <label className="m-label">Mesaj (opsiyonel)</label>
+            <input
+              className="m-field"
+              value={counterMessage}
+              onChange={e => setCounterMessage(e.target.value)}
+              placeholder="Bu fiyat altına inemem çünkü…"
+            />
+            <div style={{ display: 'flex', gap: 12, marginTop: 20 }}>
+              <button className="m-btn m-btn-ghost" style={{ flex: 1 }} onClick={() => setCounterModal(null)}>Vazgeç</button>
+              <button className="m-btn m-btn-primary" style={{ flex: 1, background: '#8b5cf6', borderColor: '#8b5cf6' }} disabled={counter.isPending} onClick={handleCounter}>
+                Gönder
+              </button>
+            </div>
           </div>
         </div>
-      ))}
-    </div>
+      )}
+    </>
   );
 }
 
