@@ -122,7 +122,7 @@ export default async function BlogPostPage({ params }: Props) {
           <span style={{ color: 'var(--ink-2)' }}>{post.category}</span>
         </div>
 
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 300px', gap: 48, alignItems: 'start' }}>
+        <div className="m-blog-layout">
           <article>
             <div style={{ background: 'repeating-linear-gradient(45deg, var(--bg-2) 0 20px, var(--bg-3) 20px 40px)', borderRadius: 'var(--radius)', display: 'grid', placeItems: 'center', height: 240, fontSize: 96, marginBottom: 32, border: '1px solid var(--line-soft)' }}>
               {post.coverEmoji}

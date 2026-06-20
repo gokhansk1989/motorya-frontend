@@ -51,7 +51,7 @@ export default function BlogPage() {
       </div>
 
       {isLoading ? (
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: 20 }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: 20 }}>
           {Array.from({ length: 6 }).map((_, i) => (
             <div key={i} style={{ height: 280, background: 'var(--bg-1)', borderRadius: 12, animation: 'pulse 1.5s ease-in-out infinite' }} />
           ))}
@@ -62,11 +62,10 @@ export default function BlogPage() {
         <>
           {featured && (
             <Link href={`/blog/${featured.slug}`} style={{ textDecoration: 'none', display: 'block', marginBottom: 32 }}>
-              <article className="m-card" style={{
+              <article className="m-card m-blog-hero" style={{
                 background: 'var(--bg-1)', border: '1px solid var(--line-soft)', borderRadius: 'var(--radius-l)',
-                overflow: 'hidden', display: 'grid', gridTemplateColumns: '1fr 1fr',
               }}>
-                <div style={{
+                <div className="m-blog-hero-media" style={{
                   background: 'repeating-linear-gradient(45deg, var(--bg-2) 0 20px, var(--bg-3) 20px 40px)',
                   display: 'grid', placeItems: 'center', minHeight: 280, fontSize: 80, position: 'relative',
                 }}>
@@ -75,7 +74,7 @@ export default function BlogPage() {
                     <span className="m-badge solid">ÖNE ÇIKAN</span>
                   </div>
                 </div>
-                <div style={{ padding: '32px 36px', display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
+                <div className="m-blog-hero-body" style={{ padding: '32px 36px', display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
                   <div style={{ display: 'flex', gap: 8, marginBottom: 16 }}>
                     <span className="m-badge verify">{featured.category}</span>
                   </div>
@@ -96,7 +95,7 @@ export default function BlogPage() {
             </Link>
           )}
 
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: 20 }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: 20 }}>
             {rest.map((post: any) => (
               <Link key={post.slug} href={`/blog/${post.slug}`} style={{ textDecoration: 'none' }}>
                 <article className="m-card" style={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
