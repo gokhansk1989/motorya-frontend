@@ -5,8 +5,7 @@ import { Home, Search, Plus, MessageCircle, User } from 'lucide-react';
 import { useAuthStore } from '@/store/auth';
 import { useNotifications } from '@/hooks/useNotifications';
 
-// Bu sayfalarda global bottom nav gizlenir — kendi özel barları var
-const HIDDEN_PATHS = ['/mesajlarim'];
+const HIDDEN_PATHS: string[] = [];
 
 type Tab = {
   href: string;
