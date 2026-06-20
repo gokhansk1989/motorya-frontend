@@ -1,5 +1,5 @@
 'use client';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { useListingBySlug, useToggleFavorite, useSimilarListings, useListingsByIds, useMarkSold, useReserveListing, useUnreserveListing, usePriceGuide } from '@/hooks/useListings';
 import { useCreateOffer, useListingOffers, useRespondOffer, useCounterOffer } from '@/hooks/useOffers';
@@ -75,6 +75,7 @@ export default function ListingDetailClient() {
   }, [listing?.id]);
 
   const [imgIdx, setImgIdx] = useState(0);
+  const galleryTouchX = useRef(0);
   const [showOfferModal, setShowOfferModal] = useState(false);
   const [showReportModal, setShowReportModal] = useState(false);
   const [reportReason, setReportReason] = useState('');
@@ -169,7 +170,16 @@ export default function ListingDetailClient() {
         {/* LEFT */}
         <div>
           {/* Gallery */}
-          <div className="m-surface-2" style={{ position: 'relative', aspectRatio: '4/3', overflow: 'hidden', borderRadius: 'var(--radius)' }}>
+          <div
+            className="m-surface-2"
+            style={{ position: 'relative', aspectRatio: '4/3', overflow: 'hidden', borderRadius: 'var(--radius)' }}
+            onTouchStart={e => { galleryTouchX.current = e.touches[0].clientX; }}
+            onTouchEnd={e => {
+              const dx = e.changedTouches[0].clientX - galleryTouchX.current;
+              if (dx < -50) setImgIdx(i => Math.min(i + 1, images.length - 1));
+              else if (dx > 50) setImgIdx(i => Math.max(i - 1, 0));
+            }}
+          >
             {images.length > 0 ? (
               <img src={images[imgIdx].url} alt={listing.title} style={{ width: '100%', height: '100%', objectFit: 'contain' }} />
             ) : (

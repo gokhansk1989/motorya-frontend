@@ -146,6 +146,40 @@ function FilterFields({
         </select>
       </div>
 
+      {/* Fiyat hızlı seçim chipleri */}
+      <div style={{ gridColumn: '1 / -1' }}>
+        <label className="m-label">Fiyat Aralığı</label>
+        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginTop: 6 }}>
+          {([
+            { label: '0–500 ₺',      min: 0,    max: 500 },
+            { label: '500–2.000 ₺',  min: 500,  max: 2000 },
+            { label: '2.000–5.000 ₺',min: 2000, max: 5000 },
+            { label: '5.000 ₺+',     min: 5000, max: undefined },
+          ] as const).map(chip => {
+            const pf = Number(priceFrom);
+            const pt = priceTo ? Number(priceTo) : undefined;
+            const active = pf === chip.min && pt === chip.max;
+            return (
+              <button
+                key={chip.label}
+                type="button"
+                onClick={() => {
+                  const newFrom = chip.min > 0 ? chip.min.toString() : '';
+                  const newTo   = chip.max?.toString() ?? '';
+                  setPriceFrom(newFrom);
+                  setPriceTo(newTo);
+                  push({ minPrice: chip.min || undefined, maxPrice: chip.max, page: 1 });
+                }}
+                className={'m-chip' + (active ? ' active' : '')}
+                style={{ height: 30, fontSize: 12 }}
+              >
+                {chip.label}
+              </button>
+            );
+          })}
+        </div>
+      </div>
+
       {/* Min Fiyat */}
       <div>
         <label className="m-label">Min Fiyat (₺)</label>
