@@ -253,8 +253,7 @@ export default function CreateListingPage() {
       <form onSubmit={handleSubmit(onSubmit)}>
 
         {/* ── STEP 1: Kategori ── */}
-        {step === 1 && (
-          <div className="m-form-card" style={card}>
+        <div className="m-form-card" style={{ ...card, display: step === 1 ? 'block' : 'none' }}>
             <p style={{ ...lbl, fontSize: 15, marginBottom: 18 }}>Hangi kategoriye uyuyor?</p>
             <input type="hidden" {...register('categoryId')} />
 
@@ -319,21 +318,19 @@ export default function CreateListingPage() {
               </div>
             )}
           </div>
-        )}
 
         {/* ── STEP 2: Fotoğraflar ── */}
-        {step === 2 && (
-          <div className="m-form-card" style={card}>
+        {/* Hidden inputs her zaman DOM'da kalmalı */}
+        <input ref={fileInputRef} type="file" accept="image/*" multiple style={{ display: 'none' }} onChange={e => handleFiles(e.target.files)} />
+        <input ref={cameraInputRef} type="file" accept="image/*" capture="environment" style={{ display: 'none' }} onChange={e => handleFiles(e.target.files)} />
+
+        <div className="m-form-card" style={{ ...card, display: step === 2 ? 'block' : 'none' }}>
             <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', marginBottom: 18 }}>
               <p style={{ ...lbl, fontSize: 15, margin: 0 }}>Fotoğraflar</p>
               <span style={{ fontSize: 12, fontFamily: 'var(--font-mono)', color: imageUrls.length >= MAX_IMAGES ? 'var(--bad)' : 'var(--ink-3)' }}>
                 {imageUrls.length}/{MAX_IMAGES}
               </span>
             </div>
-
-            {/* Hidden inputs */}
-            <input ref={fileInputRef} type="file" accept="image/*" multiple style={{ display: 'none' }} onChange={e => handleFiles(e.target.files)} />
-            <input ref={cameraInputRef} type="file" accept="image/*" capture="environment" style={{ display: 'none' }} onChange={e => handleFiles(e.target.files)} />
 
             {/* Empty state — big pick buttons */}
             {imageUrls.length === 0 && !uploading && (
@@ -349,7 +346,7 @@ export default function CreateListingPage() {
               </div>
             )}
 
-            {/* Add more buttons (when photos exist) */}
+            {/* Add more buttons */}
             {imageUrls.length > 0 && imageUrls.length < MAX_IMAGES && (
               <div style={{ display: 'flex', gap: 10, marginBottom: 14 }}>
                 <button type="button" onClick={() => fileInputRef.current?.click()} disabled={uploading} className="m-btn" style={{ flex: 1, gap: 8, justifyContent: 'center' }}>
@@ -361,7 +358,6 @@ export default function CreateListingPage() {
               </div>
             )}
 
-            {/* Uploading */}
             {uploading && (
               <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 14px', background: 'var(--bg-2)', borderRadius: 8, marginBottom: 12, fontSize: 13, color: 'var(--ink-3)' }}>
                 <span style={{ width: 16, height: 16, border: '2px solid var(--accent)', borderTopColor: 'transparent', borderRadius: '50%', animation: 'spin 0.7s linear infinite', display: 'inline-block', flexShrink: 0 }} />
@@ -369,32 +365,23 @@ export default function CreateListingPage() {
               </div>
             )}
 
-            {/* Preview grid */}
             {imageUrls.length > 0 && (
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(88px, 1fr))', gap: 10 }}>
                 {imageUrls.map((url, i) => (
                   <div key={i} style={{ position: 'relative', aspectRatio: '1', borderRadius: 10, overflow: 'hidden', background: 'var(--bg-2)', border: i === 0 ? '2px solid var(--accent)' : '1px solid var(--line)' }}>
                     <img src={url} style={{ width: '100%', height: '100%', objectFit: 'cover' }} alt="" />
-                    <button
-                      type="button"
-                      onClick={() => setImageUrls(p => p.filter((_, j) => j !== i))}
-                      style={{ position: 'absolute', top: 4, right: 4, width: 22, height: 22, background: 'oklch(0 0 0 / 0.65)', border: 0, borderRadius: '50%', display: 'grid', placeItems: 'center', cursor: 'pointer', color: '#fff' }}
-                    >
+                    <button type="button" onClick={() => setImageUrls(p => p.filter((_, j) => j !== i))} style={{ position: 'absolute', top: 4, right: 4, width: 22, height: 22, background: 'oklch(0 0 0 / 0.65)', border: 0, borderRadius: '50%', display: 'grid', placeItems: 'center', cursor: 'pointer', color: '#fff' }}>
                       <X size={12} />
                     </button>
-                    {i === 0 && (
-                      <span style={{ position: 'absolute', bottom: 4, left: 4, fontSize: 10, fontFamily: 'var(--font-mono)', background: 'var(--accent)', color: 'var(--accent-ink)', borderRadius: 4, padding: '2px 5px' }}>KAPAK</span>
-                    )}
+                    {i === 0 && <span style={{ position: 'absolute', bottom: 4, left: 4, fontSize: 10, fontFamily: 'var(--font-mono)', background: 'var(--accent)', color: 'var(--accent-ink)', borderRadius: 4, padding: '2px 5px' }}>KAPAK</span>}
                   </div>
                 ))}
               </div>
             )}
           </div>
-        )}
 
-        {/* ── STEP 3: Detaylar ── */}
-        {step === 3 && (
-          <>
+        {/* ── STEP 3: Detaylar — display:none ile gizle, DOM'dan çıkarma ── */}
+        <div style={{ display: step === 3 ? 'block' : 'none' }}>
             {/* Başlık + Açıklama */}
             <div className="m-form-card" style={card}>
               <p style={{ ...lbl, fontSize: 15, marginBottom: 16 }}>İlan Bilgileri</p>
@@ -456,12 +443,10 @@ export default function CreateListingPage() {
                 </div>
               </div>
             </div>
-          </>
-        )}
+          </div>
 
-        {/* ── STEP 4: Fiyat ── */}
-        {step === 4 && (
-          <div className="m-form-card" style={card}>
+        {/* ── STEP 4: Fiyat — display:none ile gizle ── */}
+        <div className="m-form-card" style={{ ...card, display: step === 4 ? 'block' : 'none' }}>
             <p style={{ ...lbl, fontSize: 15, marginBottom: 18 }}>Fiyat Belirle</p>
             <div className="m-form-2col" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16, marginBottom: 4 }}>
               <div>
@@ -507,7 +492,6 @@ export default function CreateListingPage() {
               </div>
             )}
           </div>
-        )}
 
         {/* Navigation */}
         <div style={{ display: 'flex', gap: 12, marginTop: 8 }}>
