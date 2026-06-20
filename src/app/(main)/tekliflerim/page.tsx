@@ -47,7 +47,7 @@ function SentOffers() {
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
       {offers.map((o: any) => (
-        <div key={o.id} style={{ display: 'flex', alignItems: 'flex-start', gap: 14, padding: 16, background: 'var(--bg-1)', borderRadius: 14, border: '1px solid var(--line)' }}>
+        <div key={o.id} className="m-offer-card" style={{ padding: 16, background: 'var(--bg-1)', borderRadius: 14, border: '1px solid var(--line)' }}>
           <ListingThumb listing={o.listing} />
           <div style={{ flex: 1, minWidth: 0 }}>
             <Link href={`/ilan/${(o.listing as any)?.slug ?? o.listing?.id}`} style={{ fontWeight: 600, fontSize: 14, color: 'var(--ink)', textDecoration: 'none', display: 'block', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
@@ -97,7 +97,7 @@ function SentOffers() {
               </div>
             )}
           </div>
-          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 8, flexShrink: 0 }}>
+          <div className="m-offer-actions">
             <StatusBadge status={o.status} />
             {o.status === 'PENDING' && (
               <button
@@ -157,7 +157,7 @@ function ReceivedOffers() {
     <>
       <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
         {offers.map((o: any) => (
-          <div key={o.id} style={{ display: 'flex', alignItems: 'flex-start', gap: 14, padding: 16, background: 'var(--bg-1)', borderRadius: 14, border: '1px solid var(--line)' }}>
+          <div key={o.id} className="m-offer-card" style={{ padding: 16, background: 'var(--bg-1)', borderRadius: 14, border: '1px solid var(--line)' }}>
             <ListingThumb listing={o.listing} />
             <div style={{ flex: 1, minWidth: 0 }}>
               <Link href={`/ilan/${(o.listing as any)?.slug ?? o.listing?.id}`} style={{ fontWeight: 600, fontSize: 14, color: 'var(--ink)', textDecoration: 'none', display: 'block', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
@@ -182,7 +182,7 @@ function ReceivedOffers() {
               </div>
               {o.message && <p style={{ fontSize: 12, color: 'var(--ink-3)', marginTop: 4, overflow: 'hidden', display: '-webkit-box', WebkitLineClamp: 1, WebkitBoxOrient: 'vertical' }}>{o.message}</p>}
             </div>
-            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 8, flexShrink: 0 }}>
+            <div className="m-offer-actions">
               <StatusBadge status={o.status} />
               {o.status === 'PENDING' && (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>

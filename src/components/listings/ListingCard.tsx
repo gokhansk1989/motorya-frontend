@@ -65,7 +65,7 @@ export function ListingCard({ listing }: { listing: Listing }) {
               onClick={e => { e.preventDefault(); e.stopPropagation(); toggle.mutate(listing.id); }}
               aria-label="Favori"
               style={{
-                position: 'absolute', top: 10, right: 10, width: 36, height: 36,
+                position: 'absolute', top: 8, right: 8, width: 44, height: 44,
                 display: 'grid', placeItems: 'center', borderRadius: '50%',
                 background: 'oklch(0 0 0 / 0.45)', border: '1px solid oklch(1 0 0 / 0.12)',
                 color: listing.isFavorited ? 'var(--accent)' : 'var(--ink)',
