@@ -416,7 +416,7 @@ export default function ListingDetailClient() {
                     Bu ilan satıldı
                   </div>
                 )}
-                <Link href={`/ilanlarim/${listing.id}/duzenle`} className="m-btn m-btn-ghost block" style={{ width: '100%', display: 'flex', justifyContent: 'center', textDecoration: 'none' }}>
+                <Link href={`/ilanlarim/duzenle/${listing.id}`} className="m-btn m-btn-ghost block" style={{ width: '100%', display: 'flex', justifyContent: 'center', textDecoration: 'none' }}>
                   İlanı Düzenle
                 </Link>
               </div>
@@ -427,7 +427,12 @@ export default function ListingDetailClient() {
               <Shield size={20} style={{ color: 'var(--accent-2)', flexShrink: 0 }} />
               <div>
                 <div style={{ fontSize: 13, fontWeight: 700 }}>Güvenli alışveriş</div>
-                <div style={{ fontSize: 12, color: 'var(--ink-3)' }}>Satıcıyla mesajlaşarak anlaşın, güvenli bir buluşma noktası seçin.</div>
+                <div style={{ fontSize: 12, color: 'var(--ink-3)', lineHeight: 1.5 }}>
+                  Satıcıyla mesajlaşarak buluşma yeri ve ödeme şeklini belirleyin. Ödemeyi teslimatta yapın — önceden yabancılara para göndermeyin.
+                </div>
+                <Link href="/sss" style={{ fontSize: 11, color: 'var(--accent)', textDecoration: 'none', fontWeight: 600, marginTop: 4, display: 'inline-block' }}>
+                  Sıkça sorulan sorular →
+                </Link>
               </div>
             </div>
           </div>

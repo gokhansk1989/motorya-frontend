@@ -1,13 +1,13 @@
 import Link from 'next/link';
 import { Logo } from './Header';
-import { Shield, Lock } from 'lucide-react';
+import { Shield } from 'lucide-react';
 
 export function Footer() {
   const cols: [string, { label: string; href: string }[]][] = [
     ['Motorya', [
       { label: 'Hakkımızda', href: '/sayfa/hakkimizda' },
       { label: 'Nasıl çalışır', href: '/sayfa/nasil-calisir' },
-      { label: 'Güvenli alışveriş', href: '/sayfa/guvenli-alisveris' },
+      { label: 'Blog', href: '/blog' },
       { label: 'Kariyer', href: '/sayfa/kariyer' },
     ]],
     ['Kategoriler', [
@@ -20,8 +20,8 @@ export function Footer() {
       { label: 'Aksesuar', href: '/kategori/aksesuar' },
     ]],
     ['Destek', [
-      { label: 'Yardım merkezi', href: '/sayfa/yardim-merkezi' },
-      { label: 'Kargo & iade', href: '/sayfa/kargo-iade' },
+      { label: 'Sıkça sorulan sorular', href: '/sss' },
+      { label: 'Güvenli alışveriş', href: '/sayfa/guvenli-alisveris' },
       { label: 'İletişim', href: '/sayfa/iletisim' },
       { label: 'KVKK', href: '/sayfa/gizlilik-politikasi' },
     ]],
@@ -43,9 +43,6 @@ export function Footer() {
           <div style={{ display: 'flex', gap: 8, marginTop: 18 }}>
             <span className="m-badge verify" style={{ display: 'inline-flex', gap: 5 }}>
               <Shield size={12} />SSL GÜVENLİ
-            </span>
-            <span className="m-badge good" style={{ display: 'inline-flex', gap: 5 }}>
-              <Lock size={12} />KORUMALI ÖDEME
             </span>
           </div>
         </div>

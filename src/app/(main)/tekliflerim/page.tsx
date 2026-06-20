@@ -60,6 +60,16 @@ function SentOffers() {
             </div>
             {o.message && <p style={{ fontSize: 12, color: 'var(--ink-3)', marginTop: 4, overflow: 'hidden', display: '-webkit-box', WebkitLineClamp: 1, WebkitBoxOrient: 'vertical' }}>{o.message}</p>}
 
+            {/* Teklif kabul edildi — sonraki adım yönlendirmesi */}
+            {o.status === 'ACCEPTED' && (
+              <div style={{ marginTop: 10, padding: '12px 14px', borderRadius: 10, background: 'color-mix(in oklch, var(--good) 8%, var(--bg-1))', border: '1.5px solid color-mix(in oklch, var(--good) 30%, transparent)' }}>
+                <div style={{ fontSize: 12, fontWeight: 700, color: 'var(--good)', marginBottom: 4 }}>🎉 Teklifiniz kabul edildi!</div>
+                <p style={{ fontSize: 12, color: 'var(--ink-2)', lineHeight: 1.5, margin: 0 }}>
+                  Satıcıyla mesajlaşarak buluşma yeri ve ödeme şeklini belirleyin. Ödemeyi teslimatta yapın — önceden yabancılara para göndermeyin.
+                </p>
+              </div>
+            )}
+
             {/* Karşı teklif geldi */}
             {o.status === 'COUNTER_OFFERED' && o.counterAmount && (
               <div style={{ marginTop: 10, padding: '10px 12px', borderRadius: 10, background: 'color-mix(in oklch, #8b5cf6 8%, var(--bg-1))', border: '1.5px solid color-mix(in oklch, #8b5cf6 25%, transparent)' }}>
@@ -99,8 +109,8 @@ function SentOffers() {
               </button>
             )}
             {o.status === 'ACCEPTED' && (
-              <Link href={`/ilan/${(o.listing as any)?.slug ?? o.listing?.id}`} style={{ fontSize: 12, color: 'var(--good)', textDecoration: 'none', fontFamily: 'var(--font-display)', fontWeight: 600 }}>
-                İlana Git →
+              <Link href={`/mesajlarim`} style={{ fontSize: 12, color: 'var(--good)', textDecoration: 'none', fontFamily: 'var(--font-display)', fontWeight: 600 }}>
+                Satıcıya Mesaj Yaz →
               </Link>
             )}
             {o.status === 'REJECTED' && o.listing?.status === 'ACTIVE' && (
