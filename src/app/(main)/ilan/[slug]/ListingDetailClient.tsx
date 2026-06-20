@@ -236,6 +236,9 @@ export default function ListingDetailClient() {
               {listing.city && (
                 <Link href={`/ara?city=${encodeURIComponent(listing.city)}`} className="m-chip" style={{ height: 30, fontSize: 12.5, textDecoration: 'none' }}>#{listing.city}</Link>
               )}
+              {(listing.tags ?? []).map((tag: string) => (
+                <Link key={tag} href={`/ara?q=${encodeURIComponent(tag)}`} className="m-chip" style={{ height: 30, fontSize: 12.5, textDecoration: 'none' }}>#{tag}</Link>
+              ))}
             </div>
           </div>
 
