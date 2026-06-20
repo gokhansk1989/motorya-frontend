@@ -46,6 +46,44 @@ function renderMarkdown(content: string) {
           {line.slice(4)}
         </h3>
       );
+    } else if (line.match(/^---+$/)) {
+      elements.push(<hr key={i} style={{ border: 'none', borderTop: '1px solid var(--line-soft)', margin: '24px 0' }} />);
+    } else if (line.startsWith('| ')) {
+      // Tablo — başlık satırı + ayırıcı + veri satırları
+      const tableLines: string[] = [];
+      while (i < lines.length && lines[i].startsWith('|')) {
+        tableLines.push(lines[i]);
+        i++;
+      }
+      const [headerRow, , ...dataRows] = tableLines;
+      const headers = headerRow.split('|').map(c => c.trim()).filter(Boolean);
+      const rows = dataRows.map(r => r.split('|').map(c => c.trim()).filter(Boolean));
+      elements.push(
+        <div key={`tbl-${i}`} style={{ overflowX: 'auto', margin: '16px 0' }}>
+          <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 14 }}>
+            <thead>
+              <tr>
+                {headers.map((h, hi) => (
+                  <th key={hi} style={{ textAlign: 'left', padding: '10px 14px', background: 'var(--bg-2)', borderBottom: '2px solid var(--line)', fontWeight: 700, color: 'var(--ink)', whiteSpace: 'nowrap' }}>
+                    {h}
+                  </th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {rows.map((row, ri) => (
+                <tr key={ri} style={{ borderBottom: '1px solid var(--line-soft)' }}>
+                  {row.map((cell, ci) => (
+                    <td key={ci} style={{ padding: '10px 14px', color: 'var(--ink-2)', verticalAlign: 'top' }}
+                      dangerouslySetInnerHTML={{ __html: renderInline(cell) }} />
+                  ))}
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      );
+      continue;
     } else if (line.startsWith('- ') || line.startsWith('* ')) {
       const items: string[] = [];
       while (i < lines.length && (lines[i].startsWith('- ') || lines[i].startsWith('* '))) {
