@@ -86,7 +86,7 @@ function CategoryGrid({ categories, activeSlug, onSelect }: {
           Tümü <ChevronRight size={14} />
         </Link>
       </div>
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: 10 }}>
+      <div className="m-category-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: 10 }}>
         {categories.map(c => {
           const active = activeSlug === c.slug;
           const icon = CATEGORY_ICONS[c.slug] ?? '📦';
