@@ -360,14 +360,15 @@ textarea.m-field { height: auto; padding: 12px 14px; resize: vertical; line-heig
   .m-form-2col { grid-template-columns: 1fr !important; }
 }
 
-/* ---------- listing grid — tek kolon mobil ---------- */
+/* ---------- listing grid — ortalanmış, son satır da hizalı ---------- */
 .m-listing-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(clamp(155px, 42vw, 240px), 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(clamp(155px, 42vw, 240px), 240px));
   gap: clamp(10px, 2vw, 18px);
+  justify-content: center;
 }
 @media (max-width: 580px) {
-  .m-listing-grid { grid-template-columns: 1fr !important; gap: 12px; }
+  .m-listing-grid { grid-template-columns: 1fr !important; gap: 12px; justify-content: stretch; }
 }
 
 /* ---------- modal — bottom sheet mobil ---------- */
