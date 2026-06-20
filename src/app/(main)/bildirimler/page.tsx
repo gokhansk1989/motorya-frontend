@@ -42,7 +42,7 @@ function getNavTarget(n: Notif): string | null {
   switch (n.type) {
     case 'listing.pending':         return '/ilanlarim';
     case 'listing.approved':        return p.listingSlug ? `/ilan/${p.listingSlug}` : p.listingId ? `/ilan/${p.listingId}` : '/ilanlarim';
-    case 'listing.rejected':        return p.listingId ? `/ilanlarim/${p.listingId}/duzenle` : '/ilanlarim';
+    case 'listing.rejected':        return p.listingId ? `/ilanlarim/duzenle/${p.listingId}` : '/ilanlarim';
     case 'listing.sold':            return p.listingSlug ? `/ilan/${p.listingSlug}` : '/ilanlarim';
     case 'offer.received':          return p.listingSlug ? `/ilan/${p.listingSlug}` : p.listingId ? `/ilan/${p.listingId}` : '/tekliflerim?tab=received';
     case 'offer.accepted':          return p.listingSlug ? `/ilan/${p.listingSlug}` : p.listingId ? `/ilan/${p.listingId}` : '/tekliflerim?tab=sent';
