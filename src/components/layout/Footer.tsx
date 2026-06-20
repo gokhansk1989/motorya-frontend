@@ -28,9 +28,9 @@ export function Footer() {
   ];
 
   return (
-    <footer style={{ borderTop: '1px solid var(--line-soft)', marginTop: 64, background: 'var(--bg-1)' }}>
-      <div className="m-wrap" style={{
-        padding: '48px 28px 36px',
+    <footer className="m-footer" style={{ borderTop: '1px solid var(--line-soft)', marginTop: 64, background: 'var(--bg-1)' }}>
+      <div className="m-wrap m-footer-grid" style={{
+        padding: '40px 28px 28px',
         display: 'grid',
         gridTemplateColumns: '1.4fr 1fr 1fr 1fr',
         gap: 40,

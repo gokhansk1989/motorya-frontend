@@ -370,6 +370,15 @@ textarea.m-field { height: auto; padding: 12px 14px; resize: vertical; line-heig
   .m-blog-hero-body  { padding: 20px 20px 24px !important; }
 }
 
+/* ---------- footer ---------- */
+@media (max-width: 767px) {
+  .m-footer { padding-bottom: 145px; }
+  .m-footer-grid { grid-template-columns: 1fr 1fr !important; gap: 28px !important; }
+}
+@media (max-width: 420px) {
+  .m-footer-grid { grid-template-columns: 1fr !important; }
+}
+
 /* ---------- ilanlarım item ---------- */
 .m-my-listing-item    { display: flex; align-items: center; gap: 16px; }
 .m-my-listing-actions { display: flex; gap: 6px; flex-shrink: 0; }
