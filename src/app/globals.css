@@ -307,4 +307,57 @@ textarea.m-field { height: auto; padding: 12px 14px; resize: vertical; line-heig
 /* scrollbar */
 *::-webkit-scrollbar { width: 11px; height: 11px; }
 *::-webkit-scrollbar-thumb { background: var(--bg-3); border-radius: 8px; border: 3px solid var(--bg-0); }
+
+/* ---------- ara sayfası — sticky search + filter drawer ---------- */
+.m-filter-panel--desktop { display: block; }
+.m-filter-drawer--mobile  { display: none; }
+@media (max-width: 767px) {
+  .m-search-bar-wrap {
+    position: sticky; top: 58px; z-index: 20;
+    background: var(--bg-0); padding: 10px 16px 6px;
+    margin-left: -16px; margin-right: -16px;
+    border-bottom: 1px solid var(--line);
+    box-shadow: 0 2px 8px oklch(0 0 0 / 0.06);
+  }
+  .m-filter-panel--desktop { display: none !important; }
+  .m-filter-drawer--mobile  { display: block; }
+}
+
+/* ---------- ilan-ver wizard ---------- */
+.wizard-steps { display: flex; align-items: center; gap: 0; margin-bottom: 28px; }
+.wizard-step { display: flex; align-items: center; flex: 1; }
+.wizard-step__dot {
+  width: 28px; height: 28px; border-radius: 50%;
+  display: grid; place-items: center;
+  font-size: 12px; font-weight: 700; font-family: var(--font-mono);
+  flex-shrink: 0; transition: background .2s, color .2s;
+}
+.wizard-step__dot--active  { background: var(--accent); color: var(--accent-ink); }
+.wizard-step__dot--done    { background: #22c55e; color: #fff; }
+.wizard-step__dot--inactive{ background: var(--bg-2); color: var(--ink-3); }
+.wizard-step__line { flex: 1; height: 2px; background: var(--line); margin: 0 4px; }
+.wizard-step__line--done   { background: #22c55e; }
+.wizard-step__label        { display: none; }
+@media (min-width: 480px) {
+  .wizard-steps { justify-content: center; gap: 0; }
+  .wizard-step  { flex-direction: column; align-items: center; gap: 4px; flex: none; }
+  .wizard-step__line { flex: 1; height: 2px; margin: 0 8px; align-self: flex-start; margin-top: 14px; }
+  .wizard-step__label { display: block; font-size: 10px; color: var(--ink-3); white-space: nowrap; }
+}
+
+/* photo upload pick buttons */
+.photo-pick-btn {
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  gap: 10px; padding: 28px 12px;
+  border: 2px dashed var(--line); border-radius: 14px;
+  background: var(--bg-1); cursor: pointer;
+  color: var(--ink-2); font-weight: 600; font-size: 14px;
+  transition: border-color .15s, background .15s;
+  width: 100%;
+}
+.photo-pick-btn:hover {
+  border-color: var(--accent);
+  background: color-mix(in oklch, var(--accent) 5%, var(--bg-1));
+  color: var(--accent);
+}
 *::-webkit-scrollbar-thumb:hover { background: var(--line); }

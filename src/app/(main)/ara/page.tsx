@@ -7,7 +7,7 @@ import { ListingCard } from '@/components/listings/ListingCard';
 import { useQuery } from '@tanstack/react-query';
 import { api } from '@/lib/api';
 import { useAuthStore } from '@/store/auth';
-import { Search, SlidersHorizontal, X, ChevronDown, ChevronUp, BellPlus } from 'lucide-react';
+import { Search, SlidersHorizontal, X, BellPlus } from 'lucide-react';
 import { AdSlot } from '@/components/ui/AdSlot';
 import toast from 'react-hot-toast';
 
@@ -34,6 +34,149 @@ const SORT_OPTIONS = [
   { value: 'oldest', label: 'En eski' },
 ];
 
+function FilterFields({
+  categories,
+  brands,
+  categoryId,
+  brandId,
+  condition,
+  gender,
+  priceFrom,
+  priceTo,
+  setPriceFrom,
+  setPriceTo,
+  push,
+  router,
+  q,
+  selectedL1Id,
+}: {
+  categories: any[];
+  brands: any[];
+  categoryId: string;
+  brandId: string;
+  condition: string;
+  gender: string;
+  priceFrom: string;
+  priceTo: string;
+  setPriceFrom: (v: string) => void;
+  setPriceTo: (v: string) => void;
+  push: (overrides: Record<string, string | number | undefined>) => void;
+  router: any;
+  q: string;
+  selectedL1Id: (cats: any[]) => string;
+}) {
+  const l1id = selectedL1Id(categories);
+  const l2cats = categories.filter((c: any) => c.parentId === l1id);
+  const l2val = categoryId && categories.find((c: any) => c.id === categoryId)?.parentId ? categoryId : '';
+
+  return (
+    <>
+      {/* Ana Kategori */}
+      <div>
+        <label className="m-label">Ana Kategori</label>
+        <select
+          value={l1id}
+          onChange={e => push({ categoryId: e.target.value, page: 1 })}
+          className="m-field"
+          style={{ height: 38 }}
+        >
+          <option value="">Tümü</option>
+          {categories.filter((c: any) => !c.parentId).map((c: any) => (
+            <option key={c.id} value={c.id}>{c.name}</option>
+          ))}
+        </select>
+      </div>
+
+      {/* Alt Kategori */}
+      <div style={{ opacity: l1id ? 1 : 0.4, transition: 'opacity .15s' }}>
+        <label className="m-label">Alt Kategori</label>
+        <select
+          value={l2val}
+          onChange={e => push({ categoryId: e.target.value || l1id, page: 1 })}
+          disabled={!l1id}
+          className="m-field"
+          style={{ height: 38, cursor: l1id ? 'pointer' : 'not-allowed' }}
+        >
+          <option value="">{l1id ? 'Tümü' : '—'}</option>
+          {l2cats.map((c: any) => (
+            <option key={c.id} value={c.id}>{c.name}</option>
+          ))}
+        </select>
+      </div>
+
+      {/* Marka */}
+      <div>
+        <label className="m-label">Marka</label>
+        <select
+          value={brandId}
+          onChange={e => push({ brandId: e.target.value, page: 1 })}
+          className="m-field"
+          style={{ height: 38 }}
+        >
+          <option value="">Tümü</option>
+          {brands.map((b: any) => (
+            <option key={b.id} value={b.id}>{b.name}</option>
+          ))}
+        </select>
+      </div>
+
+      {/* Durum */}
+      <div>
+        <label className="m-label">Durum</label>
+        <select
+          value={condition}
+          onChange={e => push({ condition: e.target.value, page: 1 })}
+          className="m-field"
+          style={{ height: 38 }}
+        >
+          {CONDITIONS.map(c => <option key={c.value} value={c.value}>{c.label}</option>)}
+        </select>
+      </div>
+
+      {/* Cinsiyet */}
+      <div>
+        <label className="m-label">Cinsiyet</label>
+        <select
+          value={gender}
+          onChange={e => push({ gender: e.target.value, page: 1 })}
+          className="m-field"
+          style={{ height: 38 }}
+        >
+          {GENDERS.map(g => <option key={g.value} value={g.value}>{g.label}</option>)}
+        </select>
+      </div>
+
+      {/* Min Fiyat */}
+      <div>
+        <label className="m-label">Min Fiyat (₺)</label>
+        <input
+          type="number"
+          value={priceFrom}
+          onChange={e => setPriceFrom(e.target.value)}
+          onBlur={() => push({ minPrice: priceFrom ? Number(priceFrom) : undefined, page: 1 })}
+          placeholder="0"
+          className="m-field"
+          style={{ height: 38 }}
+        />
+      </div>
+
+      {/* Max Fiyat */}
+      <div>
+        <label className="m-label">Max Fiyat (₺)</label>
+        <input
+          type="number"
+          value={priceTo}
+          onChange={e => setPriceTo(e.target.value)}
+          onBlur={() => push({ maxPrice: priceTo ? Number(priceTo) : undefined, page: 1 })}
+          placeholder="—"
+          className="m-field"
+          style={{ height: 38 }}
+        />
+      </div>
+    </>
+  );
+}
+
 function SearchPageInner() {
   const router = useRouter();
   const sp = useSearchParams();
@@ -56,7 +199,6 @@ function SearchPageInner() {
   const [priceTo, setPriceTo] = useState(maxPrice?.toString() ?? '');
   const [showFilters, setShowFilters] = useState(false);
 
-  // Derive selected L1 from current categoryId
   const selectedL1Id = (cats: any[]) => {
     const cat = cats.find((c: any) => c.id === categoryId);
     if (!cat) return '';
@@ -101,191 +243,181 @@ function SearchPageInner() {
     push({ q: inputVal, page: 1 });
   };
 
+  const handleReset = () => {
+    setPriceFrom('');
+    setPriceTo('');
+    router.push(`/ara${q ? `?q=${q}` : ''}`);
+    setShowFilters(false);
+  };
+
+  const hasActiveFilters = !!(categoryId || brandId || condition || city || minPrice || maxPrice);
+
   const items = data?.items ?? [];
   const meta = data?.meta;
+  const cats = categories ?? [];
+  const brnds = brands ?? [];
+
+  const filterFieldProps = {
+    categories: cats,
+    brands: brnds,
+    categoryId,
+    brandId,
+    condition,
+    gender,
+    priceFrom,
+    priceTo,
+    setPriceFrom,
+    setPriceTo,
+    push,
+    router,
+    q,
+    selectedL1Id,
+  };
 
   return (
     <div className="m-wrap" style={{ paddingTop: 28, paddingBottom: 60 }}>
 
-      {/* Search bar */}
-      <form onSubmit={handleSearch} style={{ display: 'flex', gap: 8, marginBottom: 20 }}>
-        <div style={{ flex: 1, display: 'flex', alignItems: 'center', gap: 10, height: 48, background: 'var(--bg-1)', border: '1px solid var(--line)', borderRadius: 10, padding: '0 8px 0 14px' }}>
-          <Search size={18} style={{ color: 'var(--ink-3)', flexShrink: 0 }} />
-          <input
-            value={inputVal}
-            onChange={e => setInputVal(e.target.value)}
-            placeholder="Kask, mont, egzoz ara…"
-            style={{ flex: 1, background: 'none', border: 'none', outline: 'none', fontSize: 14, color: 'var(--ink)' }}
-          />
-          {inputVal && (
-            <button type="button" onClick={() => { setInputVal(''); push({ q: '', page: 1 }); }} style={{ background: 'none', border: 'none', padding: 4, color: 'var(--ink-3)', cursor: 'pointer' }}>
-              <X size={16} />
-            </button>
-          )}
-        </div>
-        <button type="submit" className="m-btn m-btn-primary">Ara</button>
-        <button
-          type="button"
-          onClick={() => setShowFilters(!showFilters)}
-          className="m-btn"
-          style={{ gap: 6, position: 'relative' }}
-        >
-          <SlidersHorizontal size={16} />
-          Filtre
-          {(categoryId || brandId || condition || city || minPrice || maxPrice) && (
-            <span style={{ position: 'absolute', top: 6, right: 6, width: 7, height: 7, borderRadius: '50%', background: 'var(--accent)' }} />
-          )}
-        </button>
-        {(q || categoryId || brandId || condition || city || minPrice || maxPrice) && (
+      {/* Search bar — sticky on mobile */}
+      <div className="m-search-bar-wrap">
+        <form onSubmit={handleSearch} style={{ display: 'flex', gap: 8 }}>
+          <div style={{ flex: 1, display: 'flex', alignItems: 'center', gap: 10, height: 48, background: 'var(--bg-1)', border: '1px solid var(--line)', borderRadius: 10, padding: '0 8px 0 14px' }}>
+            <Search size={18} style={{ color: 'var(--ink-3)', flexShrink: 0 }} />
+            <input
+              value={inputVal}
+              onChange={e => setInputVal(e.target.value)}
+              placeholder="Kask, mont, egzoz ara…"
+              style={{ flex: 1, background: 'none', border: 'none', outline: 'none', fontSize: 14, color: 'var(--ink)' }}
+            />
+            {inputVal && (
+              <button type="button" onClick={() => { setInputVal(''); push({ q: '', page: 1 }); }} style={{ background: 'none', border: 'none', padding: 4, color: 'var(--ink-3)', cursor: 'pointer' }}>
+                <X size={16} />
+              </button>
+            )}
+          </div>
+          <button type="submit" className="m-btn m-btn-primary">Ara</button>
           <button
             type="button"
-            disabled={createSavedSearch.isPending}
-            onClick={() => {
-              if (!user) { toast.error('Aramayı kaydetmek için giriş yapmalısın'); return; }
-              const categoryName = (categories ?? []).find((c: any) => c.id === categoryId)?.name;
-              const brandName = (brands ?? []).find((b: any) => b.id === brandId)?.name;
-              const label = [q, brandName, categoryName, city].filter(Boolean).join(' · ') || 'Tüm ilanlar';
-              createSavedSearch.mutate(
-                { label, search: q || undefined, categoryId: categoryId || undefined, brandId: brandId || undefined, condition: condition || undefined, city: city || undefined, minPrice, maxPrice },
-                {
-                  onSuccess: () => toast.success('Arama kaydedildi — uyan yeni ilan girince haber vereceğiz'),
-                  onError: (err: any) => toast.error(err?.response?.data?.message ?? 'Arama kaydedilemedi'),
-                }
-              );
-            }}
+            onClick={() => setShowFilters(!showFilters)}
             className="m-btn"
-            style={{ gap: 6 }}
+            style={{ gap: 6, position: 'relative' }}
           >
-            <BellPlus size={16} />
-            Bu aramayı kaydet
+            <SlidersHorizontal size={16} />
+            Filtre
+            {hasActiveFilters && (
+              <span style={{ position: 'absolute', top: 6, right: 6, width: 7, height: 7, borderRadius: '50%', background: 'var(--accent)' }} />
+            )}
           </button>
-        )}
-      </form>
+          {(q || categoryId || brandId || condition || city || minPrice || maxPrice) && (
+            <button
+              type="button"
+              disabled={createSavedSearch.isPending}
+              onClick={() => {
+                if (!user) { toast.error('Aramayı kaydetmek için giriş yapmalısın'); return; }
+                const categoryName = cats.find((c: any) => c.id === categoryId)?.name;
+                const brandName = brnds.find((b: any) => b.id === brandId)?.name;
+                const label = [q, brandName, categoryName, city].filter(Boolean).join(' · ') || 'Tüm ilanlar';
+                createSavedSearch.mutate(
+                  { label, search: q || undefined, categoryId: categoryId || undefined, brandId: brandId || undefined, condition: condition || undefined, city: city || undefined, minPrice, maxPrice },
+                  {
+                    onSuccess: () => toast.success('Arama kaydedildi — uyan yeni ilan girince haber vereceğiz'),
+                    onError: (err: any) => toast.error(err?.response?.data?.message ?? 'Arama kaydedilemedi'),
+                  }
+                );
+              }}
+              className="m-btn"
+              style={{ gap: 6 }}
+            >
+              <BellPlus size={16} />
+              Bu aramayı kaydet
+            </button>
+          )}
+        </form>
+      </div>
 
-      {/* Filter panel — 4 col × 2 row */}
+      {/* Filter panel — desktop only (4 col × 2 row) */}
       {showFilters && (
-        <div style={{ background: 'var(--bg-1)', border: '1px solid var(--line)', borderRadius: 12, padding: '18px 20px', marginBottom: 20, display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '12px 16px' }}>
-          {/* Row 1 */}
-          {/* Ana Kategori */}
-          <div>
-            <label className="m-label">Ana Kategori</label>
-            <select
-              value={selectedL1Id(categories ?? [])}
-              onChange={e => push({ categoryId: e.target.value, page: 1 })}
-              className="m-field"
-              style={{ height: 38 }}
-            >
-              <option value="">Tümü</option>
-              {(categories ?? []).filter((c: any) => !c.parentId).map((c: any) => (
-                <option key={c.id} value={c.id}>{c.name}</option>
-              ))}
-            </select>
-          </div>
-
-          {/* Alt Kategori — always visible, disabled when no L1 selected */}
-          {(() => {
-            const l1id = selectedL1Id(categories ?? []);
-            const l2cats = (categories ?? []).filter((c: any) => c.parentId === l1id);
-            const l2val = categoryId && (categories ?? []).find((c: any) => c.id === categoryId)?.parentId ? categoryId : '';
-            return (
-              <div style={{ opacity: l1id ? 1 : 0.4, transition: 'opacity .15s' }}>
-                <label className="m-label">Alt Kategori</label>
-                <select
-                  value={l2val}
-                  onChange={e => push({ categoryId: e.target.value || l1id, page: 1 })}
-                  disabled={!l1id}
-                  className="m-field"
-                  style={{ height: 38, cursor: l1id ? 'pointer' : 'not-allowed' }}
-                >
-                  <option value="">{l1id ? 'Tümü' : '—'}</option>
-                  {l2cats.map((c: any) => (
-                    <option key={c.id} value={c.id}>{c.name}</option>
-                  ))}
-                </select>
-              </div>
-            );
-          })()}
-
-          {/* Marka */}
-          <div>
-            <label className="m-label">Marka</label>
-            <select
-              value={brandId}
-              onChange={e => push({ brandId: e.target.value, page: 1 })}
-              className="m-field"
-              style={{ height: 38 }}
-            >
-              <option value="">Tümü</option>
-              {(brands ?? []).map((b: any) => (
-                <option key={b.id} value={b.id}>{b.name}</option>
-              ))}
-            </select>
-          </div>
-
-          {/* Durum */}
-          <div>
-            <label className="m-label">Durum</label>
-            <select
-              value={condition}
-              onChange={e => push({ condition: e.target.value, page: 1 })}
-              className="m-field"
-              style={{ height: 38 }}
-            >
-              {CONDITIONS.map(c => <option key={c.value} value={c.value}>{c.label}</option>)}
-            </select>
-          </div>
-
-          {/* Row 2 */}
-          {/* Cinsiyet */}
-          <div>
-            <label className="m-label">Cinsiyet</label>
-            <select
-              value={gender}
-              onChange={e => push({ gender: e.target.value, page: 1 })}
-              className="m-field"
-              style={{ height: 38 }}
-            >
-              {GENDERS.map(g => <option key={g.value} value={g.value}>{g.label}</option>)}
-            </select>
-          </div>
-
-          {/* Min Fiyat */}
-          <div>
-            <label className="m-label">Min Fiyat (₺)</label>
-            <input
-              type="number"
-              value={priceFrom}
-              onChange={e => setPriceFrom(e.target.value)}
-              onBlur={() => push({ minPrice: priceFrom ? Number(priceFrom) : undefined, page: 1 })}
-              placeholder="0"
-              className="m-field"
-              style={{ height: 38 }}
-            />
-          </div>
-
-          {/* Max Fiyat */}
-          <div>
-            <label className="m-label">Max Fiyat (₺)</label>
-            <input
-              type="number"
-              value={priceTo}
-              onChange={e => setPriceTo(e.target.value)}
-              onBlur={() => push({ maxPrice: priceTo ? Number(priceTo) : undefined, page: 1 })}
-              placeholder="—"
-              className="m-field"
-              style={{ height: 38 }}
-            />
-          </div>
-
+        <div className="m-filter-panel--desktop" style={{ background: 'var(--bg-1)', border: '1px solid var(--line)', borderRadius: 12, padding: '18px 20px', marginBottom: 20, display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '12px 16px' }}>
+          <FilterFields {...filterFieldProps} />
           {/* Reset */}
           <div style={{ display: 'flex', alignItems: 'flex-end' }}>
             <button
-              onClick={() => { setPriceFrom(''); setPriceTo(''); router.push(`/ara${q ? `?q=${q}` : ''}`); }}
+              onClick={handleReset}
               className="m-btn m-btn-ghost"
               style={{ width: '100%', height: 38, fontSize: 13 }}
             >
               Filtreleri sıfırla
             </button>
+          </div>
+        </div>
+      )}
+
+      {/* Mobile filter drawer */}
+      {showFilters && (
+        <div className="m-filter-drawer--mobile">
+          {/* Overlay */}
+          <div
+            onClick={() => setShowFilters(false)}
+            style={{
+              position: 'fixed',
+              inset: 0,
+              background: 'rgba(0,0,0,0.45)',
+              zIndex: 100,
+            }}
+          />
+          {/* Drawer card */}
+          <div
+            style={{
+              position: 'fixed',
+              left: 0,
+              right: 0,
+              bottom: 0,
+              zIndex: 101,
+              background: 'var(--bg-0, #fff)',
+              borderRadius: '20px 20px 0 0',
+              maxHeight: '85vh',
+              overflowY: 'auto',
+              padding: '12px 20px 32px',
+            }}
+          >
+            {/* Handle bar */}
+            <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 16 }}>
+              <div style={{ width: 36, height: 4, borderRadius: 2, background: 'var(--line, #ddd)' }} />
+            </div>
+
+            {/* Title */}
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 20 }}>
+              <span style={{ fontWeight: 600, fontSize: 16, color: 'var(--ink)' }}>Filtreler</span>
+              <button
+                type="button"
+                onClick={() => setShowFilters(false)}
+                style={{ background: 'none', border: 'none', padding: 4, cursor: 'pointer', color: 'var(--ink-3)' }}
+              >
+                <X size={20} />
+              </button>
+            </div>
+
+            {/* Filter fields — single column */}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+              <FilterFields {...filterFieldProps} />
+            </div>
+
+            {/* Actions */}
+            <div style={{ marginTop: 24, display: 'flex', flexDirection: 'column', gap: 10 }}>
+              <button
+                onClick={() => setShowFilters(false)}
+                className="m-btn m-btn-primary"
+                style={{ width: '100%', height: 46, fontSize: 15, fontWeight: 600 }}
+              >
+                Filtreleri Uygula
+              </button>
+              <button
+                onClick={handleReset}
+                className="m-btn m-btn-ghost"
+                style={{ width: '100%', height: 42, fontSize: 14 }}
+              >
+                Sıfırla
+              </button>
+            </div>
           </div>
         </div>
       )}
@@ -313,8 +445,8 @@ function SearchPageInner() {
       {(categoryId || brandId || condition || gender || city) && (
         <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginBottom: 16 }}>
           {categoryId && (() => {
-            const cat = (categories ?? []).find((c: any) => c.id === categoryId);
-            const l1 = cat?.parentId ? (categories ?? []).find((c: any) => c.id === cat.parentId) : cat;
+            const cat = cats.find((c: any) => c.id === categoryId);
+            const l1 = cat?.parentId ? cats.find((c: any) => c.id === cat.parentId) : cat;
             const label = cat?.parentId ? `${l1?.name} › ${cat.name}` : cat?.name ?? categoryId;
             return (
               <span className="m-chip active" onClick={() => push({ categoryId: '', page: 1 })}>
@@ -324,7 +456,7 @@ function SearchPageInner() {
           })()}
           {brandId && (
             <span className="m-chip active" onClick={() => push({ brandId: '', page: 1 })}>
-              {(brands ?? []).find((b: any) => b.id === brandId)?.name ?? brandId} <X size={13} />
+              {brnds.find((b: any) => b.id === brandId)?.name ?? brandId} <X size={13} />
             </span>
           )}
           {condition && (
