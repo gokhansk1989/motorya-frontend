@@ -194,45 +194,52 @@ export default function ProfilePage() {
     <div className="m-wrap" style={{ maxWidth: 700, paddingTop: 36, paddingBottom: 60 }}>
       {/* Header summary */}
       {profile && (
-        <div style={{ display: 'flex', alignItems: 'center', gap: 18, marginBottom: 28 }}>
-          <div style={{ width: 64, height: 64, borderRadius: '50%', background: 'var(--bg-3)', border: '2px solid var(--line)', display: 'grid', placeItems: 'center', overflow: 'hidden', flexShrink: 0 }}>
-            {profile.avatarUrl
-              ? <img src={profile.avatarUrl} style={{ width: '100%', height: '100%', objectFit: 'cover' }} alt="" />
-              : <span style={{ fontFamily: 'var(--font-display)', fontSize: 22, fontWeight: 700, color: 'var(--accent)' }}>{initials}</span>}
+        <div style={{ marginBottom: 28 }}>
+          {/* Top row: avatar + name + public profile link */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: 16, marginBottom: 16 }}>
+            <div style={{ width: 68, height: 68, borderRadius: '50%', background: 'var(--bg-3)', border: '2px solid var(--line)', display: 'grid', placeItems: 'center', overflow: 'hidden', flexShrink: 0 }}>
+              {profile.avatarUrl
+                ? <img src={profile.avatarUrl} style={{ width: '100%', height: '100%', objectFit: 'cover' }} alt="" />
+                : <span style={{ fontFamily: 'var(--font-display)', fontSize: 24, fontWeight: 700, color: 'var(--accent)' }}>{initials}</span>}
+            </div>
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <h1 className="m-display" style={{ fontSize: 20, color: 'var(--ink)', margin: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{profile.displayName}</h1>
+              <p style={{ fontSize: 12, color: 'var(--ink-3)', marginTop: 3, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{profile.email}</p>
+              {profile.city && (
+                <p style={{ fontSize: 12, color: 'var(--ink-3)', marginTop: 3, display: 'flex', alignItems: 'center', gap: 4 }}>
+                  <MapPin size={11} />{profile.city}
+                </p>
+              )}
+            </div>
+            <Link href={`/kullanici/${profile.id}`} style={{ flexShrink: 0, width: 38, height: 38, borderRadius: 10, border: '1px solid var(--line)', display: 'grid', placeItems: 'center', color: 'var(--ink-3)' }} title="Herkese açık profil">
+              <Eye size={16} />
+            </Link>
           </div>
-          <div style={{ flex: 1 }}>
-            <h1 className="m-display" style={{ fontSize: 22, color: 'var(--ink)', margin: 0 }}>{profile.displayName}</h1>
-            <p style={{ fontSize: 13, color: 'var(--ink-3)', marginTop: 3 }}>{profile.email}</p>
-            {profile.city && (
-              <p style={{ fontSize: 12, color: 'var(--ink-3)', marginTop: 3, display: 'flex', alignItems: 'center', gap: 4 }}>
-                <MapPin size={11} />{profile.city}
-              </p>
-            )}
-          </div>
-          <div style={{ display: 'flex', gap: 20, textAlign: 'center', flexWrap: 'wrap' }}>
-            <div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 4, justifyContent: 'center' }}>
+
+          {/* Stats row */}
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 10 }}>
+            <div style={{ background: 'var(--bg-1)', border: '1px solid var(--line-soft)', borderRadius: 12, padding: '12px 0', textAlign: 'center' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 4, justifyContent: 'center', marginBottom: 4 }}>
                 <Star size={13} style={{ color: '#f59e0b' }} />
-                <span style={{ fontWeight: 700, fontSize: 15, fontFamily: 'var(--font-mono)', color: 'var(--ink)' }}>{profile.ratingAvg?.toFixed(1) ?? '—'}</span>
+                <span style={{ fontWeight: 700, fontSize: 16, fontFamily: 'var(--font-mono)', color: 'var(--ink)' }}>{profile.ratingAvg?.toFixed(1) ?? '—'}</span>
               </div>
-              <p style={{ fontSize: 11, color: 'var(--ink-3)', marginTop: 2 }}>{profile.ratingCount ?? 0} yorum</p>
+              <p style={{ fontSize: 11, color: 'var(--ink-3)' }}>{profile.ratingCount ?? 0} yorum</p>
             </div>
-            <div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 4, justifyContent: 'center' }}>
+            <div style={{ background: 'var(--bg-1)', border: '1px solid var(--line-soft)', borderRadius: 12, padding: '12px 0', textAlign: 'center' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 4, justifyContent: 'center', marginBottom: 4 }}>
                 <ShoppingBag size={13} style={{ color: 'var(--accent)' }} />
-                <span style={{ fontWeight: 700, fontSize: 15, fontFamily: 'var(--font-mono)', color: 'var(--ink)' }}>{profile.salesCount ?? 0}</span>
+                <span style={{ fontWeight: 700, fontSize: 16, fontFamily: 'var(--font-mono)', color: 'var(--ink)' }}>{profile.salesCount ?? 0}</span>
               </div>
-              <p style={{ fontSize: 11, color: 'var(--ink-3)', marginTop: 2 }}>satış</p>
+              <p style={{ fontSize: 11, color: 'var(--ink-3)' }}>satış</p>
             </div>
-            {(profile.trustScore ?? 0) > 0 && (
-              <div style={{ minWidth: 80 }}>
-                <span style={{ fontWeight: 700, fontSize: 15, fontFamily: 'var(--font-mono)', color: (profile.trustScore ?? 0) >= 70 ? 'var(--good)' : (profile.trustScore ?? 0) >= 40 ? '#f59e0b' : 'var(--ink-3)' }}>
-                  {profile.trustScore}
-                </span>
-                <p style={{ fontSize: 11, color: 'var(--ink-3)', marginTop: 2 }}>güven skoru</p>
-              </div>
-            )}
+            <div style={{ background: 'var(--bg-1)', border: '1px solid var(--line-soft)', borderRadius: 12, padding: '12px 0', textAlign: 'center' }}>
+              <span style={{ fontWeight: 700, fontSize: 16, fontFamily: 'var(--font-mono)', color: (profile.trustScore ?? 0) >= 70 ? 'var(--good)' : (profile.trustScore ?? 0) >= 40 ? '#f59e0b' : 'var(--ink-3)' }}>
+                {(profile.trustScore ?? 0) > 0 ? profile.trustScore : '—'}
+              </span>
+              <p style={{ fontSize: 11, color: 'var(--ink-3)', marginTop: 4 }}>güven</p>
+            </div>
           </div>
+
           {/* Rozetler */}
           {(profile.badges ?? []).length > 0 && (
             <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginTop: 12 }}>
@@ -258,20 +265,20 @@ export default function ProfilePage() {
         </div>
       )}
 
-      {/* Tab bar */}
-      <div style={{ display: 'flex', gap: 2, marginBottom: 24, borderBottom: '1px solid var(--line)' }}>
+      {/* Tab bar — horizontal scroll on mobile */}
+      <div style={{ display: 'flex', gap: 2, marginBottom: 24, borderBottom: '1px solid var(--line)', overflowX: 'auto', scrollbarWidth: 'none' }}>
         {TABS.map(t => (
           <button
             key={t.id}
             onClick={() => setTab(t.id)}
             style={{
-              display: 'flex', alignItems: 'center', gap: 6,
-              padding: '10px 16px', fontSize: 13, fontWeight: 600,
+              display: 'flex', alignItems: 'center', gap: 6, flexShrink: 0,
+              padding: '10px 14px', fontSize: 13, fontWeight: 600,
               fontFamily: 'var(--font-display)', cursor: 'pointer',
               background: 'none', border: 'none',
               borderBottom: tab === t.id ? '2px solid var(--accent)' : '2px solid transparent',
               color: tab === t.id ? 'var(--accent)' : 'var(--ink-3)',
-              marginBottom: -1, transition: 'color .12s',
+              marginBottom: -1, transition: 'color .12s', whiteSpace: 'nowrap',
             }}
           >
             {t.icon}{t.label}
@@ -401,7 +408,7 @@ export default function ProfilePage() {
               <Link href="/" style={{ display: 'inline-block', marginTop: 12, fontSize: 13, color: 'var(--accent)', textDecoration: 'none', fontWeight: 600 }}>İlanlara göz at →</Link>
             </div>
           ) : (
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 12 }}>
+            <div className="m-listing-grid">
               {favorites.map((listing: any) => (
                 <ListingCard key={listing.id} listing={{ ...listing, isFavorited: true }} />
               ))}
