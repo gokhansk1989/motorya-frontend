@@ -242,7 +242,7 @@ export default function CreateListingPage() {
   };
 
   return (
-    <div className="m-wrap" style={{ maxWidth: 720, paddingTop: 28, paddingBottom: 80 }}>
+    <div className="m-wrap" style={{ maxWidth: 720, paddingTop: 28, paddingBottom: 80, overflowX: 'hidden' }}>
       <div style={{ marginBottom: 20 }}>
         <h1 className="m-display" style={{ fontSize: 26, color: 'var(--ink)', marginBottom: 4 }}>İlan Ver</h1>
         <p style={{ color: 'var(--ink-3)', fontSize: 14 }}>Ekipmanını hızlıca sat, topluluğa katıl.</p>
@@ -254,7 +254,7 @@ export default function CreateListingPage() {
 
         {/* ── STEP 1: Kategori ── */}
         {step === 1 && (
-          <div style={card}>
+          <div className="m-form-card" style={card}>
             <p style={{ ...lbl, fontSize: 15, marginBottom: 18 }}>Hangi kategoriye uyuyor?</p>
             <input type="hidden" {...register('categoryId')} />
 
@@ -323,7 +323,7 @@ export default function CreateListingPage() {
 
         {/* ── STEP 2: Fotoğraflar ── */}
         {step === 2 && (
-          <div style={card}>
+          <div className="m-form-card" style={card}>
             <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', marginBottom: 18 }}>
               <p style={{ ...lbl, fontSize: 15, margin: 0 }}>Fotoğraflar</p>
               <span style={{ fontSize: 12, fontFamily: 'var(--font-mono)', color: imageUrls.length >= MAX_IMAGES ? 'var(--bad)' : 'var(--ink-3)' }}>
@@ -337,7 +337,7 @@ export default function CreateListingPage() {
 
             {/* Empty state — big pick buttons */}
             {imageUrls.length === 0 && !uploading && (
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginBottom: 14 }}>
+              <div className="m-form-2col" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginBottom: 14 }}>
                 <button type="button" className="photo-pick-btn" onClick={() => cameraInputRef.current?.click()}>
                   <Camera size={32} strokeWidth={1.5} />
                   <span>Fotoğraf Çek</span>
@@ -396,7 +396,7 @@ export default function CreateListingPage() {
         {step === 3 && (
           <>
             {/* Başlık + Açıklama */}
-            <div style={card}>
+            <div className="m-form-card" style={card}>
               <p style={{ ...lbl, fontSize: 15, marginBottom: 16 }}>İlan Bilgileri</p>
               <div style={{ marginBottom: 16 }}>
                 <label style={lbl}>Başlık *</label>
@@ -416,7 +416,7 @@ export default function CreateListingPage() {
             </div>
 
             {/* Marka */}
-            <div style={card}>
+            <div className="m-form-card" style={card}>
               <p style={{ ...lbl, fontSize: 15, marginBottom: 14 }}>Marka</p>
               <div style={{ position: 'relative' }}>
                 <select {...register('brandId')} style={selectSt}>
@@ -428,9 +428,9 @@ export default function CreateListingPage() {
             </div>
 
             {/* Durum, Beden, Şehir */}
-            <div style={card}>
+            <div className="m-form-card" style={card}>
               <p style={{ ...lbl, fontSize: 15, marginBottom: 16 }}>Ürün Özellikleri</p>
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14 }}>
+              <div className="m-form-2col" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14 }}>
                 <div>
                   <label style={lbl}>Durum *</label>
                   <div style={{ position: 'relative' }}>
@@ -461,9 +461,9 @@ export default function CreateListingPage() {
 
         {/* ── STEP 4: Fiyat ── */}
         {step === 4 && (
-          <div style={card}>
+          <div className="m-form-card" style={card}>
             <p style={{ ...lbl, fontSize: 15, marginBottom: 18 }}>Fiyat Belirle</p>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16, marginBottom: 4 }}>
+            <div className="m-form-2col" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16, marginBottom: 4 }}>
               <div>
                 <label style={lbl}>Fiyat (₺) *</label>
                 <input {...register('price')} type="number" style={inputSt(!!errors.price)} placeholder="0" />

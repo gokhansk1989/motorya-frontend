@@ -354,6 +354,12 @@ textarea.m-field { height: auto; padding: 12px 14px; resize: vertical; line-heig
   .wizard-step__label { display: block; font-size: 10px; color: var(--ink-3); white-space: nowrap; }
 }
 
+/* ---------- form kart + grid — mobil sıkışma düzeltmesi ---------- */
+@media (max-width: 580px) {
+  .m-form-card { padding: 16px !important; }
+  .m-form-2col { grid-template-columns: 1fr !important; }
+}
+
 /* ---------- listing grid — tek kolon mobil ---------- */
 .m-listing-grid {
   display: grid;
