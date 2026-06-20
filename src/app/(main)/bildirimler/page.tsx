@@ -4,8 +4,8 @@ import { useRouter } from 'next/navigation';
 import { api } from '@/lib/api';
 import { timeAgo } from '@/lib/utils';
 import {
-  Bell, CheckCheck, Package, Tag, MessageCircle, AlertTriangle,
-  Heart, UserPlus, ShoppingBag, Star,
+  Bell, CheckCheck, Package, Tag, MessageCircle,
+  Heart, UserPlus, Star, ArrowLeftRight, CheckCircle, XCircle,
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 
@@ -20,37 +20,42 @@ type Notif = {
 };
 
 const TYPE_META: Record<string, { icon: any; color: string }> = {
-  'listing.pending':   { icon: Package,      color: 'var(--warn)' },
-  'listing.approved':  { icon: Package,      color: 'var(--good)' },
-  'listing.rejected':  { icon: Package,      color: 'var(--bad)' },
-  'offer.received':    { icon: Tag,          color: 'var(--accent)' },
-  'offer.accepted':    { icon: Tag,          color: 'var(--good)' },
-  'offer.rejected':    { icon: Tag,          color: 'var(--bad)' },
-  'message.new':       { icon: MessageCircle, color: 'var(--accent-2)' },
-  'favorite.price_drop': { icon: Heart,     color: 'var(--accent)' },
-  'favorite.listing_sold': { icon: Heart,   color: 'var(--ink-3)' },
-  'follow.new':        { icon: UserPlus,    color: 'var(--accent-2)' },
-  'order.new':         { icon: ShoppingBag, color: 'var(--good)' },
-  'dispute.open':      { icon: AlertTriangle, color: 'var(--bad)' },
-  'review.new':        { icon: Star,        color: 'var(--warn)' },
+  'listing.pending':          { icon: Package,         color: 'var(--warn)' },
+  'listing.approved':         { icon: Package,         color: 'var(--good)' },
+  'listing.rejected':         { icon: Package,         color: 'var(--bad)' },
+  'listing.sold':             { icon: CheckCircle,     color: 'var(--good)' },
+  'offer.received':           { icon: Tag,             color: 'var(--accent)' },
+  'offer.accepted':           { icon: Tag,             color: 'var(--good)' },
+  'offer.rejected':           { icon: Tag,             color: 'var(--bad)' },
+  'offer.countered':          { icon: ArrowLeftRight,  color: 'var(--warn)' },
+  'offer.counter_accepted':   { icon: CheckCircle,     color: 'var(--good)' },
+  'offer.counter_rejected':   { icon: XCircle,         color: 'var(--bad)' },
+  'message.new':              { icon: MessageCircle,   color: 'var(--accent-2)' },
+  'favorite.price_drop':      { icon: Heart,           color: 'var(--accent)' },
+  'favorite.listing_sold':    { icon: Heart,           color: 'var(--ink-3)' },
+  'follow.new':               { icon: UserPlus,        color: 'var(--accent-2)' },
+  'review.new':               { icon: Star,            color: 'var(--warn)' },
 };
 
 function getNavTarget(n: Notif): string | null {
   const p = n.payload ?? {};
   switch (n.type) {
-    case 'listing.pending':   return '/ilanlarim';
-    case 'listing.approved':  return p.listingSlug ? `/ilan/${p.listingSlug}` : p.listingId ? `/ilan/${p.listingId}` : '/ilanlarim';
-    case 'listing.rejected':  return p.listingId ? `/ilanlarim/${p.listingId}/duzenle` : '/ilanlarim';
-    case 'offer.received':    return p.listingSlug ? `/ilan/${p.listingSlug}` : p.listingId ? `/ilan/${p.listingId}` : '/tekliflerim?tab=received';
-    case 'offer.accepted':    return p.listingSlug ? `/ilan/${p.listingSlug}` : p.listingId ? `/ilan/${p.listingId}` : '/tekliflerim?tab=sent';
-    case 'offer.rejected':    return p.listingSlug ? `/ilan/${p.listingSlug}` : p.listingId ? `/ilan/${p.listingId}` : '/tekliflerim?tab=sent';
-    case 'message.new':       return p.conversationId ? `/mesajlarim?conv=${p.conversationId}` : '/mesajlarim';
-    case 'favorite.price_drop': return p.listingSlug ? `/ilan/${p.listingSlug}` : p.listingId ? `/ilan/${p.listingId}` : null;
-    case 'favorite.listing_sold': return '/';
-    case 'follow.new':        return p.followerId ? `/kullanici/${p.followerId}` : null;
-    case 'order.new':         return p.orderId ? `/siparislerim/${p.orderId}` : '/siparislerim';
-    case 'review.new':        return '/profilim';
-    default:                  return null;
+    case 'listing.pending':         return '/ilanlarim';
+    case 'listing.approved':        return p.listingSlug ? `/ilan/${p.listingSlug}` : p.listingId ? `/ilan/${p.listingId}` : '/ilanlarim';
+    case 'listing.rejected':        return p.listingId ? `/ilanlarim/${p.listingId}/duzenle` : '/ilanlarim';
+    case 'listing.sold':            return p.listingSlug ? `/ilan/${p.listingSlug}` : '/ilanlarim';
+    case 'offer.received':          return p.listingSlug ? `/ilan/${p.listingSlug}` : p.listingId ? `/ilan/${p.listingId}` : '/tekliflerim?tab=received';
+    case 'offer.accepted':          return p.listingSlug ? `/ilan/${p.listingSlug}` : p.listingId ? `/ilan/${p.listingId}` : '/tekliflerim?tab=sent';
+    case 'offer.rejected':          return p.listingSlug ? `/ilan/${p.listingSlug}` : p.listingId ? `/ilan/${p.listingId}` : '/tekliflerim?tab=sent';
+    case 'offer.countered':         return p.listingSlug ? `/ilan/${p.listingSlug}` : p.listingId ? `/ilan/${p.listingId}` : '/tekliflerim?tab=sent';
+    case 'offer.counter_accepted':  return p.listingSlug ? `/ilan/${p.listingSlug}` : '/tekliflerim?tab=received';
+    case 'offer.counter_rejected':  return p.listingSlug ? `/ilan/${p.listingSlug}` : '/tekliflerim?tab=received';
+    case 'message.new':             return p.conversationId ? `/mesajlarim?conv=${p.conversationId}` : '/mesajlarim';
+    case 'favorite.price_drop':     return p.listingSlug ? `/ilan/${p.listingSlug}` : p.listingId ? `/ilan/${p.listingId}` : null;
+    case 'favorite.listing_sold':   return '/';
+    case 'follow.new':              return p.followerId ? `/kullanici/${p.followerId}` : null;
+    case 'review.new':              return '/profilim';
+    default:                        return null;
   }
 }
 
