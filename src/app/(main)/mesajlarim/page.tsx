@@ -217,8 +217,13 @@ export default function MessagesPage() {
           <div style={{ display: 'flex', flexDirection: 'column', background: 'var(--bg-0)' }}>
             {/* Header */}
             <div style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '12px 18px', borderBottom: '1px solid var(--line-soft)', background: 'var(--bg-1)' }}>
-              <button className="m-hide-desktop" onClick={() => setActiveId(null)} style={{ width: 36, height: 36, background: 'none', border: 0, display: 'grid', placeItems: 'center', color: 'var(--ink-2)', cursor: 'pointer', flexShrink: 0 }}>
-                <ArrowLeft size={20} />
+              <button
+                className="m-hide-desktop"
+                onClick={() => setActiveId(null)}
+                style={{ display: 'flex', alignItems: 'center', gap: 5, height: 36, padding: '0 12px 0 6px', background: 'var(--bg-2)', border: '1px solid var(--line)', borderRadius: 20, color: 'var(--ink-2)', cursor: 'pointer', flexShrink: 0, fontSize: 13, fontWeight: 600 }}
+              >
+                <ArrowLeft size={18} />
+                <span>Geri</span>
               </button>
               <Avatar user={activeConv?.otherUser ?? null} size={38} />
               <div>

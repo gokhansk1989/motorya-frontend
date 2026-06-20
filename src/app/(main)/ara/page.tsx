@@ -474,7 +474,7 @@ function SearchPageInner() {
 
       {/* Grid */}
       {isLoading ? (
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(clamp(155px, 42vw, 240px), 1fr))', gap: 12 }}>
+        <div className="m-listing-grid" style={{ gap: 12 }}>
           {Array.from({ length: 12 }).map((_, i) => (
             <div key={i} style={{ aspectRatio: '4/5', background: 'var(--bg-1)', borderRadius: 12, animation: 'pulse 1.5s ease-in-out infinite' }} />
           ))}
@@ -487,7 +487,7 @@ function SearchPageInner() {
         </div>
       ) : (
         <>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(clamp(155px, 42vw, 240px), 1fr))', gap: 12 }}>
+          <div className="m-listing-grid" style={{ gap: 12 }}>
             {items.map((item: any, i: number) => (
               <>
                 <ListingCard key={item.id} listing={item} />

@@ -114,7 +114,7 @@ function CategoryGrid({ categories, activeSlug, onSelect }: {
 
 function SkeletonGrid() {
   return (
-    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(clamp(155px, 42vw, 240px), 1fr))', gap: 'clamp(10px, 2vw, 18px)' }}>
+    <div className="m-listing-grid">
       {Array.from({ length: 8 }).map((_, i) => (
         <div key={i} className="m-card" style={{ opacity: 0.5 }}>
           <div className="m-card-media" style={{ background: 'var(--bg-2)' }} />
@@ -212,7 +212,7 @@ function HomeContent() {
           <SkeletonGrid />
         ) : data?.items?.length ? (
           <>
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(clamp(155px, 42vw, 240px), 1fr))', gap: 'clamp(10px, 2vw, 18px)' }}>
+            <div className="m-listing-grid">
               {data.items.map((l: any, i: number) => (
                 <>
                   <ListingCard key={l.id} listing={l} />
@@ -274,7 +274,7 @@ export default function HomePage() {
   return (
     <Suspense fallback={
       <div className="m-wrap" style={{ paddingTop: 48 }}>
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(clamp(155px, 42vw, 240px), 1fr))', gap: 'clamp(10px, 2vw, 18px)' }}>
+        <div className="m-listing-grid">
           {Array.from({ length: 8 }).map((_, i) => (
             <div key={i} className="m-card" style={{ opacity: 0.4 }}>
               <div className="m-card-media" style={{ background: 'var(--bg-2)' }} />

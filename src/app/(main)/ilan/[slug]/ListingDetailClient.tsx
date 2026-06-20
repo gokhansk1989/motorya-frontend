@@ -585,8 +585,8 @@ export default function ListingDetailClient() {
 
       {/* Offer Modal */}
       {showOfferModal && (
-        <div style={{ position: 'fixed', inset: 0, background: 'oklch(0 0 0 / 0.7)', zIndex: 50, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 16 }}>
-          <div className="m-surface-2" style={{ padding: 24, width: '100%', maxWidth: 440 }}>
+        <div className="m-modal-wrap">
+          <div className="m-surface-2 m-modal-sheet" style={{ padding: 24, width: '100%', maxWidth: 440 }}>
             <h3 className="m-display" style={{ fontSize: 20, margin: '0 0 20px' }}>Teklif Ver</h3>
             <label className="m-label">Teklif tutarı (₺)</label>
             <input className="m-field" type="number" value={offerAmount} onChange={e => setOfferAmount(e.target.value)} placeholder={`Max: ${formatPrice(listing.price)}`} style={{ marginBottom: 12 }} />
@@ -601,8 +601,8 @@ export default function ListingDetailClient() {
 
       {/* Counter Offer Modal */}
       {counterModal && (
-        <div style={{ position: 'fixed', inset: 0, background: 'oklch(0 0 0 / 0.7)', zIndex: 50, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 16 }}>
-          <div className="m-surface-2" style={{ padding: 24, width: '100%', maxWidth: 420 }}>
+        <div className="m-modal-wrap">
+          <div className="m-surface-2 m-modal-sheet" style={{ padding: 24, width: '100%', maxWidth: 420 }}>
             <h3 className="m-display" style={{ fontSize: 20, margin: '0 0 6px' }}>Karşı Teklif Yap</h3>
             <p style={{ fontSize: 13, color: 'var(--ink-3)', marginBottom: 18 }}>
               Alıcı teklifi: <strong>{formatPrice(counterModal.buyerAmount)} ₺</strong> · İlan fiyatı: <strong>{formatPrice(listing.price)} ₺</strong>
@@ -645,8 +645,8 @@ export default function ListingDetailClient() {
 
       {/* Report Modal */}
       {showReportModal && (
-        <div style={{ position: 'fixed', inset: 0, background: 'oklch(0 0 0 / 0.7)', zIndex: 50, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 16 }}>
-          <div className="m-surface-2" style={{ padding: 24, width: '100%', maxWidth: 440 }}>
+        <div className="m-modal-wrap">
+          <div className="m-surface-2 m-modal-sheet" style={{ padding: 24, width: '100%', maxWidth: 440 }}>
             {reportSent ? (
               <div style={{ textAlign: 'center', padding: '20px 0' }}>
                 <div style={{ width: 56, height: 56, borderRadius: '50%', background: 'color-mix(in oklch, var(--good) 12%, transparent)', display: 'grid', placeItems: 'center', margin: '0 auto 16px' }}>
