@@ -57,7 +57,7 @@ export async function generateMetadata({ params }: Props) {
     title,
     description,
     keywords: `${brand.name} ${category.name} ikinci el, ${brand.name} ${category.name.toLowerCase()} fiyatları, ikinci el ${brand.name}`,
-    openGraph: { title, description, url: `https://motorya.com.tr/kategori/${slug}/${brandSlug}` },
+    openGraph: { title, description, url: `https://motorya.com.tr/kategori/${slug}/marka/${brandSlug}` },
   };
 }
 
@@ -93,7 +93,7 @@ export default async function CategoryBrandPage({ params }: Props) {
     '@context': 'https://schema.org', '@type': 'CollectionPage',
     name: `İkinci El ${brand.name} ${category.name}`,
     description: `Motorya'da ${brand.name} ${category.name} ilanları`,
-    url: `https://motorya.com.tr/kategori/${slug}/${brandSlug}`,
+    url: `https://motorya.com.tr/kategori/${slug}/marka/${brandSlug}`,
   };
 
   return (
@@ -125,7 +125,7 @@ export default async function CategoryBrandPage({ params }: Props) {
             <p style={{ fontSize: 12, color: 'var(--ink-3)', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 8 }}>Diğer Markalar</p>
             <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
               {(brands as any[]).map((b: any) => (
-                <Link key={b.slug} href={`/kategori/${slug}/${b.slug}`}
+                <Link key={b.slug} href={`/kategori/${slug}/marka/${b.slug}`}
                   className="m-chip"
                   style={{ height: 32, fontSize: 12.5, textDecoration: 'none',
                     background: b.slug === brandSlug ? 'var(--accent)' : undefined,
