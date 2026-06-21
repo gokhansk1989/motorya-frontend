@@ -148,7 +148,6 @@ input, textarea, select { font-family: inherit; color: var(--ink); }
   /* listing detail */
   .m-detail-grid  { grid-template-columns: 1fr !important; gap: 20px !important; }
   .m-detail-sticky { position: static !important; }
-  .m-detail-right { order: -1; }   /* fiyat/başlık mobilde üste çıkar */
   .m-buy-desktop-actions { display: none !important; }
   .m-mobile-bar {
     display: flex; position: fixed; bottom: 70px; left: 0; right: 0; z-index: 90;

@@ -167,7 +167,7 @@ export default function ListingDetailClient() {
       </div>
 
       <div className="m-detail-grid">
-        {/* LEFT — mobilede order:2 (galeri + açıklama altta) */}
+        {/* LEFT — galeri + açıklama */}
         <div className="m-detail-left">
           {/* Gallery */}
           <div
@@ -264,7 +264,7 @@ export default function ListingDetailClient() {
           </div>
         </div>
 
-        {/* RIGHT — buy box (sticky, mobilede order:1 yani üstte) */}
+        {/* RIGHT — buy box (sticky) */}
         <div className="m-detail-sticky m-detail-right" style={{ position: 'sticky', top: 88 }}>
           <div className="m-surface-2" style={{ padding: '22px 24px' }}>
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
