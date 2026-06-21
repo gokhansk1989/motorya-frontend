@@ -195,7 +195,7 @@ export default async function CategoryPage({ params }: { params: Promise<{ slug:
           </div>
         ) : (
           <>
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(clamp(155px, 42vw, 240px), 1fr))', gap: 14 }}>
+            <div className="m-listing-grid" style={{ gap: 14 }}>
               {listings.map((listing, i) => (
                 <>
                   <Link key={listing.id} href={`/ilan/${listing.slug ?? listing.id}`} style={{ textDecoration: 'none' }}>
