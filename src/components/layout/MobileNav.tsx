@@ -1,7 +1,7 @@
 'use client';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
-import { Home, Search, Plus, MessageCircle, User } from 'lucide-react';
+import { Home, Search, Plus, MessageCircle, User, ListPlus } from 'lucide-react';
 import { useAuthStore } from '@/store/auth';
 import { useNotifications } from '@/hooks/useNotifications';
 
@@ -28,7 +28,7 @@ export function MobileNav() {
 
   const tabs: Tab[] = [
     { href: '/', icon: <Home size={22} />, label: 'Ana Sayfa' },
-    { href: '/ara', icon: <Search size={22} />, label: 'Ara' },
+    { href: '/tekliflerim', icon: <ListPlus size={22} />, label: 'Teklifler' },
     { href: '/mesajlarim', icon: <MessageCircle size={22} />, label: 'Mesajlar', badge: unreadCount },
     { href: user ? '/profilim' : '/giris', icon: <User size={22} />, label: 'Profil' },
   ];

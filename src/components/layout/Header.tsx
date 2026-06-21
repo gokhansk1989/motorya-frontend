@@ -1,13 +1,13 @@
 'use client';
 import Link from 'next/link';
 import { useRouter, usePathname } from 'next/navigation';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useAuthStore } from '@/store/auth';
 import { useThemeStore } from '@/store/theme';
 import {
   Search, Bell, MessageSquare, User, Plus, Zap, LogOut,
   Menu, X, Home, Tag, Newspaper, Heart, ListPlus,
-  Moon, Sun, BellPlus,
+  Moon, Sun, BellPlus, ChevronDown,
 } from 'lucide-react';
 import { useNotifications } from '@/hooks/useNotifications';
 
@@ -36,11 +36,23 @@ export function Header() {
   const [searchVal, setSearchVal] = useState('');
   const [menuOpen, setMenuOpen] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
+  const [userDropOpen, setUserDropOpen] = useState(false);
+  const userDropRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const handler = (e: MouseEvent) => {
+      if (userDropRef.current && !userDropRef.current.contains(e.target as Node)) {
+        setUserDropOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handler);
+    return () => document.removeEventListener('mousedown', handler);
+  }, []);
   const { data: notifs } = useNotifications();
   const unreadCount = notifs?.meta?.unreadCount ?? 0;
   const isDark = theme === 'dark';
 
-  useEffect(() => { setMenuOpen(false); setSearchOpen(false); }, [pathname]);
+  useEffect(() => { setMenuOpen(false); setSearchOpen(false); setUserDropOpen(false); }, [pathname]);
   useEffect(() => {
     document.body.style.overflow = menuOpen ? 'hidden' : '';
     return () => { document.body.style.overflow = ''; };
@@ -141,10 +153,65 @@ export function Header() {
                   {unreadCount > 0 && <span style={{ ...badgeDot, background: 'var(--accent-2)', color: 'var(--accent-2-ink)' }}>{unreadCount}</span>}
                 </Link>
                 <Link href="/mesajlarim" style={iconBtn}><MessageSquare size={19} /></Link>
-                <Link href="/profilim" style={iconBtn}><User size={19} /></Link>
-                <button onClick={() => { clearAuth(); router.push('/'); }} style={{ ...iconBtn, cursor: 'pointer' }}>
-                  <LogOut size={18} />
-                </button>
+
+                {/* User avatar dropdown */}
+                <div ref={userDropRef} style={{ position: 'relative' }}>
+                  <button
+                    onClick={() => setUserDropOpen(v => !v)}
+                    style={{ ...iconBtn, cursor: 'pointer', width: 'auto', padding: '0 10px', gap: 6, display: 'flex', alignItems: 'center' }}
+                    aria-expanded={userDropOpen}
+                  >
+                    {user.avatarUrl
+                      ? <img src={user.avatarUrl} style={{ width: 26, height: 26, borderRadius: '50%', objectFit: 'cover' }} alt="" />
+                      : <div style={{ width: 26, height: 26, borderRadius: '50%', background: 'var(--accent)', color: 'var(--accent-ink)', display: 'grid', placeItems: 'center', fontSize: 11, fontWeight: 700 }}>
+                          {user.displayName?.[0]?.toUpperCase()}
+                        </div>
+                    }
+                    <ChevronDown size={14} style={{ color: 'var(--ink-3)', transform: userDropOpen ? 'rotate(180deg)' : 'none', transition: 'transform .15s' }} />
+                  </button>
+
+                  {userDropOpen && (
+                    <div style={{
+                      position: 'absolute', right: 0, top: 'calc(100% + 6px)', zIndex: 60,
+                      width: 200, background: 'var(--bg-0)', border: '1px solid var(--line)',
+                      borderRadius: 12, boxShadow: '0 8px 24px -4px oklch(0 0 0 / 0.12)',
+                      overflow: 'hidden',
+                    }}>
+                      {[
+                        { href: '/profilim', label: 'Profilim', icon: <User size={15} /> },
+                        { href: '/ilanlarim', label: 'İlanlarım', icon: <Tag size={15} /> },
+                        { href: '/tekliflerim', label: 'Tekliflerim', icon: <ListPlus size={15} /> },
+                        { href: '/favoriler', label: 'Favorilerim', icon: <Heart size={15} /> },
+                        { href: '/fiyat-alarm', label: 'Fiyat Alarmları', icon: <BellPlus size={15} /> },
+                      ].map(({ href, label, icon }) => (
+                        <Link key={href} href={href} style={{
+                          display: 'flex', alignItems: 'center', gap: 10,
+                          padding: '11px 16px', color: 'var(--ink-2)', fontSize: 13.5,
+                          textDecoration: 'none', fontWeight: 500,
+                        }}
+                          onMouseEnter={e => (e.currentTarget.style.background = 'var(--bg-1)')}
+                          onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}
+                        >
+                          <span style={{ color: 'var(--ink-3)' }}>{icon}</span>
+                          {label}
+                        </Link>
+                      ))}
+                      <div style={{ height: 1, background: 'var(--line-soft)', margin: '4px 0' }} />
+                      <button
+                        onClick={() => { clearAuth(); router.push('/'); }}
+                        style={{
+                          display: 'flex', alignItems: 'center', gap: 10, width: '100%',
+                          padding: '11px 16px', color: 'var(--error, #e53e3e)', fontSize: 13.5,
+                          background: 'none', border: 0, cursor: 'pointer', fontWeight: 500,
+                        }}
+                        onMouseEnter={e => (e.currentTarget.style.background = 'var(--bg-1)')}
+                        onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}
+                      >
+                        <LogOut size={15} /> Çıkış Yap
+                      </button>
+                    </div>
+                  )}
+                </div>
               </>
             ) : (
               <Link href="/giris" className="m-btn m-btn-ghost" style={{ height: 40, padding: '0 16px', fontSize: 14, textDecoration: 'none' }}>Giriş Yap</Link>
