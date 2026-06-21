@@ -48,15 +48,17 @@ interface Props { params: Promise<{ slug: string; brand: string }> }
 export async function generateMetadata({ params }: Props) {
   const { slug, brand: brandSlug } = await params;
   const [category, brands] = await Promise.all([getCategory(slug), getBrandsForCategory(slug)]);
-  if (!category) return {};
+  if (!category?.name) return {};
   const brand = (brands as any[]).find((b: any) => b.slug === brandSlug);
-  if (!brand) return {};
-  const title = `İkinci El ${brand.name} ${category.name} | Motorya`;
-  const description = `Motorya'da ${brand.name} ${category.name} ilanları. İkinci el ${brand.name} ${category.name.toLowerCase()} al sat, güvenli ödeme ve kargo ile.`;
+  if (!brand?.name) return {};
+  const catName = category.name as string;
+  const brandName = brand.name as string;
+  const title = `İkinci El ${brandName} ${catName} | Motorya`;
+  const description = `Motorya'da ${brandName} ${catName} ilanları. İkinci el ${brandName} ${catName.toLowerCase()} al sat, güvenli ödeme ve kargo ile.`;
   return {
     title,
     description,
-    keywords: `${brand.name} ${category.name} ikinci el, ${brand.name} ${category.name.toLowerCase()} fiyatları, ikinci el ${brand.name}`,
+    keywords: `${brandName} ${catName} ikinci el, ${brandName} ${catName.toLowerCase()} fiyatları, ikinci el ${brandName}`,
     openGraph: { title, description, url: `https://motorya.com.tr/kategori/${slug}/marka/${brandSlug}` },
   };
 }
@@ -71,7 +73,7 @@ export async function generateStaticParams() {
     await Promise.all(
       categories.filter(c => !c.parentId).map(async cat => {
         const brands: any[] = await getBrandsForCategory(cat.slug);
-        brands.forEach(b => params.push({ slug: cat.slug, brand: b.slug }));
+        brands.filter((b: any) => b?.slug).forEach((b: any) => params.push({ slug: cat.slug, brand: b.slug }));
       })
     );
     return params.slice(0, 200);
