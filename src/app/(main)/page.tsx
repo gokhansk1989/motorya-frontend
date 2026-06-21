@@ -39,8 +39,7 @@ function HeroSection({ onSearch }: { onSearch: (q: string) => void }) {
             <span className="m-kicker">Türkiye'nin motosiklet ekipman pazarı</span>
           </div>
           <h1 className="m-display" style={{ fontSize: 'clamp(36px, 5vw, 60px)', margin: 0 }}>
-            Garajındaki ekipman,<br />birinin{' '}
-            <span className="m-accent">bir sonraki</span> yolculuğu.
+            Garajındaki ekipman,<br /><span className="m-accent">başkasının</span> sıradaki yolculuğu.
           </h1>
           <p style={{ fontSize: 'clamp(14px, 3vw, 17px)', maxWidth: 480, marginTop: 18, lineHeight: 1.55, color: 'var(--ink-2)' }}>
             İkinci el kask, mont, egzoz ve parça al-sat. Güvenli ödeme, kargo takibi
