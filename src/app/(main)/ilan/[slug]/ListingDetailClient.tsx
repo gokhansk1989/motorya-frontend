@@ -269,12 +269,19 @@ export default function ListingDetailClient() {
           <div className="m-surface-2" style={{ padding: '22px 24px' }}>
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
               <ConditionPill condition={listing.condition} />
-              <button
-                onClick={() => user && toggleFavorite.mutate(id)}
-                style={{ width: 38, height: 38, borderRadius: 8, background: 'var(--bg-1)', border: '1px solid var(--line)', display: 'grid', placeItems: 'center', color: favd ? 'var(--accent)' : 'var(--ink-2)' }}
-              >
-                <Heart size={18} fill={favd ? 'currentColor' : 'none'} />
-              </button>
+              <div>
+                <button
+                  onClick={() => user && toggleFavorite.mutate(id)}
+                  style={{ width: 38, height: 38, borderRadius: 8, background: 'var(--bg-1)', border: '1px solid var(--line)', display: 'grid', placeItems: 'center', color: favd ? 'var(--accent)' : 'var(--ink-2)' }}
+                >
+                  <Heart size={18} fill={favd ? 'currentColor' : 'none'} />
+                </button>
+                {!favd && user && (
+                  <p style={{ fontSize: 11, color: 'var(--ink-3)', textAlign: 'center', marginTop: 4 }}>
+                    Favorile → fiyat düşünce bildir
+                  </p>
+                )}
+              </div>
             </div>
 
             <h1 className="m-display" style={{ fontSize: 24, margin: '0 0 14px', lineHeight: 1.2 }}>{listing.title}</h1>

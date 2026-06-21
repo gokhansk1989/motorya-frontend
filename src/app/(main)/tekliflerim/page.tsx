@@ -1,10 +1,44 @@
 'use client';
 import { useState, useEffect } from 'react';
 import { useMyOffers, useReceivedOffers, useRespondOffer, useWithdrawOffer, useCounterOffer, useRespondCounterOffer } from '@/hooks/useOffers';
+import { useCreateReview } from '@/hooks/useReviews';
 import { formatPrice, timeAgo } from '@/lib/utils';
 import { Tag, UserCheck, Plus } from 'lucide-react';
 import Link from 'next/link';
 import toast from 'react-hot-toast';
+
+function ReviewModal({ open, onClose, onSubmit, isPending, title }: {
+  open: boolean; onClose: () => void;
+  onSubmit: (rating: number, comment: string) => void;
+  isPending: boolean; title: string;
+}) {
+  const [rating, setRating] = useState(0);
+  const [comment, setComment] = useState('');
+  if (!open) return null;
+  return (
+    <div style={{ position: 'fixed', inset: 0, background: 'oklch(0 0 0 / 0.7)', zIndex: 50, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 16 }}>
+      <div className="m-surface-2" style={{ padding: 24, width: '100%', maxWidth: 400, borderRadius: 'var(--radius-l)' }}>
+        <h3 className="m-display" style={{ fontSize: 18, margin: '0 0 16px' }}>{title}</h3>
+        <div style={{ display: 'flex', gap: 6, marginBottom: 16 }}>
+          {[1,2,3,4,5].map(s => (
+            <button key={s} onClick={() => setRating(s)} style={{ fontSize: 28, background: 'none', border: 0, cursor: 'pointer', opacity: s <= rating ? 1 : 0.3, transition: 'opacity .1s' }}>⭐</button>
+          ))}
+        </div>
+        <label className="m-label">Yorum (opsiyonel)</label>
+        <textarea value={comment} onChange={e => setComment(e.target.value)} rows={3}
+          placeholder="Deneyimini anlat..."
+          style={{ width: '100%', marginTop: 6, marginBottom: 16, padding: '10px 12px', background: 'var(--bg-1)', border: '1px solid var(--line)', borderRadius: 8, color: 'var(--ink)', fontSize: 14, resize: 'vertical' }} />
+        <div style={{ display: 'flex', gap: 10 }}>
+          <button className="m-btn m-btn-ghost" style={{ flex: 1 }} onClick={onClose}>Vazgeç</button>
+          <button className="m-btn m-btn-primary" style={{ flex: 1 }} disabled={rating === 0 || isPending}
+            onClick={() => onSubmit(rating, comment)}>
+            Gönder
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
 
 const STATUS_MAP: Record<string, { label: string; bg: string; color: string }> = {
   PENDING:         { label: 'Bekliyor',         bg: 'color-mix(in oklch, #f59e0b 14%, transparent)',     color: '#f59e0b' },
@@ -38,6 +72,8 @@ function SentOffers() {
   const { data: offers, isLoading } = useMyOffers();
   const withdraw = useWithdrawOffer();
   const respondCounter = useRespondCounterOffer();
+  const createReview = useCreateReview();
+  const [reviewState, setReviewState] = useState<Record<string, { open: boolean; done: boolean }>>({});
 
   if (isLoading) return <Skeleton />;
   if (!offers?.length) return (
@@ -113,12 +149,44 @@ function SentOffers() {
                 Satıcıya Mesaj Yaz →
               </Link>
             )}
+            {o.status === 'ACCEPTED' && (
+              reviewState[o.id]?.done ? (
+                <span style={{ fontSize: 12, color: 'var(--ink-3)', fontFamily: 'var(--font-display)' }}>Yorum yapıldı ✓</span>
+              ) : (
+                <button
+                  style={{ fontSize: 12, color: 'var(--accent)', background: 'none', border: 0, cursor: 'pointer', fontFamily: 'var(--font-display)', fontWeight: 700 }}
+                  onClick={() => setReviewState(s => ({ ...s, [o.id]: { open: true, done: false } }))}
+                >
+                  ⭐ Satıcıya Yorum Yap
+                </button>
+              )
+            )}
             {o.status === 'REJECTED' && o.listing?.status === 'ACTIVE' && (
               <Link href={`/ilan/${(o.listing as any)?.slug ?? o.listing?.id}`} style={{ fontSize: 12, color: 'var(--accent)', textDecoration: 'none', fontFamily: 'var(--font-display)', fontWeight: 600, display: 'flex', alignItems: 'center', gap: 3 }}>
                 <Plus size={12} /> Yeni Teklif Ver
               </Link>
             )}
           </div>
+          {reviewState[o.id]?.open && (
+            <ReviewModal
+              open
+              title="Satıcıya Yorum Yap"
+              isPending={createReview.isPending}
+              onClose={() => setReviewState(s => ({ ...s, [o.id]: { open: false, done: false } }))}
+              onSubmit={(rating, comment) => {
+                createReview.mutate(
+                  { listingId: o.listing?.id, rating, comment: comment || undefined },
+                  {
+                    onSuccess: () => {
+                      toast.success('Yorumunuz gönderildi!');
+                      setReviewState(s => ({ ...s, [o.id]: { open: false, done: true } }));
+                    },
+                    onError: (e: any) => toast.error(e.response?.data?.message || 'Hata oluştu'),
+                  }
+                );
+              }}
+            />
+          )}
         </div>
       ))}
     </div>
@@ -129,6 +197,8 @@ function ReceivedOffers() {
   const { data: offers, isLoading } = useReceivedOffers();
   const respond = useRespondOffer();
   const counter = useCounterOffer();
+  const createReview = useCreateReview();
+  const [reviewState, setReviewState] = useState<Record<string, { open: boolean; done: boolean }>>({});
   const [counterModal, setCounterModal] = useState<{ offerId: string; buyerAmount: number; listingPrice: number } | null>(null);
   const [counterAmount, setCounterAmount] = useState('');
   const [counterMessage, setCounterMessage] = useState('');
@@ -184,6 +254,18 @@ function ReceivedOffers() {
             </div>
             <div className="m-offer-actions">
               <StatusBadge status={o.status} />
+              {o.status === 'ACCEPTED' && (
+                reviewState[o.id]?.done ? (
+                  <span style={{ fontSize: 12, color: 'var(--ink-3)', fontFamily: 'var(--font-display)' }}>Yorum yapıldı ✓</span>
+                ) : (
+                  <button
+                    style={{ fontSize: 12, color: 'var(--accent)', background: 'none', border: 0, cursor: 'pointer', fontFamily: 'var(--font-display)', fontWeight: 700 }}
+                    onClick={() => setReviewState(s => ({ ...s, [o.id]: { open: true, done: false } }))}
+                  >
+                    ⭐ Alıcıya Yorum Yap
+                  </button>
+                )
+              )}
               {o.status === 'PENDING' && (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
                   <div style={{ display: 'flex', gap: 6 }}>
@@ -213,6 +295,26 @@ function ReceivedOffers() {
                 </div>
               )}
             </div>
+            {reviewState[o.id]?.open && (
+              <ReviewModal
+                open
+                title="Alıcıya Yorum Yap"
+                isPending={createReview.isPending}
+                onClose={() => setReviewState(s => ({ ...s, [o.id]: { open: false, done: false } }))}
+                onSubmit={(rating, comment) => {
+                  createReview.mutate(
+                    { listingId: o.listing?.id, rating, comment: comment || undefined, buyerId: o.buyer?.id },
+                    {
+                      onSuccess: () => {
+                        toast.success('Yorumunuz gönderildi!');
+                        setReviewState(s => ({ ...s, [o.id]: { open: false, done: true } }));
+                      },
+                      onError: (e: any) => toast.error(e.response?.data?.message || 'Hata oluştu'),
+                    }
+                  );
+                }}
+              />
+            )}
           </div>
         ))}
       </div>
