@@ -89,7 +89,7 @@ function CategoryGrid({ categories, activeSlug, onSelect }: {
                   padding: '14px 10px', background: active ? 'color-mix(in oklch, var(--accent) 12%, var(--bg-1))' : 'var(--bg-1)',
                   border: '1px solid ' + (active ? 'var(--accent)' : 'var(--line-soft)'),
                   borderRadius: 14, cursor: 'pointer', transition: 'all .15s ease' }}>
-                <CategoryIcon slug={c.slug} size={36} alt={c.name} />
+                <CategoryIcon slug={c.slug} size={52} alt={c.name} />
                 <span style={{ fontSize: 12, fontWeight: 600, color: active ? 'var(--accent)' : 'var(--ink-2)', textAlign: 'center', lineHeight: 1.2 }}>{c.name}</span>
               </button>
               <Link href={`/kategori/${c.slug}`}
