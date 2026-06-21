@@ -24,7 +24,7 @@ function EmailGonderildiContent() {
   };
 
   return (
-    <div style={{ minHeight: '100vh', display: 'grid', placeItems: 'center', padding: 20 }}>
+    <div style={{ minHeight: '100dvh', display: 'grid', placeItems: 'center', padding: 20 }}>
       <div style={{ textAlign: 'center', maxWidth: 440 }}>
         <div style={{ width: 72, height: 72, borderRadius: '50%', background: 'color-mix(in oklch, var(--accent) 12%, transparent)', display: 'grid', placeItems: 'center', margin: '0 auto 24px' }}>
           <Mail size={36} style={{ color: 'var(--accent)' }} />

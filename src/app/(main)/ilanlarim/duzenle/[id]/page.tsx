@@ -170,7 +170,7 @@ export default function EditListingPage() {
   }
 
   return (
-    <div className="m-wrap" style={{ maxWidth: 720, paddingTop: 36, paddingBottom: 60 }}>
+    <div className="m-wrap" style={{ maxWidth: 720, paddingTop: 36, paddingBottom: 90 }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 28 }}>
         <Link href="/ilanlarim" style={{ width: 36, height: 36, display: 'grid', placeItems: 'center', background: 'var(--bg-1)', border: '1px solid var(--line)', borderRadius: 8, color: 'var(--ink-2)', textDecoration: 'none' }}>
           <ArrowLeft size={17} />

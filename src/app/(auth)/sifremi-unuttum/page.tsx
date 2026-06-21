@@ -24,7 +24,7 @@ export default function SifremiUnuttumPage() {
   };
 
   return (
-    <div style={{ minHeight: '100vh', display: 'grid', placeItems: 'center', padding: 20 }}>
+    <div style={{ minHeight: '100dvh', display: 'grid', placeItems: 'center', padding: 20 }}>
       <div style={{ width: '100%', maxWidth: 400 }}>
         <Link href="/giris" style={{ display: 'inline-flex', alignItems: 'center', gap: 6, color: 'var(--ink-3)', textDecoration: 'none', fontSize: 14, marginBottom: 28 }}>
           <ArrowLeft size={16} />Giriş sayfasına dön
