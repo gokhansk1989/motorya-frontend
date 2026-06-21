@@ -9,14 +9,7 @@ import { api } from '@/lib/api';
 import { Search, Flame, ChevronRight, Bell } from 'lucide-react';
 import Link from 'next/link';
 import { useAuthStore } from '@/store/auth';
-
-const CATEGORY_ICONS: Record<string, string> = {
-  kask: '🪖', mont: '🧥', pantolon: '👖', eldiven: '🧤',
-  'bot-cizme': '👢', koruma: '🛡️', 'mx-off-road': '🏁',
-  canta: '🎒', aksesuar: '⚙️', 'yedek-parca': '🔧',
-  bakim: '🛢️', motosiklet: '🏍️', 'casual-giyim': '👕',
-  'surucu-aksesuarlari': '🦺',
-};
+import { CategoryIcon } from '@/components/icons/CategoryIcons';
 
 const SORT_OPTIONS = [
   { value: 'newest', label: 'En yeni' },
@@ -89,7 +82,6 @@ function CategoryGrid({ categories, activeSlug, onSelect }: {
       <div className="m-category-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: 10 }}>
         {categories.map(c => {
           const active = activeSlug === c.slug;
-          const icon = CATEGORY_ICONS[c.slug] ?? '📦';
           return (
             <div key={c.id} style={{ position: 'relative' }}>
               <button onClick={() => onSelect(active ? '' : c.slug)}
@@ -97,7 +89,7 @@ function CategoryGrid({ categories, activeSlug, onSelect }: {
                   padding: '14px 10px', background: active ? 'color-mix(in oklch, var(--accent) 12%, var(--bg-1))' : 'var(--bg-1)',
                   border: '1px solid ' + (active ? 'var(--accent)' : 'var(--line-soft)'),
                   borderRadius: 14, cursor: 'pointer', transition: 'all .15s ease' }}>
-                <span style={{ fontSize: 24 }}>{icon}</span>
+                <CategoryIcon slug={c.slug} size={36} alt={c.name} />
                 <span style={{ fontSize: 12, fontWeight: 600, color: active ? 'var(--accent)' : 'var(--ink-2)', textAlign: 'center', lineHeight: 1.2 }}>{c.name}</span>
               </button>
               <Link href={`/kategori/${c.slug}`}
@@ -260,7 +252,7 @@ function HomeContent() {
             {l1Categories.map(c => (
               <Link key={c.slug} href={`/kategori/${c.slug}`} className="m-chip"
                 style={{ height: 34, fontSize: 13, textDecoration: 'none' }}>
-                {CATEGORY_ICONS[c.slug] ?? '📦'} {c.name}
+                <CategoryIcon slug={c.slug} size={16} alt={c.name} /> {c.name}
               </Link>
             ))}
           </div>

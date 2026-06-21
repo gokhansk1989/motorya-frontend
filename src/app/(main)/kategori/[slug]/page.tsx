@@ -14,12 +14,18 @@ const CITIES = [
 ];
 
 const CATEGORY_ICONS: Record<string, string> = {
-  kask: '🪖', mont: '🧥', pantolon: '👖', eldiven: '🧤',
-  'bot-cizme': '👢', koruma: '🛡️', 'mx-off-road': '🏍️',
-  canta: '🎒', aksesuar: '⚙️', 'yedek-parca': '🔧',
-  bakim: '🛢️', motosiklet: '🏍️', 'casual-giyim': '👕',
-  'surucu-aksesuarlari': '🦺',
+  kask: '/icons/kask.png', mont: '/icons/mont.png', pantolon: '/icons/pantolon.png',
+  eldiven: '/icons/eldiven.png', 'bot-cizme': '/icons/bot-cizme.png',
+  koruma: '/icons/koruma.png', canta: '/icons/canta.png',
+  aksesuar: '/icons/moto-aksesuar.png', 'motosiklet-aksesuarlari': '/icons/moto-aksesuar.png',
+  'surucu-aksesuarlari': '/icons/surucu-aksesuari.png',
+  'yedek-parca': '/icons/yedek-parca.png', bakim: '/icons/bakim.png',
 };
+
+function CatIcon({ slug, size = 28 }: { slug: string; size?: number }) {
+  const src = CATEGORY_ICONS[slug] ?? '/icons/moto-aksesuar.png';
+  return <img src={src} alt="" width={size} height={size} style={{ objectFit: 'contain' }} />;
+}
 
 interface Category {
   id: string; name: string; slug: string; parentId: string | null;
@@ -148,7 +154,7 @@ export default async function CategoryPage({ params }: { params: Promise<{ slug:
         {/* Header */}
         <div style={{ padding: '16px 0 24px' }}>
           <h1 className="m-display" style={{ fontSize: 28, margin: '0 0 8px' }}>
-            {icon} İkinci El {category.name}
+            <CatIcon slug={slug} size={36} /> İkinci El {category.name}
           </h1>
           <p style={{ color: 'var(--ink-3)', fontSize: 14.5, margin: 0 }}>
             {total > 0 ? `${total.toLocaleString('tr-TR')} ilan bulundu` : 'Bu kategoride ilan bekleniyor'}
@@ -162,7 +168,7 @@ export default async function CategoryPage({ params }: { params: Promise<{ slug:
               style={{ height: 34, fontSize: 13, textDecoration: 'none',
                 background: cat.slug === slug ? 'var(--accent)' : undefined,
                 color: cat.slug === slug ? '#fff' : undefined }}>
-              {CATEGORY_ICONS[cat.slug] ?? '📦'} {cat.name}
+              <CatIcon slug={cat.slug} size={16} /> {cat.name}
             </Link>
           ))}
         </div>
@@ -205,8 +211,8 @@ export default async function CategoryPage({ params }: { params: Promise<{ slug:
                           <img src={listing.images[0].url} alt={listing.title}
                             style={{ width: '100%', height: '100%', objectFit: 'cover' }} loading="lazy" />
                         ) : (
-                          <div style={{ width: '100%', height: '100%', display: 'grid', placeItems: 'center', color: 'var(--ink-3)', fontSize: 28 }}>
-                            {icon}
+                          <div style={{ width: '100%', height: '100%', display: 'grid', placeItems: 'center' }}>
+                            <CatIcon slug={slug} size={48} />
                           </div>
                         )}
                       </div>

@@ -5,9 +5,17 @@ import { ChevronRight } from 'lucide-react';
 const API = process.env.NEXT_PUBLIC_API_URL || 'https://motorya.com.tr/api-backend';
 
 const CATEGORY_ICONS: Record<string, string> = {
-  kask: '🪖', mont: '🧥', pantolon: '👖', eldiven: '🧤',
-  'bot-cizme': '👢', koruma: '🛡️', aksesuar: '⚙️', 'yedek-parca': '🔧',
+  kask: '/icons/kask.png', mont: '/icons/mont.png', pantolon: '/icons/pantolon.png',
+  eldiven: '/icons/eldiven.png', 'bot-cizme': '/icons/bot-cizme.png',
+  koruma: '/icons/koruma.png', canta: '/icons/canta.png',
+  aksesuar: '/icons/moto-aksesuar.png', 'surucu-aksesuarlari': '/icons/surucu-aksesuari.png',
+  'yedek-parca': '/icons/yedek-parca.png', bakim: '/icons/bakim.png',
 };
+
+function CatIcon({ slug, size = 36 }: { slug: string; size?: number }) {
+  const src = CATEGORY_ICONS[slug] ?? '/icons/moto-aksesuar.png';
+  return <img src={src} alt="" width={size} height={size} style={{ objectFit: 'contain' }} />;
+}
 
 async function getCategory(slug: string) {
   try {
@@ -89,7 +97,6 @@ export default async function CategoryBrandPage({ params }: Props) {
 
   const data = await getListings(slug, brandSlug);
   const listings: any[] = data.items ?? [];
-  const icon = CATEGORY_ICONS[slug] ?? '📦';
 
   const jsonLd = {
     '@context': 'https://schema.org', '@type': 'CollectionPage',
@@ -114,7 +121,7 @@ export default async function CategoryBrandPage({ params }: Props) {
         {/* Header */}
         <div style={{ marginBottom: 32 }}>
           <h1 className="m-display" style={{ fontSize: 'clamp(24px, 4vw, 36px)', margin: '0 0 8px' }}>
-            {icon} İkinci El {brand.name} {category.name}
+            <CatIcon slug={slug} size={36} /> İkinci El {brand.name} {category.name}
           </h1>
           <p style={{ color: 'var(--ink-3)', fontSize: 14.5 }}>
             {listings.length > 0 ? `${data.total ?? listings.length} ilan bulundu` : 'Bu kombinasyon için ilan bekleniyor'}
@@ -160,7 +167,7 @@ export default async function CategoryBrandPage({ params }: Props) {
                         <img src={listing.images[0].url} alt={listing.title}
                           style={{ width: '100%', height: '100%', objectFit: 'cover' }} loading="lazy" />
                       ) : (
-                        <div style={{ width: '100%', height: '100%', display: 'grid', placeItems: 'center', color: 'var(--ink-3)', fontSize: 32 }}>{icon}</div>
+                        <div style={{ width: '100%', height: '100%', display: 'grid', placeItems: 'center' }}><CatIcon slug={slug} size={48} /></div>
                       )}
                     </div>
                     <div style={{ padding: '12px 14px' }}>
