@@ -245,18 +245,6 @@ function HomeContent() {
           </div>
         )}
 
-        {/* Hızlı kategori linkleri — SEO iç linkleme */}
-        <div style={{ marginTop: 56, paddingTop: 32, borderTop: '1px solid var(--line-soft)' }}>
-          <h2 style={{ fontSize: 15, fontWeight: 700, color: 'var(--ink-2)', marginBottom: 16 }}>Kategorileri Keşfet</h2>
-          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 10 }}>
-            {l1Categories.map(c => (
-              <Link key={c.slug} href={`/kategori/${c.slug}`} className="m-chip"
-                style={{ height: 34, fontSize: 13, textDecoration: 'none' }}>
-                <CategoryIcon slug={c.slug} size={16} alt={c.name} /> {c.name}
-              </Link>
-            ))}
-          </div>
-        </div>
       </div>
     </div>
   );
