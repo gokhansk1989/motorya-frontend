@@ -1,5 +1,3 @@
-import Image from 'next/image';
-
 interface CategoryIconProps {
   slug: string;
   size?: number;
@@ -32,7 +30,8 @@ const ICON_MAP: Record<string, string> = {
 export function CategoryIcon({ slug, size = 48, alt = '', className, style }: CategoryIconProps) {
   const src = ICON_MAP[slug] ?? '/icons/moto-aksesuar.png';
   return (
-    <Image
+    // eslint-disable-next-line @next/next/no-img-element
+    <img
       src={src}
       alt={alt}
       width={size}
