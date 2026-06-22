@@ -502,7 +502,7 @@ export default function ProfilePage() {
             <div style={{ textAlign: 'center', padding: '40px 0', color: 'var(--ink-3)' }}>
               <Heart size={32} style={{ opacity: 0.2, marginBottom: 10 }} />
               <p style={{ fontSize: 14 }}>Henüz favori eklemediniz</p>
-              <Link href="/" style={{ display: 'inline-block', marginTop: 12, fontSize: 13, color: 'var(--accent)', textDecoration: 'none', fontWeight: 600 }}>İlanlara göz at →</Link>
+              <Link href="/" style={{ display: 'inline-block', marginTop: 12, fontSize: 13, color: 'var(--accent)', textDecoration: 'none', fontWeight: 600 }}>İlanlara göz at</Link>
             </div>
           ) : (
             <>

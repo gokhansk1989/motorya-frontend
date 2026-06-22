@@ -146,7 +146,7 @@ function SentOffers() {
             )}
             {o.status === 'ACCEPTED' && (
               <Link href={`/mesajlarim`} style={{ fontSize: 12, color: 'var(--good)', textDecoration: 'none', fontFamily: 'var(--font-display)', fontWeight: 600 }}>
-                Satıcıya Mesaj Yaz →
+                Satıcıya Mesaj Yaz
               </Link>
             )}
             {o.status === 'ACCEPTED' && (

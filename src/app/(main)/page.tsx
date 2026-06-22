@@ -91,10 +91,6 @@ function CategoryGrid({ categories, activeSlug, onSelect }: {
                 <CategoryIcon slug={c.slug} size={52} alt={c.name} />
                 <span style={{ fontSize: 12, fontWeight: 600, color: active ? 'var(--accent)' : 'var(--ink-2)', textAlign: 'center', lineHeight: 1.2 }}>{c.name}</span>
               </button>
-              <Link href={`/kategori/${c.slug}`}
-                style={{ position: 'absolute', bottom: 4, right: 6, fontSize: 10, color: 'var(--ink-3)', textDecoration: 'none' }}>
-                →
-              </Link>
             </div>
           );
         })}
@@ -221,7 +217,7 @@ function HomeContent() {
               <div style={{ textAlign: 'center', marginTop: 24 }}>
                 <Link href={`/kategori/${categorySlug}`} className="m-btn"
                   style={{ textDecoration: 'none', display: 'inline-flex' }}>
-                  {l1Categories.find(c => c.slug === categorySlug)?.name} ilanlarının tümünü gör →
+                  {l1Categories.find(c => c.slug === categorySlug)?.name} ilanlarının tümünü gör
                 </Link>
               </div>
             )}

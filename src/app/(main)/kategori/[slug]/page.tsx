@@ -248,7 +248,7 @@ export default async function CategoryPage({ params }: { params: Promise<{ slug:
             <div style={{ textAlign: 'center', marginTop: 24 }}>
               <Link href={`/ara?categoryId=${catData.category.id}`} className="m-btn"
                 style={{ textDecoration: 'none', display: 'inline-flex' }}>
-                Tümünü Gör & Filtrele →
+                Tümünü Gör & Filtrele
               </Link>
             </div>
           </>

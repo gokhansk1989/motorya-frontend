@@ -451,7 +451,7 @@ export default function ListingDetailClient() {
                   Satıcıyla mesajlaşarak buluşma yeri ve ödeme şeklini belirleyin. Ödemeyi teslimatta yapın — önceden yabancılara para göndermeyin.
                 </div>
                 <Link href="/sss" style={{ fontSize: 11, color: 'var(--accent)', textDecoration: 'none', fontWeight: 600, marginTop: 4, display: 'inline-block' }}>
-                  Sıkça sorulan sorular →
+                  Sıkça sorulan sorular
                 </Link>
               </div>
             </div>

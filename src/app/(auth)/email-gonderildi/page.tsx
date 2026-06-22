@@ -43,7 +43,7 @@ function EmailGonderildiContent() {
             {resending ? 'Gönderiliyor…' : 'Tekrar Gönder'}
           </button>
           <Link href="/giris" style={{ fontSize: 13, color: 'var(--ink-3)', textDecoration: 'none' }}>
-            Giriş sayfasına dön →
+            Giriş sayfasına dön
           </Link>
         </div>
       </div>
