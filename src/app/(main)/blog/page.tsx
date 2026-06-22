@@ -5,6 +5,55 @@ import { useQuery } from '@tanstack/react-query';
 import { api } from '@/lib/api';
 import { Clock, ChevronRight, ArrowRight } from 'lucide-react';
 
+const COVER_IMAGES: Record<string, string> = {
+  'motosiklet-botu-rehberi':
+    'https://images.unsplash.com/photo-1609710228159-0fa9bd7c0827?auto=format&fit=crop&w=800&q=80',
+  'motosiklet-ekipman-bakimi-uzun-omur':
+    'https://images.unsplash.com/photo-1558618666-fcd25c85cd64?auto=format&fit=crop&w=800&q=80',
+  'motosiklet-fotograflari-iyi-cekmek':
+    'https://images.unsplash.com/photo-1502920917128-1aa500764cbd?auto=format&fit=crop&w=800&q=80',
+  'alpinestars-vs-dainese-koruyucu-giysi':
+    'https://images.unsplash.com/photo-1571068316344-75bc76f77890?auto=format&fit=crop&w=800&q=80',
+  'motosiklet-suruse-baslangi%C3%A7-rehberi':
+    'https://images.unsplash.com/photo-1449426468159-d96dbf08f19f?auto=format&fit=crop&w=800&q=80',
+  'motosiklet-suruse-baslangic-rehberi':
+    'https://images.unsplash.com/photo-1449426468159-d96dbf08f19f?auto=format&fit=crop&w=800&q=80',
+  'motosiklet-depolama-ve-kis-uykusu':
+    'https://images.unsplash.com/photo-1526139334526-f591a54b477c?auto=format&fit=crop&w=800&q=80',
+  'ikinci-el-motosiklet-nasil-alinir':
+    'https://images.unsplash.com/photo-1568772585407-9361f9bf3a87?auto=format&fit=crop&w=800&q=80',
+  'motosiklet-zinciri-bakimi-ve-yagi':
+    'https://images.unsplash.com/photo-1547549082-6bc09f2049ae?auto=format&fit=crop&w=800&q=80',
+  'kis-motosiklet-surmenin-ipuclari':
+    'https://images.unsplash.com/photo-1518639192441-8fce0a366e2e?auto=format&fit=crop&w=800&q=80',
+  'shoei-vs-agv-vs-arai-kask-karsilastirmasi':
+    'https://images.unsplash.com/photo-1558618047-3c8c76ca7d13?auto=format&fit=crop&w=800&q=80',
+  'motosiklet-lastigi-secimi-ve-bakimi':
+    'https://images.unsplash.com/photo-1591637333184-19aa84b3e01f?auto=format&fit=crop&w=800&q=80',
+  'ikinci-el-kask-alirken-dikkat-edilmesi-gerekenler':
+    'https://images.unsplash.com/photo-1573435567032-ff5669b13abb?auto=format&fit=crop&w=800&q=80',
+  'motosiklet-montu-secimi-rehberi':
+    'https://images.unsplash.com/photo-1581093458791-9d15482b8b53?auto=format&fit=crop&w=800&q=80',
+  'akrapovic-egzoz-rehberi':
+    'https://images.unsplash.com/photo-1609710228159-0fa9bd7c0827?auto=format&fit=crop&w=800&q=80',
+  'motosiklet-eldiveni-secimi':
+    'https://images.unsplash.com/photo-1434682772747-f16d3ea162c3?auto=format&fit=crop&w=800&q=80',
+  'motosiklet-koruyucu-ekipman-rehberi':
+    'https://images.unsplash.com/photo-1571068316344-75bc76f77890?auto=format&fit=crop&w=800&q=80',
+  'motosiklet-bakim-ipuclari':
+    'https://images.unsplash.com/photo-1558618666-fcd25c85cd64?auto=format&fit=crop&w=800&q=80',
+  'turkiyede-motosiklet-turizmi':
+    'https://images.unsplash.com/photo-1476820865390-c52aeebb9891?auto=format&fit=crop&w=800&q=80',
+  'agv-kask-modelleri-karsilastirma':
+    'https://images.unsplash.com/photo-1558618047-3c8c76ca7d13?auto=format&fit=crop&w=800&q=80',
+  'motosiklet-sigortasi-ve-ekipman-korumasi':
+    'https://images.unsplash.com/photo-1568772585407-9361f9bf3a87?auto=format&fit=crop&w=800&q=80',
+};
+
+function getCover(post: any): string | null {
+  return post.coverImage || COVER_IMAGES[post.slug] || null;
+}
+
 function useBlogPosts(category?: string) {
   return useQuery({
     queryKey: ['blog', category],
@@ -66,10 +115,14 @@ export default function BlogPage() {
                 background: 'var(--bg-1)', border: '1px solid var(--line-soft)', borderRadius: 'var(--radius-l)',
               }}>
                 <div className="m-blog-hero-media" style={{
-                  background: 'repeating-linear-gradient(45deg, var(--bg-2) 0 20px, var(--bg-3) 20px 40px)',
+                  background: 'var(--bg-2)',
                   display: 'grid', placeItems: 'center', minHeight: 280, fontSize: 80, position: 'relative',
+                  overflow: 'hidden',
                 }}>
-                  {featured.coverEmoji}
+                  {getCover(featured)
+                    ? <img src={getCover(featured)!} alt={featured.title} style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover' }} />
+                    : featured.coverEmoji}
+
                   <div style={{ position: 'absolute', top: 16, left: 16 }}>
                     <span className="m-badge solid">ÖNE ÇIKAN</span>
                   </div>
@@ -100,10 +153,13 @@ export default function BlogPage() {
               <Link key={post.slug} href={`/blog/${post.slug}`} style={{ textDecoration: 'none' }}>
                 <article className="m-card" style={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
                   <div style={{
-                    background: 'repeating-linear-gradient(45deg, var(--bg-2) 0 12px, var(--bg-3) 12px 24px)',
+                    background: 'var(--bg-2)',
                     display: 'grid', placeItems: 'center', height: 140, fontSize: 52, flexShrink: 0,
+                    overflow: 'hidden', position: 'relative',
                   }}>
-                    {post.coverEmoji}
+                    {getCover(post)
+                      ? <img src={getCover(post)!} alt={post.title} style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover' }} />
+                      : post.coverEmoji}
                   </div>
                   <div className="m-card-body" style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
                     <div style={{ marginBottom: 10 }}>
