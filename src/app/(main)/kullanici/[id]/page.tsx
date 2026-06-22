@@ -67,7 +67,7 @@ export default function PublicProfilePage({ params }: { params: Promise<{ id: st
   if (isError || !user) {
     return (
       <div className="m-wrap" style={{ maxWidth: 760, paddingTop: 60, textAlign: 'center' }}>
-        <p style={{ fontSize: 48, marginBottom: 12 }}>🔍</p>
+        <img src="/icons/no-results.png" alt="" width={100} height={100} style={{ objectFit: 'contain', marginBottom: 12, opacity: 0.85 }} />
         <h2 className="m-display" style={{ fontSize: 22, marginBottom: 8 }}>Kullanıcı bulunamadı</h2>
         <p style={{ color: 'var(--ink-3)', marginBottom: 24 }}>Bu kullanıcı mevcut değil veya hesabı kapatılmış.</p>
         <Link href="/" className="m-btn m-btn-primary" style={{ textDecoration: 'none', display: 'inline-flex', height: 44, padding: '0 24px' }}>
@@ -281,7 +281,7 @@ export default function PublicProfilePage({ params }: { params: Promise<{ id: st
                 <div style={{ height: 110, background: 'var(--bg-2)', overflow: 'hidden', position: 'relative' }}>
                   {l.images?.[0]
                     ? <img src={l.images[0].url} style={{ width: '100%', height: '100%', objectFit: 'cover' }} alt="" />
-                    : <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 24 }}>📦</div>
+                    : <img src="/icons/empty-listing.png" alt="" style={{ width: '100%', height: '100%', objectFit: 'contain', padding: 8 }} />
                   }
                   {listingTab === 'SOLD' && (
                     <div style={{ position: 'absolute', inset: 0, background: 'oklch(0 0 0 / 0.45)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
@@ -376,7 +376,7 @@ export default function PublicProfilePage({ params }: { params: Promise<{ id: st
                     <div style={{ width: 32, height: 32, borderRadius: 6, overflow: 'hidden', flexShrink: 0, background: 'var(--bg-3)' }}>
                       {r.order.listing.images?.[0]
                         ? <img src={r.order.listing.images[0].url} style={{ width: '100%', height: '100%', objectFit: 'cover' }} alt="" />
-                        : <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 14 }}>📦</div>
+                        : <img src="/icons/empty-listing.png" alt="" style={{ width: '100%', height: '100%', objectFit: 'contain', padding: 4 }} />
                       }
                     </div>
                     <p style={{ fontSize: 12, color: 'var(--ink-3)', flex: 1, overflow: 'hidden', whiteSpace: 'nowrap', textOverflow: 'ellipsis' }}>

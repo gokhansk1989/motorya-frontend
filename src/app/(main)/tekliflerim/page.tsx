@@ -63,7 +63,7 @@ function ListingThumb({ listing }: { listing: any }) {
     <div style={{ width: 64, height: 64, borderRadius: 10, background: 'var(--bg-2)', overflow: 'hidden', flexShrink: 0, border: '1px solid var(--line)' }}>
       {listing?.images?.[0]
         ? <img src={listing.images[0].url} style={{ width: '100%', height: '100%', objectFit: 'cover' }} alt="" />
-        : <div style={{ width: '100%', height: '100%', display: 'grid', placeItems: 'center', fontSize: 22 }}>📦</div>}
+        : <img src="/icons/empty-listing.png" alt="" style={{ width: '100%', height: '100%', objectFit: 'contain', padding: 8 }} />}
     </div>
   );
 }
