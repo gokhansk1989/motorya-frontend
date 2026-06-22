@@ -3,11 +3,10 @@ import Link from 'next/link';
 import { useRouter, usePathname } from 'next/navigation';
 import { useState, useEffect, useRef } from 'react';
 import { useAuthStore } from '@/store/auth';
-import { useThemeStore } from '@/store/theme';
 import {
   Search, Bell, MessageSquare, User, Plus, Zap, LogOut,
   Menu, X, Home, Tag, Newspaper, Heart, ListPlus,
-  Moon, Sun, BellPlus, ChevronDown,
+  BellPlus, ChevronDown,
 } from 'lucide-react';
 import { useNotifications } from '@/hooks/useNotifications';
 
@@ -32,7 +31,6 @@ export function Header() {
   const router = useRouter();
   const pathname = usePathname();
   const { user, logout: clearAuth } = useAuthStore();
-  const { theme, toggle: toggleTheme } = useThemeStore();
   const [searchVal, setSearchVal] = useState('');
   const [menuOpen, setMenuOpen] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
@@ -50,8 +48,6 @@ export function Header() {
   }, []);
   const { data: notifs } = useNotifications();
   const unreadCount = notifs?.meta?.unreadCount ?? 0;
-  const isDark = theme === 'dark';
-
   useEffect(() => { setMenuOpen(false); setSearchOpen(false); setUserDropOpen(false); }, [pathname]);
   useEffect(() => {
     document.body.style.overflow = menuOpen ? 'hidden' : '';
@@ -137,15 +133,6 @@ export function Header() {
 
           {/* Desktop sağ */}
           <div className="desktop-actions" style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-            {/* Dark mode toggle */}
-            <button
-              onClick={toggleTheme}
-              title={isDark ? 'Açık temaya geç' : 'Koyu temaya geç'}
-              style={{ ...iconBtn, cursor: 'pointer' }}
-            >
-              {isDark ? <Sun size={18} /> : <Moon size={18} />}
-            </button>
-
             {user ? (
               <>
                 <Link href="/bildirimler" style={iconBtn}>
@@ -223,9 +210,6 @@ export function Header() {
 
           {/* Mobil sağ */}
           <div className="mobile-actions" style={{ display: 'none', alignItems: 'center', gap: 6 }}>
-            <button onClick={toggleTheme} style={{ ...iconBtn, cursor: 'pointer', border: 'none', background: 'none' }} aria-label="Tema">
-              {isDark ? <Sun size={20} /> : <Moon size={20} />}
-            </button>
             <button onClick={() => setSearchOpen(v => !v)} style={{ ...iconBtn, cursor: 'pointer', border: 'none', background: 'none' }} aria-label="Ara">
               {searchOpen ? <X size={21} /> : <Search size={21} />}
             </button>
