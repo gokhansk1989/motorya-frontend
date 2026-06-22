@@ -234,7 +234,7 @@ function HomeContent() {
           </>
         ) : (
           <div style={{ textAlign: 'center', padding: '96px 0', color: 'var(--ink-3)' }}>
-            <img src="/icons/no-results.png" alt="" width={120} height={120} style={{ objectFit: 'contain', marginBottom: 16, opacity: 0.85 }} />
+            <img src="/icons/no-results.png" alt="" width={120} height={120} style={{ objectFit: 'contain', marginBottom: 16, opacity: 0.85, display: 'block', margin: '0 auto 16px' }} />
             <p className="m-display" style={{ fontSize: 20, color: 'var(--ink-2)', margin: '0 0 8px' }}>Uygun ilan bulunamadı</p>
             <p style={{ fontSize: 14 }}>Farklı bir kategori dene</p>
           </div>
