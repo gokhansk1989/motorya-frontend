@@ -2,6 +2,7 @@
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useSavedSearches, useCreateSavedSearch } from '@/hooks/useSavedSearches';
+import { useMyFavorites } from '@/hooks/useListings';
 import { useAuthStore } from '@/store/auth';
 import { api } from '@/lib/api';
 import { BellPlus, Bell, Trash2, Loader2, ExternalLink } from 'lucide-react';
@@ -41,6 +42,8 @@ export default function FiyatAlarmPage() {
 
   const [showForm, setShowForm] = useState(false);
   const [form, setForm] = useState({ label: '', search: '', categoryId: '', maxPrice: '', minPrice: '', city: '' });
+  const { data: favoritesData } = useMyFavorites();
+  const favorites: any[] = Array.isArray(favoritesData) ? favoritesData : (favoritesData?.items ?? []);
 
   const { data: categories = [] } = useQuery<{ id: string; name: string; slug: string; parentId: string | null }[]>({
     queryKey: ['categories'],
@@ -161,22 +164,29 @@ export default function FiyatAlarmPage() {
         </div>
       ) : alarms.length === 0 ? (
         <div style={{ textAlign: 'center', padding: '64px 0', color: 'var(--ink-3)' }}>
-          <Bell size={48} style={{ margin: '0 auto 16px', opacity: 0.2 }} />
-          <p style={{ fontSize: 16, marginBottom: 8 }}>Henüz alarm kurulmamış</p>
-          <p style={{ fontSize: 14 }}>Arama kriterlerine uyan ilan çıkınca seni haberdar edelim.</p>
+          <div style={{ width: 72, height: 72, borderRadius: '50%', background: 'color-mix(in oklch, var(--accent) 10%, var(--bg-2))', display: 'grid', placeItems: 'center', margin: '0 auto 20px' }}>
+            <Bell size={32} style={{ color: 'var(--accent)', opacity: 0.6 }} />
+          </div>
+          <p style={{ fontSize: 18, fontWeight: 700, color: 'var(--ink-2)', marginBottom: 8, fontFamily: 'var(--font-display)' }}>Henüz alarm kurulmamış</p>
+          <p style={{ fontSize: 14, lineHeight: 1.6, maxWidth: 320, margin: '0 auto 28px' }}>Kriterlere uyan ilan yayınlandığında anında haber verelim — fiyat, marka, kategori veya şehir bazlı alarm kurabilirsin.</p>
+          <button onClick={() => setShowForm(true)} className="m-btn m-btn-primary" style={{ display: 'inline-flex', alignItems: 'center', gap: 8 }}>
+            <BellPlus size={16} /> İlk Alarmını Kur
+          </button>
         </div>
       ) : (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
           {alarms.map(alarm => (
             <div key={alarm.id} className="m-surface"
-              style={{ padding: '16px 20px', borderRadius: 'var(--radius)', display: 'flex', alignItems: 'center', gap: 14 }}>
+              style={{ padding: '16px 20px', borderRadius: 'var(--radius)', display: 'flex', alignItems: 'center', gap: 14, position: 'relative' }}
+              onMouseEnter={e => { const btn = e.currentTarget.querySelector<HTMLElement>('[data-hover-btn]'); if (btn) btn.style.opacity = '1'; }}
+              onMouseLeave={e => { const btn = e.currentTarget.querySelector<HTMLElement>('[data-hover-btn]'); if (btn) btn.style.opacity = '0'; }}
+            >
               <div style={{ width: 40, height: 40, borderRadius: 10, background: 'color-mix(in oklch, var(--accent) 15%, var(--bg-2))', display: 'grid', placeItems: 'center', flexShrink: 0 }}>
                 <Bell size={18} style={{ color: 'var(--accent)' }} />
               </div>
-              <Link href={savedSearchToUrl(alarm)} style={{ flex: 1, minWidth: 0, textDecoration: 'none', color: 'inherit' }}>
+              <div style={{ flex: 1, minWidth: 0 }}>
                 <p style={{ fontWeight: 600, fontSize: 14, margin: '0 0 4px', color: 'var(--ink)', display: 'flex', alignItems: 'center', gap: 6 }}>
                   {alarm.label}
-                  <ExternalLink size={12} style={{ opacity: 0.4, flexShrink: 0 }} />
                 </p>
                 <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
                   {alarm.search && <span className="m-chip" style={{ height: 22, fontSize: 11 }}>🔍 {alarm.search}</span>}
@@ -185,15 +195,23 @@ export default function FiyatAlarmPage() {
                   {alarm.city && <span className="m-chip" style={{ height: 22, fontSize: 11 }}>📍 {alarm.city}</span>}
                   {alarm.condition && <span className="m-chip" style={{ height: 22, fontSize: 11 }}>{CONDITION_LABELS[alarm.condition]}</span>}
                 </div>
-                {alarm.lastNotifiedAt && (
+                {alarm.lastNotifiedAt ? (
                   <p style={{ fontSize: 11, color: 'var(--ink-3)', marginTop: 4 }}>
-                    Son bildirim: {timeAgo(alarm.lastNotifiedAt)}
+                    Son eşleşme: {timeAgo(alarm.lastNotifiedAt)}
                   </p>
+                ) : (
+                  <p style={{ fontSize: 11, color: 'var(--ink-3)', marginTop: 4 }}>Henüz eşleşme yok</p>
                 )}
+              </div>
+              <Link
+                href={savedSearchToUrl(alarm)}
+                data-hover-btn
+                style={{ position: 'absolute', right: 52, top: '50%', transform: 'translateY(-50%)', opacity: 0, transition: 'opacity .15s', height: 30, padding: '0 12px', borderRadius: 8, border: '1px solid var(--accent)', background: 'color-mix(in oklch, var(--accent) 10%, transparent)', color: 'var(--accent)', fontSize: 12, fontWeight: 600, textDecoration: 'none', display: 'flex', alignItems: 'center', gap: 5, whiteSpace: 'nowrap' }}
+              >
+                <ExternalLink size={12} /> Sonuçları Gör
               </Link>
               <button onClick={() => deleteMut.mutate(alarm.id)} disabled={deleteMut.isPending}
-                style={{ padding: 8, background: 'none', border: 'none', color: 'var(--ink-3)', cursor: 'pointer', borderRadius: 8 }}
-                className="hover:text-red-400">
+                style={{ padding: 8, background: 'none', border: 'none', color: 'var(--ink-3)', cursor: 'pointer', borderRadius: 8, flexShrink: 0 }}>
                 <Trash2 size={16} />
               </button>
             </div>
@@ -202,21 +220,63 @@ export default function FiyatAlarmPage() {
       )}
 
       {/* Hızlı alarm kur — kategori linkleri */}
-      {!showForm && alarms.length === 0 && (
-        <div style={{ marginTop: 48 }}>
-          <p style={{ fontSize: 13, color: 'var(--ink-3)', marginBottom: 14 }}>Popüler kategori alarmları:</p>
+      {!showForm && alarms.length === 0 && l1Categories.length > 0 && (
+        <div style={{ marginTop: 40, padding: '24px', background: 'var(--bg-1)', border: '1px solid var(--line)', borderRadius: 16 }}>
+          <p style={{ fontSize: 14, fontWeight: 700, color: 'var(--ink)', marginBottom: 6, fontFamily: 'var(--font-display)' }}>Popüler kategori alarmları</p>
+          <p style={{ fontSize: 13, color: 'var(--ink-3)', marginBottom: 16 }}>Bir kategoriye tıkla, alarm otomatik pre-fill edilsin.</p>
           <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
             {l1Categories.slice(0, 8).map(c => (
               <button key={c.id} onClick={() => {
                 setForm(f => ({ ...f, label: `${c.name} Alarmı`, categoryId: c.id }));
                 setShowForm(true);
-              }} className="m-chip" style={{ height: 34, fontSize: 13 }}>
-                + {c.name} alarmı
+              }} style={{ height: 36, padding: '0 16px', borderRadius: 20, border: '1px solid var(--line)', background: 'var(--bg-0)', color: 'var(--ink-2)', fontSize: 13, cursor: 'pointer', fontWeight: 500, transition: 'border-color .12s, color .12s' }}
+                onMouseEnter={e => { e.currentTarget.style.borderColor = 'var(--accent)'; e.currentTarget.style.color = 'var(--accent)'; }}
+                onMouseLeave={e => { e.currentTarget.style.borderColor = 'var(--line)'; e.currentTarget.style.color = 'var(--ink-2)'; }}
+              >
+                + {c.name}
               </button>
             ))}
           </div>
         </div>
       )}
+
+      {/* Favorilerden hızlı alarm kur */}
+      {favorites.length > 0 && (
+        <div style={{ marginTop: 40 }}>
+          <p style={{ fontSize: 15, fontWeight: 700, color: 'var(--ink)', marginBottom: 6, fontFamily: 'var(--font-display)', display: 'flex', alignItems: 'center', gap: 8 }}>
+            <Bell size={16} style={{ color: 'var(--accent)' }} /> Favorilediğin ilanlar için alarm kur
+          </p>
+          <p style={{ fontSize: 13, color: 'var(--ink-3)', marginBottom: 16 }}>Takip ettiğin ilanların fiyatı değişince haberdar ol.</p>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+            {favorites.slice(0, 6).map((listing: any) => {
+              const thumb = listing.images?.[0]?.url ?? listing.imageUrl;
+              return (
+                <div key={listing.id} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '10px 16px', background: 'var(--bg-1)', border: '1px solid var(--line)', borderRadius: 12 }}>
+                  <div style={{ width: 40, height: 40, borderRadius: 8, background: 'var(--bg-2)', flexShrink: 0, overflow: 'hidden', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                    {thumb ? <img src={thumb} style={{ width: '100%', height: '100%', objectFit: 'cover' }} alt="" /> : <Bell size={16} style={{ color: 'var(--ink-3)' }} />}
+                  </div>
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <p style={{ fontSize: 13.5, fontWeight: 600, color: 'var(--ink)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{listing.title}</p>
+                    <p style={{ fontSize: 12, color: 'var(--ink-3)', fontFamily: 'var(--font-mono)' }}>{Number(listing.price).toLocaleString('tr-TR')} ₺</p>
+                  </div>
+                  <button
+                    onClick={() => {
+                      setForm(f => ({ ...f, label: listing.title ?? 'İlan Alarmı', search: listing.title ?? '' }));
+                      setShowForm(true);
+                      window.scrollTo({ top: 0, behavior: 'smooth' });
+                    }}
+                    style={{ flexShrink: 0, height: 32, padding: '0 12px', borderRadius: 8, border: '1px solid var(--accent)', background: 'color-mix(in oklch, var(--accent) 10%, transparent)', color: 'var(--accent)', fontSize: 12, fontWeight: 700, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 4 }}
+                  >
+                    <Bell size={12} /> Takip et
+                  </button>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
+      <style>{`@keyframes pulse { 0%,100% { opacity:1 } 50% { opacity:.5 } }`}</style>
     </div>
   );
 }

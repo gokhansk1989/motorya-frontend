@@ -10,6 +10,7 @@ import {
   User, Lock, Star, MapPin, Eye, EyeOff, ShoppingBag,
   ChevronDown, Palmtree, Heart, ChevronRight, Users, UserX,
   UserMinus, Camera, Bell, BellOff, Settings, Layers, Search, Trash2, ExternalLink,
+  Package, BellPlus, PenSquare,
 } from 'lucide-react';
 
 function savedSearchToUrl(s: { search?: string; categoryId?: string; city?: string; condition?: string; minPrice?: string; maxPrice?: string }) {
@@ -23,7 +24,8 @@ function savedSearchToUrl(s: { search?: string; categoryId?: string; city?: stri
   const qs = p.toString();
   return `/ara${qs ? `?${qs}` : ''}`;
 }
-import { useSavedSearches, useDeleteSavedSearch } from '@/hooks/useSavedSearches';
+import { useSavedSearches, useDeleteSavedSearch, useCreateSavedSearch } from '@/hooks/useSavedSearches';
+import type { CreateSavedSearchInput } from '@/hooks/useSavedSearches';
 import { useMyFavorites } from '@/hooks/useListings';
 import { ListingCard } from '@/components/listings/ListingCard';
 import { usePushNotifications } from '@/hooks/usePushNotifications';
@@ -56,14 +58,32 @@ const passwordSchema = z.object({
 
 type ProfileData = z.infer<typeof profileSchema>;
 type PasswordData = z.infer<typeof passwordSchema>;
-type Tab = 'profil' | 'favoriler' | 'sosyal' | 'ayarlar';
+type Tab = 'profil' | 'ilanlarim' | 'favoriler' | 'alarmlar' | 'sosyal' | 'ayarlar';
 
 const TABS: { id: Tab; label: string; icon: React.ReactNode }[] = [
   { id: 'profil', label: 'Profil', icon: <User size={15} /> },
+  { id: 'ilanlarim', label: 'İlanlarım', icon: <Package size={15} /> },
   { id: 'favoriler', label: 'Favoriler', icon: <Heart size={15} /> },
+  { id: 'alarmlar', label: 'Fiyat Alarmları', icon: <Bell size={15} /> },
   { id: 'sosyal', label: 'Sosyal', icon: <Users size={15} /> },
   { id: 'ayarlar', label: 'Ayarlar', icon: <Settings size={15} /> },
 ];
+
+const CONDITION_LABELS: Record<string, string> = {
+  NEW: 'Sıfır', LIKE_NEW: 'Sıfır Gibi', GOOD: 'İyi', FAIR: 'Makul', POOR: 'Kullanılmış',
+};
+
+function alarmToUrl(s: { search?: string; categoryId?: string; city?: string; condition?: string; minPrice?: string; maxPrice?: string }) {
+  const p = new URLSearchParams();
+  if (s.search) p.set('q', s.search);
+  if (s.categoryId) p.set('categoryId', s.categoryId);
+  if (s.city) p.set('city', s.city);
+  if (s.condition) p.set('condition', s.condition);
+  if (s.minPrice) p.set('minPrice', s.minPrice);
+  if (s.maxPrice) p.set('maxPrice', s.maxPrice);
+  const qs = p.toString();
+  return `/ara${qs ? `?${qs}` : ''}`;
+}
 
 const card: React.CSSProperties = {
   background: 'var(--bg-1)', border: '1px solid var(--line)',
@@ -89,6 +109,22 @@ export default function ProfilePage() {
   const [avatarUploading, setAvatarUploading] = useState(false);
   const { data: savedSearches } = useSavedSearches();
   const deleteSavedSearch = useDeleteSavedSearch();
+  const createAlarm = useCreateSavedSearch();
+  const [alarmShowForm, setAlarmShowForm] = useState(false);
+  const [alarmForm, setAlarmForm] = useState<{ label: string; search: string; categoryId: string; minPrice: string; maxPrice: string; city: string }>({ label: '', search: '', categoryId: '', minPrice: '', maxPrice: '', city: '' });
+
+  const { data: myListingsData, isLoading: listingsLoading } = useQuery({
+    queryKey: ['my-listings-tab'],
+    queryFn: () => api.get('/listings', { params: { userId: user?.id, limit: 50 } }).then(r => r.data.items ?? r.data),
+    enabled: !!user?.id,
+  });
+  const myListings: any[] = Array.isArray(myListingsData) ? myListingsData : [];
+
+  const { data: categoriesData = [] } = useQuery<{ id: string; name: string; parentId: string | null }[]>({
+    queryKey: ['categories'],
+    queryFn: () => api.get('/listings/meta/categories').then(r => r.data),
+  });
+  const l1Categories = (categoriesData as any[]).filter((c: any) => !c.parentId);
 
   const { data: profile } = useQuery({
     queryKey: ['my-profile'],
@@ -282,9 +318,19 @@ export default function ProfilePage() {
             }}
           >
             {t.icon}{t.label}
+            {t.id === 'ilanlarim' && myListings.length > 0 && (
+              <span style={{ fontSize: 11, fontFamily: 'var(--font-mono)', background: 'color-mix(in oklch, var(--accent) 12%, transparent)', color: 'var(--accent)', padding: '1px 6px', borderRadius: 20, fontWeight: 700 }}>
+                {myListings.length}
+              </span>
+            )}
             {t.id === 'favoriler' && favoritesTotal > 0 && (
               <span style={{ fontSize: 11, fontFamily: 'var(--font-mono)', background: 'color-mix(in oklch, var(--accent) 12%, transparent)', color: 'var(--accent)', padding: '1px 6px', borderRadius: 20, fontWeight: 700 }}>
                 {favoritesTotal}
+              </span>
+            )}
+            {t.id === 'alarmlar' && savedSearches && savedSearches.length > 0 && (
+              <span style={{ fontSize: 11, fontFamily: 'var(--font-mono)', background: 'color-mix(in oklch, var(--accent) 12%, transparent)', color: 'var(--accent)', padding: '1px 6px', borderRadius: 20, fontWeight: 700 }}>
+                {savedSearches.length}
               </span>
             )}
             {t.id === 'sosyal' && following.length > 0 && (
@@ -392,6 +438,57 @@ export default function ProfilePage() {
         </>
       )}
 
+      {/* ── TAB: İlanlarım ──────────────────────────── */}
+      {tab === 'ilanlarim' && (
+        <div style={card}>
+          <p style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 15, fontWeight: 700, color: 'var(--ink)', fontFamily: 'var(--font-display)', marginBottom: 16 }}>
+            <Package size={16} style={{ color: 'var(--accent)' }} />İlanlarım
+            {myListings.length > 0 && (
+              <span style={{ fontSize: 12, fontFamily: 'var(--font-mono)', background: 'color-mix(in oklch, var(--accent) 12%, transparent)', color: 'var(--accent)', padding: '2px 8px', borderRadius: 20, fontWeight: 700 }}>{myListings.length}</span>
+            )}
+          </p>
+          {listingsLoading ? (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+              {[1, 2, 3].map(i => <div key={i} style={{ height: 64, background: 'var(--bg-2)', borderRadius: 10, opacity: 0.6 }} />)}
+            </div>
+          ) : myListings.length === 0 ? (
+            <div style={{ textAlign: 'center', padding: '40px 0', color: 'var(--ink-3)' }}>
+              <Package size={32} style={{ opacity: 0.2, marginBottom: 10 }} />
+              <p style={{ fontSize: 14, marginBottom: 16 }}>Henüz ilan vermediniz</p>
+              <Link href="/ilan-ver" className="m-btn m-btn-primary" style={{ textDecoration: 'none', display: 'inline-flex', alignItems: 'center', gap: 6, fontSize: 13 }}>
+                <Package size={14} /> İlan Ver
+              </Link>
+            </div>
+          ) : (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 0 }}>
+              {myListings.map((listing: any) => {
+                const statusColor = listing.status === 'ACTIVE' ? 'var(--good)' : listing.status === 'SOLD' ? 'var(--ink-3)' : '#f59e0b';
+                const statusBg = listing.status === 'ACTIVE' ? 'color-mix(in oklch, var(--good) 12%, transparent)' : listing.status === 'SOLD' ? 'var(--bg-3)' : 'color-mix(in oklch, #f59e0b 15%, transparent)';
+                const statusLabel = listing.status === 'ACTIVE' ? 'Aktif' : listing.status === 'SOLD' ? 'Satıldı' : 'Beklemede';
+                const thumb = listing.images?.[0]?.url ?? listing.imageUrl;
+                return (
+                  <div key={listing.id} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '10px 0', borderBottom: '1px solid var(--line-soft)' }}>
+                    <div style={{ width: 40, height: 40, borderRadius: 8, background: 'var(--bg-2)', flexShrink: 0, overflow: 'hidden', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                      {thumb ? <img src={thumb} style={{ width: '100%', height: '100%', objectFit: 'cover' }} alt="" /> : <Package size={16} style={{ color: 'var(--ink-3)' }} />}
+                    </div>
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <p style={{ fontSize: 13.5, fontWeight: 600, color: 'var(--ink)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', marginBottom: 3 }}>{listing.title}</p>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                        <span style={{ fontSize: 12.5, fontWeight: 700, fontFamily: 'var(--font-mono)', color: 'var(--ink)' }}>{Number(listing.price).toLocaleString('tr-TR')} ₺</span>
+                        <span style={{ fontSize: 11, fontWeight: 700, fontFamily: 'var(--font-mono)', padding: '2px 7px', borderRadius: 20, background: statusBg, color: statusColor }}>{statusLabel}</span>
+                      </div>
+                    </div>
+                    <Link href={`/ilanlarim/duzenle/${listing.id}`} style={{ flexShrink: 0, height: 32, padding: '0 12px', borderRadius: 8, border: '1px solid var(--line)', background: 'var(--bg-0)', color: 'var(--ink-3)', fontSize: 12, textDecoration: 'none', display: 'flex', alignItems: 'center', gap: 4, fontWeight: 600 }}>
+                      <PenSquare size={12} /> Düzenle
+                    </Link>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </div>
+      )}
+
       {/* ── TAB: Favoriler ──────────────────────────── */}
       {tab === 'favoriler' && (
         <div style={card}>
@@ -408,9 +505,165 @@ export default function ProfilePage() {
               <Link href="/" style={{ display: 'inline-block', marginTop: 12, fontSize: 13, color: 'var(--accent)', textDecoration: 'none', fontWeight: 600 }}>İlanlara göz at →</Link>
             </div>
           ) : (
-            <div className="m-listing-grid">
-              {favorites.map((listing: any) => (
-                <ListingCard key={listing.id} listing={{ ...listing, isFavorited: true }} />
+            <>
+              <div className="m-listing-grid">
+                {favorites.map((listing: any) => (
+                  <div key={listing.id} style={{ position: 'relative' }}>
+                    <ListingCard listing={{ ...listing, isFavorited: true }} />
+                    <button
+                      onClick={() => {
+                        setAlarmForm(f => ({ ...f, label: listing.title ?? 'İlan Alarmı', search: listing.title ?? '' }));
+                        setAlarmShowForm(true);
+                        setTab('alarmlar');
+                      }}
+                      title="Fiyat değişince haber ver"
+                      style={{ position: 'absolute', bottom: 10, right: 10, height: 28, padding: '0 10px', borderRadius: 8, border: '1px solid var(--line)', background: 'var(--bg-0)', color: 'var(--ink-3)', fontSize: 11, fontWeight: 600, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 4, backdropFilter: 'blur(4px)' }}
+                    >
+                      <Bell size={11} /> Fiyat Alarmı Kur
+                    </button>
+                  </div>
+                ))}
+              </div>
+            </>
+          )}
+        </div>
+      )}
+
+      {/* ── TAB: Fiyat Alarmları ─────────────────────── */}
+      {tab === 'alarmlar' && (
+        <div style={card}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16, flexWrap: 'wrap', gap: 10 }}>
+            <p style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 15, fontWeight: 700, color: 'var(--ink)', fontFamily: 'var(--font-display)', margin: 0 }}>
+              <Bell size={16} style={{ color: 'var(--accent)' }} />Fiyat Alarmlarım
+              {savedSearches && savedSearches.length > 0 && (
+                <span style={{ fontSize: 12, fontFamily: 'var(--font-mono)', background: 'color-mix(in oklch, var(--accent) 12%, transparent)', color: 'var(--accent)', padding: '2px 8px', borderRadius: 20, fontWeight: 700 }}>{savedSearches.length}</span>
+              )}
+            </p>
+            <button
+              onClick={() => setAlarmShowForm(s => !s)}
+              style={{ height: 34, padding: '0 14px', borderRadius: 8, border: '1px solid var(--accent)', background: 'color-mix(in oklch, var(--accent) 10%, transparent)', color: 'var(--accent)', fontSize: 13, fontWeight: 700, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 6 }}
+            >
+              <BellPlus size={14} /> Alarm Kur
+            </button>
+          </div>
+
+          {/* Alarm form */}
+          {alarmShowForm && (
+            <div style={{ background: 'var(--bg-0)', border: '1px solid var(--line)', borderRadius: 12, padding: 20, marginBottom: 20 }}>
+              <p style={{ fontSize: 14, fontWeight: 700, color: 'var(--ink)', marginBottom: 16, fontFamily: 'var(--font-display)' }}>Yeni Alarm</p>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(180px, 1fr))', gap: 12 }}>
+                <div style={{ gridColumn: '1/-1' }}>
+                  <label style={lbl}>Alarm Adı *</label>
+                  <input value={alarmForm.label} onChange={e => setAlarmForm(f => ({ ...f, label: e.target.value }))}
+                    placeholder="örn. Shoei kask 2000₺ altı" style={inp()} />
+                </div>
+                <div>
+                  <label style={lbl}>Anahtar Kelime</label>
+                  <input value={alarmForm.search} onChange={e => setAlarmForm(f => ({ ...f, search: e.target.value }))}
+                    placeholder="Shoei, Alpinestars..." style={inp()} />
+                </div>
+                <div>
+                  <label style={lbl}>Kategori</label>
+                  <select value={alarmForm.categoryId} onChange={e => setAlarmForm(f => ({ ...f, categoryId: e.target.value }))} style={{ ...inp(), paddingRight: 14 }}>
+                    <option value="">Tüm kategoriler</option>
+                    {l1Categories.map((c: any) => <option key={c.id} value={c.id}>{c.name}</option>)}
+                  </select>
+                </div>
+                <div>
+                  <label style={lbl}>Min Fiyat (₺)</label>
+                  <input type="number" value={alarmForm.minPrice} onChange={e => setAlarmForm(f => ({ ...f, minPrice: e.target.value }))}
+                    placeholder="0" style={inp()} />
+                </div>
+                <div>
+                  <label style={lbl}>Max Fiyat (₺)</label>
+                  <input type="number" value={alarmForm.maxPrice} onChange={e => setAlarmForm(f => ({ ...f, maxPrice: e.target.value }))}
+                    placeholder="Üst sınır yok" style={inp()} />
+                </div>
+                <div>
+                  <label style={lbl}>Şehir</label>
+                  <input value={alarmForm.city} onChange={e => setAlarmForm(f => ({ ...f, city: e.target.value }))}
+                    placeholder="İstanbul, Ankara..." style={inp()} />
+                </div>
+              </div>
+              <div style={{ display: 'flex', gap: 10, marginTop: 16 }}>
+                <button onClick={() => setAlarmShowForm(false)} style={{ flex: 1, height: 40, borderRadius: 8, border: '1px solid var(--line)', background: 'var(--bg-1)', color: 'var(--ink-2)', fontSize: 13, fontWeight: 600, cursor: 'pointer' }}>İptal</button>
+                <button
+                  onClick={() => {
+                    if (!alarmForm.label.trim()) { toast.error('Alarm adı zorunlu'); return; }
+                    createAlarm.mutate({
+                      label: alarmForm.label,
+                      search: alarmForm.search || undefined,
+                      categoryId: alarmForm.categoryId || undefined,
+                      minPrice: alarmForm.minPrice ? Number(alarmForm.minPrice) : undefined,
+                      maxPrice: alarmForm.maxPrice ? Number(alarmForm.maxPrice) : undefined,
+                      city: alarmForm.city || undefined,
+                    } as CreateSavedSearchInput, {
+                      onSuccess: () => {
+                        toast.success('Alarm kuruldu!');
+                        setAlarmShowForm(false);
+                        setAlarmForm({ label: '', search: '', categoryId: '', minPrice: '', maxPrice: '', city: '' });
+                      },
+                      onError: (e: any) => toast.error(e?.response?.data?.message ?? 'Alarm kurulamadı'),
+                    });
+                  }}
+                  disabled={createAlarm.isPending}
+                  style={{ flex: 1, height: 40, borderRadius: 8, border: 'none', background: 'var(--accent)', color: 'var(--accent-ink)', fontSize: 13, fontWeight: 700, cursor: createAlarm.isPending ? 'not-allowed' : 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}
+                >
+                  {createAlarm.isPending ? <span style={{ width: 16, height: 16, border: '2px solid var(--accent-ink)', borderTopColor: 'transparent', borderRadius: '50%', animation: 'spin .7s linear infinite', display: 'inline-block' }} /> : <><BellPlus size={14} /> Alarm Kur</>}
+                </button>
+              </div>
+            </div>
+          )}
+
+          {/* Alarm listesi */}
+          {!savedSearches || savedSearches.length === 0 ? (
+            <div style={{ textAlign: 'center', padding: '40px 0', color: 'var(--ink-3)' }}>
+              <Bell size={40} style={{ opacity: 0.18, marginBottom: 12 }} />
+              <p style={{ fontSize: 15, fontWeight: 600, color: 'var(--ink-2)', marginBottom: 8 }}>Henüz alarm kurulmamış</p>
+              <p style={{ fontSize: 13, marginBottom: 20, lineHeight: 1.6 }}>Kriterlere uyan ilan yayınlandığında seni haberdar edelim.</p>
+              {l1Categories.length > 0 && (
+                <div>
+                  <p style={{ fontSize: 12, color: 'var(--ink-3)', marginBottom: 10 }}>Popüler kategori alarmları:</p>
+                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, justifyContent: 'center' }}>
+                    {l1Categories.slice(0, 6).map((c: any) => (
+                      <button key={c.id} onClick={() => {
+                        setAlarmForm(f => ({ ...f, label: `${c.name} Alarmı`, categoryId: c.id }));
+                        setAlarmShowForm(true);
+                      }} style={{ height: 34, padding: '0 14px', borderRadius: 20, border: '1px solid var(--line)', background: 'var(--bg-0)', color: 'var(--ink-2)', fontSize: 13, cursor: 'pointer', fontWeight: 500 }}>
+                        + {c.name} alarmı
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+          ) : (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 0 }}>
+              {savedSearches.map(s => (
+                <div key={s.id} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '12px 0', borderBottom: '1px solid var(--line-soft)' }}>
+                  <div style={{ width: 36, height: 36, borderRadius: 9, background: 'color-mix(in oklch, var(--accent) 14%, var(--bg-2))', display: 'grid', placeItems: 'center', flexShrink: 0 }}>
+                    <Bell size={16} style={{ color: 'var(--accent)' }} />
+                  </div>
+                  <Link href={alarmToUrl(s)} style={{ flex: 1, minWidth: 0, textDecoration: 'none', color: 'inherit' }}>
+                    <p style={{ fontSize: 13.5, fontWeight: 600, color: 'var(--ink)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', marginBottom: 4, display: 'flex', alignItems: 'center', gap: 5 }}>
+                      {s.label} <ExternalLink size={11} style={{ opacity: 0.35, flexShrink: 0 }} />
+                    </p>
+                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: 5, marginBottom: 3 }}>
+                      {s.search && <span style={{ fontSize: 11, padding: '1px 7px', borderRadius: 20, background: 'var(--bg-2)', color: 'var(--ink-3)', border: '1px solid var(--line-soft)' }}>🔍 {s.search}</span>}
+                      {s.minPrice && <span style={{ fontSize: 11, padding: '1px 7px', borderRadius: 20, background: 'var(--bg-2)', color: 'var(--ink-3)', border: '1px solid var(--line-soft)' }}>Min {Number(s.minPrice).toLocaleString('tr-TR')}₺</span>}
+                      {s.maxPrice && <span style={{ fontSize: 11, padding: '1px 7px', borderRadius: 20, background: 'var(--bg-2)', color: 'var(--ink-3)', border: '1px solid var(--line-soft)' }}>Max {Number(s.maxPrice).toLocaleString('tr-TR')}₺</span>}
+                      {s.city && <span style={{ fontSize: 11, padding: '1px 7px', borderRadius: 20, background: 'var(--bg-2)', color: 'var(--ink-3)', border: '1px solid var(--line-soft)' }}>📍 {s.city}</span>}
+                      {s.condition && <span style={{ fontSize: 11, padding: '1px 7px', borderRadius: 20, background: 'var(--bg-2)', color: 'var(--ink-3)', border: '1px solid var(--line-soft)' }}>{CONDITION_LABELS[s.condition] ?? s.condition}</span>}
+                    </div>
+                    {s.lastNotifiedAt && (
+                      <p style={{ fontSize: 11, color: 'var(--ink-3)' }}>Son eşleşme: {new Date(s.lastNotifiedAt).toLocaleDateString('tr-TR')}</p>
+                    )}
+                  </Link>
+                  <button onClick={() => deleteSavedSearch.mutate(s.id)} disabled={deleteSavedSearch.isPending} title="Sil"
+                    style={{ flexShrink: 0, width: 32, height: 32, borderRadius: 8, border: 'none', background: 'var(--bg-2)', color: 'var(--ink-3)', cursor: 'pointer', display: 'grid', placeItems: 'center' }}>
+                    <Trash2 size={14} />
+                  </button>
+                </div>
               ))}
             </div>
           )}
