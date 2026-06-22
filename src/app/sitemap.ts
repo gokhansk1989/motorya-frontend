@@ -64,7 +64,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   // Static pages
   const staticPages: MetadataRoute.Sitemap = [
     { url: BASE_URL,                   lastModified: new Date(), changeFrequency: 'daily',   priority: 1.0 },
-    { url: `${BASE_URL}/ara`,          lastModified: new Date(), changeFrequency: 'daily',   priority: 0.9 },
+    { url: `${BASE_URL}/ara`,          lastModified: new Date(), changeFrequency: 'hourly',  priority: 0.95 },
     { url: `${BASE_URL}/blog`,         lastModified: new Date(), changeFrequency: 'daily',   priority: 0.85 },
     { url: `${BASE_URL}/ilan-ver`,     lastModified: new Date(), changeFrequency: 'monthly', priority: 0.7 },
     { url: `${BASE_URL}/fiyat-alarm`,  lastModified: new Date(), changeFrequency: 'monthly', priority: 0.5 },

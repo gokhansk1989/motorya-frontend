@@ -41,17 +41,27 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
   const canonicalSlug = listing.slug ?? listing.id;
   const canonical = `${BASE_URL}/ilan/${canonicalSlug}`;
   const price = Number(listing.price).toLocaleString('tr-TR');
-  const title = `${listing.title} — ${price} TL | Motorya`;
+  const conditionMap: Record<string, string> = {
+    NEW: 'Sıfır', LIKE_NEW: 'Sıfır Gibi', GOOD: 'İyi Durumda', FAIR: 'Makul', POOR: 'Kullanılmış',
+  };
+  const conditionLabel = conditionMap[listing.condition] ?? 'İkinci El';
+  const cityPart = listing.city ? ` ${listing.city}'da` : '';
+  const brandPart = listing.brand ? ` ${listing.brand.name}` : '';
+  const catPart = listing.category ? ` ${listing.category.name}` : '';
+  const title = `${listing.title} — ${price} ₺ | Motorya`;
+  const autoDesc = `${conditionLabel}${brandPart}${catPart} satılık.${cityPart} ${price} ₺. Motorya'da güvenli al-sat.`;
   const description = listing.description
-    ? listing.description.slice(0, 155) + (listing.description.length > 155 ? '…' : '')
-    : `${listing.title} ilanı Motorya'da. ${price} TL fiyatıyla satışta.`;
+    ? listing.description.slice(0, 148) + (listing.description.length > 148 ? '…' : '')
+    : autoDesc;
 
   const keywords = [
     listing.title,
     listing.category?.name,
     listing.brand?.name,
     listing.city,
-    'ikinci el', 'motosiklet ekipman',
+    `ikinci el${catPart}`,
+    `${conditionLabel}${catPart}`,
+    'motosiklet ekipman', 'motorya',
   ].filter(Boolean).join(', ');
 
   return {
