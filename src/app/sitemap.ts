@@ -9,7 +9,7 @@ const CITY_SLUGS = Object.keys(CITY_MAP);
 async function fetchAllListings() {
   const items: { id: string; slug?: string; updatedAt?: string; createdAt: string }[] = [];
   let page = 1;
-  const limit = 500;
+  const limit = 50;
   try {
     while (true) {
       const res = await fetch(`${API}/listings?limit=${limit}&page=${page}`, {
