@@ -168,7 +168,7 @@ export default async function CategoryPage({ params }: { params: Promise<{ slug:
               style={{ height: 34, fontSize: 13, textDecoration: 'none',
                 background: cat.slug === slug ? 'var(--accent)' : undefined,
                 color: cat.slug === slug ? '#fff' : undefined }}>
-              <CatIcon slug={cat.slug} size={16} /> {cat.name}
+              <CatIcon slug={cat.slug} size={21} /> {cat.name}
             </Link>
           ))}
         </div>
@@ -193,7 +193,7 @@ export default async function CategoryPage({ params }: { params: Promise<{ slug:
         {/* İlan grid */}
         {listings.length === 0 ? (
           <div style={{ textAlign: 'center', padding: '64px 0', color: 'var(--ink-3)' }}>
-            <img src="/icons/empty-listing.png" alt="" width={100} height={100} style={{ objectFit: 'contain', marginBottom: 16, opacity: 0.85 }} />
+            <img src="/icons/empty-listing.png" alt="" width={100} height={100} style={{ objectFit: 'contain', marginBottom: 16, opacity: 0.85, display: 'block', margin: '0 auto 16px' }} />
             <p style={{ fontSize: 18, marginBottom: 8 }}>Bu kategoride henüz ilan yok</p>
             <p style={{ fontSize: 14, marginBottom: 20 }}>İlk ilanı sen ver!</p>
             <Link href="/ilan-ver" className="m-btn m-btn-primary" style={{ display: 'inline-flex', textDecoration: 'none' }}>
