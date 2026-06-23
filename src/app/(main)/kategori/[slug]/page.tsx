@@ -44,7 +44,7 @@ interface Listing {
 
 async function fetchCategoryData(slug: string): Promise<CategoryData | null> {
   try {
-    const res = await fetch(`${API_URL}/listings/meta/category/${slug}`, { next: { revalidate: 3600 } });
+    const res = await fetch(`${API_URL}/listings/meta/category/${slug}`, { cache: 'no-store' });
     if (!res.ok) return null;
     return res.json();
   } catch { return null; }
@@ -54,7 +54,7 @@ async function fetchListings(categoryId: string, city?: string): Promise<{ items
   try {
     const params = new URLSearchParams({ categoryId, limit: '48', page: '1' });
     if (city) params.set('city', city);
-    const res = await fetch(`${API_URL}/listings?${params}`, { next: { revalidate: 300 } });
+    const res = await fetch(`${API_URL}/listings?${params}`, { cache: 'no-store' });
     if (!res.ok) return { items: [], total: 0 };
     const data = await res.json();
     return { items: data.items || [], total: data.meta?.total ?? 0 };
@@ -63,21 +63,14 @@ async function fetchListings(categoryId: string, city?: string): Promise<{ items
 
 async function fetchAllL1Categories(): Promise<Category[]> {
   try {
-    const res = await fetch(`${API_URL}/listings/meta/categories`, { next: { revalidate: 3600 } });
+    const res = await fetch(`${API_URL}/listings/meta/categories`, { cache: 'no-store' });
     if (!res.ok) return [];
     const all: Category[] = await res.json();
     return all.filter(c => !c.parentId);
   } catch { return []; }
 }
 
-export async function generateStaticParams() {
-  try {
-    const res = await fetch(`${API_URL}/listings/meta/categories`, { next: { revalidate: 3600 } });
-    if (!res.ok) return [];
-    const cats: Category[] = await res.json();
-    return cats.map(c => ({ slug: c.slug }));
-  } catch { return []; }
-}
+export const dynamic = 'force-dynamic';
 
 export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }): Promise<Metadata> {
   const { slug } = await params;

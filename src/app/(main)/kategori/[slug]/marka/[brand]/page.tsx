@@ -19,7 +19,7 @@ function CatIcon({ slug, size = 36 }: { slug: string; size?: number }) {
 
 async function getCategory(slug: string) {
   try {
-    const res = await fetch(`${API}/listings/meta/category/${slug}`, { next: { revalidate: 3600 } });
+    const res = await fetch(`${API}/listings/meta/category/${slug}`, { cache: 'no-store' });
     if (!res.ok) return null;
     return res.json();
   } catch { return null; }
@@ -27,7 +27,7 @@ async function getCategory(slug: string) {
 
 async function getBrandsForCategory(categorySlug: string) {
   try {
-    const res = await fetch(`${API}/listings/meta/brands-by-category/${categorySlug}`, { next: { revalidate: 3600 } });
+    const res = await fetch(`${API}/listings/meta/brands-by-category/${categorySlug}`, { cache: 'no-store' });
     if (!res.ok) return [];
     return res.json();
   } catch { return []; }
@@ -44,7 +44,7 @@ async function getListings(categorySlug: string, brandSlug: string) {
     if (!brand) return { items: [], total: 0 };
     const res = await fetch(
       `${API}/listings?categoryId=${category.id}&brandId=${brand.id}&limit=24&sort=newest`,
-      { next: { revalidate: 300 } }
+      { cache: 'no-store' }
     );
     if (!res.ok) return { items: [], total: 0 };
     return res.json();
@@ -71,21 +71,10 @@ export async function generateMetadata({ params }: Props) {
   };
 }
 
-export async function generateStaticParams() {
-  try {
-    const catRes = await fetch(`${API}/listings/meta/categories`, { next: { revalidate: 86400 } });
-    if (!catRes.ok) return [];
-    const categories: any[] = await catRes.json();
+export const dynamic = 'force-dynamic';
 
-    const params: { slug: string; brand: string }[] = [];
-    await Promise.all(
-      categories.filter(c => !c.parentId).map(async cat => {
-        const brands: any[] = await getBrandsForCategory(cat.slug);
-        brands.filter((b: any) => b?.slug).forEach((b: any) => params.push({ slug: cat.slug, brand: b.slug }));
-      })
-    );
-    return params.slice(0, 200);
-  } catch { return []; }
+export async function generateStaticParams() {
+  return [];
 }
 
 export default async function CategoryBrandPage({ params }: Props) {

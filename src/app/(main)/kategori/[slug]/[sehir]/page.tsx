@@ -31,11 +31,7 @@ const CITIES: Record<string, string> = {
   tekirdag: 'Tekirdağ', sakarya: 'Sakarya', denizli: 'Denizli', eskisehir: 'Eskişehir',
 };
 
-export async function generateStaticParams() {
-  return Object.keys(CATEGORIES).flatMap(slug =>
-    Object.keys(CITIES).map(sehir => ({ slug, sehir }))
-  );
-}
+export const dynamic = 'force-dynamic';
 
 export async function generateMetadata({ params }: { params: Promise<{ slug: string; sehir: string }> }): Promise<Metadata> {
   const { slug, sehir } = await params;
@@ -65,7 +61,7 @@ async function fetchListings(slug: string, city: string): Promise<Listing[]> {
   try {
     const res = await fetch(
       `${API_URL}/listings?categorySlug=${slug}&city=${encodeURIComponent(city)}&limit=24&status=ACTIVE`,
-      { next: { revalidate: 3600 } }
+      { cache: 'no-store' }
     );
     if (!res.ok) return [];
     const data = await res.json();
