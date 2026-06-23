@@ -2,30 +2,11 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { AdSlot } from '@/components/ui/AdSlot';
+import { CategoryIcon as CatIcon } from '@/components/icons/CategoryIcons';
+import { CITIES } from '@/lib/cities';
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000';
 const BASE_URL = 'https://motorya.com.tr';
-
-const CITIES = [
-  ['istanbul','İstanbul'],['ankara','Ankara'],['izmir','İzmir'],['bursa','Bursa'],
-  ['antalya','Antalya'],['adana','Adana'],['konya','Konya'],['gaziantep','Gaziantep'],
-  ['mersin','Mersin'],['kocaeli','Kocaeli'],['kayseri','Kayseri'],['samsun','Samsun'],
-  ['eskisehir','Eskişehir'],['denizli','Denizli'],['balikesir','Balıkesir'],
-];
-
-const CATEGORY_ICONS: Record<string, string> = {
-  kask: '/icons/kask.png', mont: '/icons/mont.png', pantolon: '/icons/pantolon.png',
-  eldiven: '/icons/eldiven.png', 'bot-cizme': '/icons/bot-cizme.png',
-  koruma: '/icons/koruma.png', canta: '/icons/canta.png',
-  aksesuar: '/icons/moto-aksesuar.png', 'motosiklet-aksesuarlari': '/icons/moto-aksesuar.png',
-  'surucu-aksesuarlari': '/icons/surucu-aksesuari.png',
-  'yedek-parca': '/icons/yedek-parca.png', bakim: '/icons/bakim.png',
-};
-
-function CatIcon({ slug, size = 28 }: { slug: string; size?: number }) {
-  const src = CATEGORY_ICONS[slug] ?? '/icons/moto-aksesuar.png';
-  return <img src={src} alt="" width={size} height={size} style={{ objectFit: 'contain' }} />;
-}
 
 interface Category {
   id: string; name: string; slug: string; parentId: string | null;
@@ -44,30 +25,48 @@ interface Listing {
 
 async function fetchCategoryData(slug: string): Promise<CategoryData | null> {
   try {
-    const res = await fetch(`${API_URL}/listings/meta/category/${slug}`, { cache: 'no-store' });
-    if (!res.ok) return null;
+    const res = await fetch(`${API_URL}/listings/meta/category/${slug}`, { next: { revalidate: 60 } });
+    if (!res.ok) {
+      console.error(`[kategori/${slug}] category fetch failed: ${res.status}`);
+      return null;
+    }
     return res.json();
-  } catch { return null; }
+  } catch (err) {
+    console.error(`[kategori/${slug}] category fetch error:`, err);
+    return null;
+  }
 }
 
 async function fetchListings(categoryId: string, city?: string): Promise<{ items: Listing[]; total: number }> {
   try {
     const params = new URLSearchParams({ categoryId, limit: '48', page: '1' });
     if (city) params.set('city', city);
-    const res = await fetch(`${API_URL}/listings?${params}`, { cache: 'no-store' });
-    if (!res.ok) return { items: [], total: 0 };
+    const res = await fetch(`${API_URL}/listings?${params}`, { next: { revalidate: 60 } });
+    if (!res.ok) {
+      console.error(`[kategori] listings fetch failed for categoryId=${categoryId}: ${res.status}`);
+      return { items: [], total: 0 };
+    }
     const data = await res.json();
     return { items: data.items || [], total: data.meta?.total ?? 0 };
-  } catch { return { items: [], total: 0 }; }
+  } catch (err) {
+    console.error(`[kategori] listings fetch error for categoryId=${categoryId}:`, err);
+    return { items: [], total: 0 };
+  }
 }
 
 async function fetchAllL1Categories(): Promise<Category[]> {
   try {
-    const res = await fetch(`${API_URL}/listings/meta/categories`, { cache: 'no-store' });
-    if (!res.ok) return [];
+    const res = await fetch(`${API_URL}/listings/meta/categories`, { next: { revalidate: 300 } });
+    if (!res.ok) {
+      console.error(`[kategori] categories fetch failed: ${res.status}`);
+      return [];
+    }
     const all: Category[] = await res.json();
     return all.filter(c => !c.parentId);
-  } catch { return []; }
+  } catch (err) {
+    console.error('[kategori] categories fetch error:', err);
+    return [];
+  }
 }
 
 export const dynamic = 'force-dynamic';
@@ -78,7 +77,6 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
   if (!data) return { title: 'Kategori Bulunamadı' };
 
   const { category } = data;
-  const icon = CATEGORY_ICONS[slug] ?? '📦';
   const title = `İkinci El ${category.name} — Motorya`;
   const description = `İkinci el motosiklet ${category.name.toLowerCase()} al ya da sat. Türkiye genelinde güvenli ödeme, kargo takibi ile. Motorya'da ${category.name} ilanlarını incele.`;
   const canonical = `${BASE_URL}/kategori/${slug}`;
@@ -120,7 +118,6 @@ export default async function CategoryPage({ params }: { params: Promise<{ slug:
   // L2 ise kardeş kategorileri (parent'ın children'ı) getir
   const siblingData = isL2 && parentL1 ? await fetchCategoryData(parentL1.slug) : null;
   const subcategories = isL2 ? (siblingData?.children ?? []) : children;
-  const icon = CATEGORY_ICONS[slug] ?? '📦';
 
   const jsonLd = {
     '@context': 'https://schema.org',

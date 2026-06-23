@@ -1,13 +1,10 @@
 import { MetadataRoute } from 'next';
+import { CITY_MAP } from '@/lib/cities';
 
 const BASE_URL = 'https://motorya.com.tr';
 const API = process.env.NEXT_PUBLIC_API_URL || 'https://motorya.com.tr/api-backend';
 
-const CITY_SLUGS = [
-  'istanbul', 'ankara', 'izmir', 'bursa', 'antalya', 'adana', 'konya',
-  'gaziantep', 'mersin', 'kocaeli', 'diyarbakir', 'hatay', 'manisa',
-  'kayseri', 'samsun', 'balikesir', 'tekirdag', 'sakarya', 'denizli', 'eskisehir',
-];
+const CITY_SLUGS = Object.keys(CITY_MAP);
 
 async function fetchAllListings() {
   const items: { id: string; slug?: string; updatedAt?: string; createdAt: string }[] = [];
@@ -15,17 +12,22 @@ async function fetchAllListings() {
   const limit = 500;
   try {
     while (true) {
-      const res = await fetch(`${API}/listings?limit=${limit}&page=${page}&status=ACTIVE`, {
+      const res = await fetch(`${API}/listings?limit=${limit}&page=${page}`, {
         next: { revalidate: 1800 },
       });
-      if (!res.ok) break;
+      if (!res.ok) {
+        console.error(`[sitemap] listings fetch failed: ${res.status}`);
+        break;
+      }
       const data = await res.json();
       const batch = data.items ?? [];
       items.push(...batch);
       if (batch.length < limit || items.length >= (data.meta?.total ?? 0)) break;
       page++;
     }
-  } catch {}
+  } catch (err) {
+    console.error('[sitemap] listings fetch error:', err);
+  }
   return items;
 }
 
@@ -35,7 +37,8 @@ async function fetchCategories() {
     if (!res.ok) return [];
     const cats: { id: string; slug: string; parentId: string | null }[] = await res.json();
     return cats;
-  } catch {
+  } catch (err) {
+    console.error('[sitemap] categories fetch error:', err);
     return [];
   }
 }
@@ -46,7 +49,8 @@ async function fetchBlogPosts() {
     if (!res.ok) return [];
     const data = await res.json();
     return (data.items ?? []) as { slug: string; publishedAt?: string; createdAt: string }[];
-  } catch {
+  } catch (err) {
+    console.error('[sitemap] blog posts fetch error:', err);
     return [];
   }
 }

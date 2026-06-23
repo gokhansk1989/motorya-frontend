@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
+import { CITY_MAP } from '@/lib/cities';
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000';
 const BASE_URL = 'https://motorya.com.tr';
@@ -22,14 +23,7 @@ const CATEGORIES: Record<string, { label: string; description: string; keywords:
   'surucu-aksesuarlari':{ label: 'Sürücü Aksesuarları', description: 'sürücü aksesuarı', keywords: ['güvenlik yeleği', 'airbag yelek', 'reflektör'] },
 };
 
-// En büyük 20 şehir
-const CITIES: Record<string, string> = {
-  istanbul: 'İstanbul', ankara: 'Ankara', izmir: 'İzmir', bursa: 'Bursa',
-  antalya: 'Antalya', adana: 'Adana', konya: 'Konya', gaziantep: 'Gaziantep',
-  mersin: 'Mersin', kocaeli: 'Kocaeli', diyarbakir: 'Diyarbakır', hatay: 'Hatay',
-  manisa: 'Manisa', kayseri: 'Kayseri', samsun: 'Samsun', balikesir: 'Balıkesir',
-  tekirdag: 'Tekirdağ', sakarya: 'Sakarya', denizli: 'Denizli', eskisehir: 'Eskişehir',
-};
+const CITIES = CITY_MAP;
 
 export const dynamic = 'force-dynamic';
 
@@ -60,13 +54,19 @@ interface Listing {
 async function fetchListings(slug: string, city: string): Promise<Listing[]> {
   try {
     const res = await fetch(
-      `${API_URL}/listings?categorySlug=${slug}&city=${encodeURIComponent(city)}&limit=24&status=ACTIVE`,
-      { cache: 'no-store' }
+      `${API_URL}/listings?categorySlug=${slug}&city=${encodeURIComponent(city)}&limit=24`,
+      { next: { revalidate: 60 } }
     );
-    if (!res.ok) return [];
+    if (!res.ok) {
+      console.error(`[kategori/${slug}/sehir] listings fetch failed: ${res.status}`);
+      return [];
+    }
     const data = await res.json();
     return data.items ?? [];
-  } catch { return []; }
+  } catch (err) {
+    console.error(`[kategori/${slug}/sehir] listings fetch error:`, err);
+    return [];
+  }
 }
 
 export default async function CityListingPage({ params }: { params: Promise<{ slug: string; sehir: string }> }) {

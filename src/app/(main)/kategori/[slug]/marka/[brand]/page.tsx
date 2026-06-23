@@ -1,36 +1,36 @@
 import { notFound } from 'next/navigation';
 import Link from 'next/link';
 import { ChevronRight } from 'lucide-react';
+import { CategoryIcon as CatIcon } from '@/components/icons/CategoryIcons';
 
 const API = process.env.NEXT_PUBLIC_API_URL || 'https://motorya.com.tr/api-backend';
 
-const CATEGORY_ICONS: Record<string, string> = {
-  kask: '/icons/kask.png', mont: '/icons/mont.png', pantolon: '/icons/pantolon.png',
-  eldiven: '/icons/eldiven.png', 'bot-cizme': '/icons/bot-cizme.png',
-  koruma: '/icons/koruma.png', canta: '/icons/canta.png',
-  aksesuar: '/icons/moto-aksesuar.png', 'surucu-aksesuarlari': '/icons/surucu-aksesuari.png',
-  'yedek-parca': '/icons/yedek-parca.png', bakim: '/icons/bakim.png',
-};
-
-function CatIcon({ slug, size = 36 }: { slug: string; size?: number }) {
-  const src = CATEGORY_ICONS[slug] ?? '/icons/moto-aksesuar.png';
-  return <img src={src} alt="" width={size} height={size} style={{ objectFit: 'contain' }} />;
-}
-
 async function getCategory(slug: string) {
   try {
-    const res = await fetch(`${API}/listings/meta/category/${slug}`, { cache: 'no-store' });
-    if (!res.ok) return null;
+    const res = await fetch(`${API}/listings/meta/category/${slug}`, { next: { revalidate: 60 } });
+    if (!res.ok) {
+      console.error(`[kategori/${slug}/marka] category fetch failed: ${res.status}`);
+      return null;
+    }
     return res.json();
-  } catch { return null; }
+  } catch (err) {
+    console.error(`[kategori/${slug}/marka] category fetch error:`, err);
+    return null;
+  }
 }
 
 async function getBrandsForCategory(categorySlug: string) {
   try {
-    const res = await fetch(`${API}/listings/meta/brands-by-category/${categorySlug}`, { cache: 'no-store' });
-    if (!res.ok) return [];
+    const res = await fetch(`${API}/listings/meta/brands-by-category/${categorySlug}`, { next: { revalidate: 60 } });
+    if (!res.ok) {
+      console.error(`[kategori/${categorySlug}/marka] brands fetch failed: ${res.status}`);
+      return [];
+    }
     return res.json();
-  } catch { return []; }
+  } catch (err) {
+    console.error(`[kategori/${categorySlug}/marka] brands fetch error:`, err);
+    return [];
+  }
 }
 
 async function getListings(categorySlug: string, brandSlug: string) {
@@ -44,11 +44,17 @@ async function getListings(categorySlug: string, brandSlug: string) {
     if (!brand) return { items: [], total: 0 };
     const res = await fetch(
       `${API}/listings?categoryId=${category.id}&brandId=${brand.id}&limit=24&sort=newest`,
-      { cache: 'no-store' }
+      { next: { revalidate: 60 } }
     );
-    if (!res.ok) return { items: [], total: 0 };
+    if (!res.ok) {
+      console.error(`[kategori/${categorySlug}/marka/${brandSlug}] listings fetch failed: ${res.status}`);
+      return { items: [], total: 0 };
+    }
     return res.json();
-  } catch { return { items: [], total: 0 }; }
+  } catch (err) {
+    console.error(`[kategori/${categorySlug}/marka/${brandSlug}] listings fetch error:`, err);
+    return { items: [], total: 0 };
+  }
 }
 
 interface Props { params: Promise<{ slug: string; brand: string }> }
