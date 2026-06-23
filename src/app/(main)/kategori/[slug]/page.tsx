@@ -50,9 +50,9 @@ async function fetchCategoryData(slug: string): Promise<CategoryData | null> {
   } catch { return null; }
 }
 
-async function fetchListings(categorySlug: string, city?: string): Promise<{ items: Listing[]; total: number }> {
+async function fetchListings(categoryId: string, city?: string): Promise<{ items: Listing[]; total: number }> {
   try {
-    const params = new URLSearchParams({ categorySlug, limit: '48', page: '1', status: 'ACTIVE' });
+    const params = new URLSearchParams({ categoryId, limit: '48', page: '1', status: 'ACTIVE' });
     if (city) params.set('city', city);
     const res = await fetch(`${API_URL}/listings?${params}`, { next: { revalidate: 300 } });
     if (!res.ok) return { items: [], total: 0 };
@@ -108,13 +108,14 @@ function conditionLabel(c: string) {
 
 export default async function CategoryPage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;
-  const [catData, { items: listings, total }, l1Categories] = await Promise.all([
+  const [catData, l1Categories] = await Promise.all([
     fetchCategoryData(slug),
-    fetchListings(slug),
     fetchAllL1Categories(),
   ]);
 
   if (!catData) notFound();
+
+  const { items: listings, total } = await fetchListings(catData.category.id);
 
   const { category, children } = catData;
   const icon = CATEGORY_ICONS[slug] ?? '📦';
