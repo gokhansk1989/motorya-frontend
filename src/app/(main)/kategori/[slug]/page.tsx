@@ -10,7 +10,7 @@ const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000';
 const BASE_URL = 'https://motorya.com.tr';
 
 interface Category {
-  id: string; name: string; slug: string; parentId: string | null;
+  id: string; name: string; slug: string; parentId: string | null; iconKey?: string | null;
 }
 
 interface CategoryData {
@@ -159,7 +159,7 @@ export default async function CategoryPage({ params }: { params: Promise<{ slug:
         {/* Header */}
         <div style={{ padding: '16px 0 24px' }}>
           <h1 className="m-display" style={{ fontSize: 28, margin: '0 0 8px', display: 'flex', alignItems: 'center', gap: 12 }}>
-            <CatIcon slug={slug} size={40} /> İkinci El {category.name}
+            <CatIcon slug={slug} size={40} iconUrl={category.iconKey} /> İkinci El {category.name}
           </h1>
           <p style={{ color: 'var(--ink-3)', fontSize: 14.5, margin: 0 }}>
             {total > 0 ? `${total.toLocaleString('tr-TR')} ilan bulundu` : 'Bu kategoride ilan bekleniyor'}
@@ -173,7 +173,7 @@ export default async function CategoryPage({ params }: { params: Promise<{ slug:
               style={{ height: 34, fontSize: 13, textDecoration: 'none',
                 background: cat.slug === activeL1Slug ? 'var(--accent)' : undefined,
                 color: cat.slug === activeL1Slug ? '#fff' : undefined }}>
-              <CatIcon slug={cat.slug} size={21} /> {cat.name}
+              <CatIcon slug={cat.slug} size={21} iconUrl={cat.iconKey} /> {cat.name}
             </Link>
           ))}
         </div>
@@ -222,7 +222,7 @@ export default async function CategoryPage({ params }: { params: Promise<{ slug:
                             style={{ objectFit: 'cover' }} loading="lazy" />
                         ) : (
                           <div style={{ width: '100%', height: '100%', display: 'grid', placeItems: 'center' }}>
-                            <CatIcon slug={slug} size={48} />
+                            <CatIcon slug={slug} size={48} iconUrl={category.iconKey} />
                           </div>
                         )}
                       </div>

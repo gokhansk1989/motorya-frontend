@@ -4,6 +4,8 @@ interface CategoryIconProps {
   alt?: string;
   className?: string;
   style?: React.CSSProperties;
+  // Admin panelden yüklenmiş özel ikon (varsa slug haritasından önceliklidir)
+  iconUrl?: string | null;
 }
 
 // Tek kaynak: tüm L1 ve L2 kategori slugları → ikon dosyası.
@@ -114,8 +116,8 @@ export const ICON_MAP: Record<string, string> = {
   'bakim-temizlik': '/icons/bakim.png',
 };
 
-export function CategoryIcon({ slug, size = 48, alt = '', className, style }: CategoryIconProps) {
-  const src = ICON_MAP[slug] ?? '/icons/moto-aksesuar.png';
+export function CategoryIcon({ slug, size = 48, alt = '', className, style, iconUrl }: CategoryIconProps) {
+  const src = iconUrl || ICON_MAP[slug] || '/icons/moto-aksesuar.png';
   return (
     // eslint-disable-next-line @next/next/no-img-element
     <img
