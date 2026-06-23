@@ -111,6 +111,15 @@ export default async function CategoryPage({ params }: { params: Promise<{ slug:
   const { items: listings, total } = await fetchListings(catData.category.id);
 
   const { category, children } = catData;
+
+  // L2 sayfasında parent L1'i bul, ve parent'ın alt kategorilerini getir
+  const isL2 = !!category.parentId;
+  const parentL1 = isL2 ? l1Categories.find(c => c.id === category.parentId) ?? null : null;
+  const activeL1Slug = isL2 ? (parentL1?.slug ?? null) : slug;
+
+  // L2 ise kardeş kategorileri (parent'ın children'ı) getir
+  const siblingData = isL2 && parentL1 ? await fetchCategoryData(parentL1.slug) : null;
+  const subcategories = isL2 ? (siblingData?.children ?? []) : children;
   const icon = CATEGORY_ICONS[slug] ?? '📦';
 
   const jsonLd = {
@@ -142,6 +151,10 @@ export default async function CategoryPage({ params }: { params: Promise<{ slug:
         <div style={{ padding: '20px 0 0', display: 'flex', alignItems: 'center', gap: 6, color: 'var(--ink-3)', fontSize: 12.5 }}>
           <Link href="/" style={{ color: 'var(--ink-3)' }}>Keşfet</Link>
           <span style={{ opacity: 0.5 }}>›</span>
+          {parentL1 && <>
+            <Link href={`/kategori/${parentL1.slug}`} style={{ color: 'var(--ink-3)' }}>{parentL1.name}</Link>
+            <span style={{ opacity: 0.5 }}>›</span>
+          </>}
           <span style={{ color: 'var(--ink-2)' }}>{category.name}</span>
         </div>
 
@@ -156,27 +169,30 @@ export default async function CategoryPage({ params }: { params: Promise<{ slug:
         </div>
 
         {/* L1 kategori navigasyonu */}
-        <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginBottom: children.length > 0 ? 16 : 28 }}>
+        <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginBottom: subcategories.length > 0 ? 16 : 28 }}>
           {l1Categories.map(cat => (
             <Link key={cat.slug} href={`/kategori/${cat.slug}`} className="m-chip"
               style={{ height: 34, fontSize: 13, textDecoration: 'none',
-                background: cat.slug === slug ? 'var(--accent)' : undefined,
-                color: cat.slug === slug ? '#fff' : undefined }}>
+                background: cat.slug === activeL1Slug ? 'var(--accent)' : undefined,
+                color: cat.slug === activeL1Slug ? '#fff' : undefined }}>
               <CatIcon slug={cat.slug} size={21} /> {cat.name}
             </Link>
           ))}
         </div>
 
-        {/* L2 alt kategoriler */}
-        {children.length > 0 && (
+        {/* Alt kategoriler — L1'de children, L2'de kardeşler */}
+        {subcategories.length > 0 && (
           <div style={{ marginBottom: 28 }}>
             <p style={{ fontSize: 12, color: 'var(--ink-3)', margin: '0 0 8px', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
               Alt Kategoriler
             </p>
             <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-              {children.map(child => (
+              {subcategories.map(child => (
                 <Link key={child.slug} href={`/kategori/${child.slug}`} className="m-chip"
-                  style={{ height: 32, fontSize: 12.5, textDecoration: 'none', border: '1px solid var(--accent)', color: 'var(--accent)' }}>
+                  style={{ height: 32, fontSize: 12.5, textDecoration: 'none',
+                    border: '1px solid var(--accent)', color: 'var(--accent)',
+                    background: child.slug === slug ? 'var(--accent)' : undefined,
+                    ...(child.slug === slug ? { color: '#fff' } : {}) }}>
                   {child.name}
                 </Link>
               ))}

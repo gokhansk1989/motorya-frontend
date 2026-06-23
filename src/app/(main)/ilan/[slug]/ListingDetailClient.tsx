@@ -147,9 +147,13 @@ export default function ListingDetailClient() {
     }
   };
 
+  const categoryLabel = listing.category
+    ? (listing.category.parent ? `${listing.category.parent.name} › ${listing.category.name}` : listing.category.name)
+    : null;
+
   const specs = [
     listing.brand && ['Marka', listing.brand.name],
-    listing.category && ['Kategori', listing.category.name],
+    categoryLabel && ['Kategori', categoryLabel],
     listing.sizeLabel && ['Beden', listing.sizeLabel],
     listing.city && ['Konum', listing.city],
     ['İlan no', '#MTR-' + listing.id.slice(-6).toUpperCase()],
@@ -161,6 +165,10 @@ export default function ListingDetailClient() {
       <div style={{ display: 'flex', alignItems: 'center', gap: 8, color: 'var(--ink-3)', fontSize: 12.5, padding: '20px 0 4px', flexWrap: 'wrap' }}>
         <Link href="/" style={{ color: 'var(--ink-3)' }}>Keşfet</Link>
         <ChevronRight size={13} style={{ opacity: 0.5 }} />
+        {listing.category?.parent && <>
+          <Link href={`/kategori/${listing.category.parent.slug}`} style={{ color: 'var(--ink-3)' }}>{listing.category.parent.name}</Link>
+          <ChevronRight size={13} style={{ opacity: 0.5 }} />
+        </>}
         {listing.category && <Link href={`/kategori/${listing.category.slug ?? listing.category.name.toLowerCase()}`} style={{ color: 'var(--ink-3)' }}>{listing.category.name}</Link>}
         {listing.category && <ChevronRight size={13} style={{ opacity: 0.5 }} />}
         <span style={{ color: 'var(--ink-2)' }}>{listing.title}</span>
