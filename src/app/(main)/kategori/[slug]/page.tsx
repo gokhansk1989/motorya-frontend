@@ -153,8 +153,8 @@ export default async function CategoryPage({ params }: { params: Promise<{ slug:
 
         {/* Header */}
         <div style={{ padding: '16px 0 24px' }}>
-          <h1 className="m-display" style={{ fontSize: 28, margin: '0 0 8px' }}>
-            <CatIcon slug={slug} size={36} /> İkinci El {category.name}
+          <h1 className="m-display" style={{ fontSize: 28, margin: '0 0 8px', display: 'flex', alignItems: 'center', gap: 12 }}>
+            <CatIcon slug={slug} size={40} /> İkinci El {category.name}
           </h1>
           <p style={{ color: 'var(--ink-3)', fontSize: 14.5, margin: 0 }}>
             {total > 0 ? `${total.toLocaleString('tr-TR')} ilan bulundu` : 'Bu kategoride ilan bekleniyor'}
