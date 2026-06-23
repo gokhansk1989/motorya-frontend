@@ -115,12 +115,24 @@ export default async function CityListingPage({ params }: { params: Promise<{ sl
           <span style={{ color: 'var(--ink)' }}>{city}</span>
         </nav>
 
-        <h1 className="m-display" style={{ fontSize: 28, marginBottom: 8 }}>
+        <h1 className="m-display" style={{ fontSize: 28, marginBottom: 8, display: 'flex', alignItems: 'center', gap: 12 }}>
           {city} İkinci El {cat.label}
         </h1>
-        <p style={{ color: 'var(--ink-3)', fontSize: 15, marginBottom: 32 }}>
+        <p style={{ color: 'var(--ink-3)', fontSize: 15, marginBottom: 20 }}>
           {city}&apos;de {listings.length > 0 ? `${listings.length}+ ` : ''}ikinci el {cat.description} ilanı. Güvenli al-sat, hızlı kargo.
         </p>
+
+        {/* L1 kategori navigasyonu — şehir bağlamını korur */}
+        <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginBottom: 28 }}>
+          {Object.entries(CATEGORIES).map(([cSlug, c]) => (
+            <Link key={cSlug} href={`/kategori/${cSlug}/${sehir}`} className="m-chip"
+              style={{ height: 34, fontSize: 13, textDecoration: 'none',
+                background: cSlug === catSlug ? 'var(--accent)' : undefined,
+                color: cSlug === catSlug ? '#fff' : undefined }}>
+              {c.label}
+            </Link>
+          ))}
+        </div>
 
         {listings.length === 0 ? (
           <div style={{ textAlign: 'center', padding: '80px 0', color: 'var(--ink-3)' }}>
@@ -166,19 +178,6 @@ export default async function CityListingPage({ params }: { params: Promise<{ sl
           </div>
         </section>
 
-        {/* İç linkler: diğer kategoriler */}
-        <section style={{ marginTop: 32 }}>
-          <h2 style={{ fontSize: 16, fontWeight: 700, marginBottom: 14, color: 'var(--ink-2)' }}>
-            {city}&apos;de Diğer Kategoriler
-          </h2>
-          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
-            {Object.entries(CATEGORIES).filter(([k]) => k !== catSlug).map(([slug, c]) => (
-              <Link key={slug} href={`/kategori/${slug}/${sehir}`} className="m-chip" style={{ height: 32, fontSize: 13 }}>
-                {c.label}
-              </Link>
-            ))}
-          </div>
-        </section>
       </div>
     </>
   );
