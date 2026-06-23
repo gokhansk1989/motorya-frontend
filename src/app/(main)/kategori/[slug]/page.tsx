@@ -52,7 +52,7 @@ async function fetchCategoryData(slug: string): Promise<CategoryData | null> {
 
 async function fetchListings(categoryId: string, city?: string): Promise<{ items: Listing[]; total: number }> {
   try {
-    const params = new URLSearchParams({ categoryId, limit: '48', page: '1', status: 'ACTIVE' });
+    const params = new URLSearchParams({ categoryId, limit: '48', page: '1' });
     if (city) params.set('city', city);
     const res = await fetch(`${API_URL}/listings?${params}`, { next: { revalidate: 300 } });
     if (!res.ok) return { items: [], total: 0 };
