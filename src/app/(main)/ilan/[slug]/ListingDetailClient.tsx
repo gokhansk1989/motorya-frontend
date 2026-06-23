@@ -148,7 +148,9 @@ export default function ListingDetailClient() {
   };
 
   const categoryLabel = listing.category
-    ? (listing.category.parent ? `${listing.category.parent.name} › ${listing.category.name}` : listing.category.name)
+    ? (listing.category.parent
+        ? `${listing.category.parent.name ?? listing.category.parent.slug} › ${listing.category.name}`
+        : listing.category.name)
     : null;
 
   const specs = [
@@ -166,7 +168,7 @@ export default function ListingDetailClient() {
         <Link href="/" style={{ color: 'var(--ink-3)' }}>Keşfet</Link>
         <ChevronRight size={13} style={{ opacity: 0.5 }} />
         {listing.category?.parent && <>
-          <Link href={`/kategori/${listing.category.parent.slug}`} style={{ color: 'var(--ink-3)' }}>{listing.category.parent.name}</Link>
+          <Link href={`/kategori/${listing.category.parent.slug}`} style={{ color: 'var(--ink-3)' }}>{listing.category.parent.name ?? listing.category.parent.slug}</Link>
           <ChevronRight size={13} style={{ opacity: 0.5 }} />
         </>}
         {listing.category && <Link href={`/kategori/${listing.category.slug ?? listing.category.name.toLowerCase()}`} style={{ color: 'var(--ink-3)' }}>{listing.category.name}</Link>}
