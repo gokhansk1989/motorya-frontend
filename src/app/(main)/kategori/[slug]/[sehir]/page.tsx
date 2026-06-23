@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
+import Image from 'next/image';
 import { notFound } from 'next/navigation';
 import { CITY_MAP } from '@/lib/cities';
 
@@ -144,7 +145,9 @@ export default async function CityListingPage({ params }: { params: Promise<{ sl
                 <article className="m-card">
                   <div className="m-card-media">
                     {l.images?.[0] ? (
-                      <img src={l.images[0].url} alt={l.title} className="m-card-img" loading="lazy" />
+                      <Image src={l.images[0].url} alt={l.title} fill
+                        sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 200px"
+                        style={{ objectFit: 'cover' }} loading="lazy" />
                     ) : (
                       <div style={{ position: 'absolute', inset: 0, background: 'var(--bg-2)', display: 'grid', placeItems: 'center', color: 'var(--ink-3)', fontSize: 12 }}>Fotoğraf yok</div>
                     )}

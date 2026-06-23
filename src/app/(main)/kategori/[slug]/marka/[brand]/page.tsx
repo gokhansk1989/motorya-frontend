@@ -1,5 +1,6 @@
 import { notFound } from 'next/navigation';
 import Link from 'next/link';
+import Image from 'next/image';
 import { ChevronRight } from 'lucide-react';
 import { CategoryIcon as CatIcon } from '@/components/icons/CategoryIcons';
 
@@ -157,10 +158,11 @@ export default async function CategoryBrandPage({ params }: Props) {
               return (
                 <Link key={listing.id} href={`/ilan/${listingSlug}`} style={{ textDecoration: 'none' }}>
                   <div className="m-surface" style={{ overflow: 'hidden', borderRadius: 'var(--radius)', cursor: 'pointer' }}>
-                    <div style={{ aspectRatio: '4/3', background: 'var(--bg-3)', overflow: 'hidden' }}>
+                    <div style={{ position: 'relative', aspectRatio: '4/3', background: 'var(--bg-3)', overflow: 'hidden' }}>
                       {listing.images?.[0] ? (
-                        <img src={listing.images[0].url} alt={listing.title}
-                          style={{ width: '100%', height: '100%', objectFit: 'cover' }} loading="lazy" />
+                        <Image src={listing.images[0].url} alt={listing.title} fill
+                          sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 240px"
+                          style={{ objectFit: 'cover' }} loading="lazy" />
                       ) : (
                         <div style={{ width: '100%', height: '100%', display: 'grid', placeItems: 'center' }}><CatIcon slug={slug} size={48} /></div>
                       )}
