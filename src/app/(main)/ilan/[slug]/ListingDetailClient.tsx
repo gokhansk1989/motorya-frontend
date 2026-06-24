@@ -1,9 +1,11 @@
 'use client';
 import { useEffect, useRef, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
+import { useQuery } from '@tanstack/react-query';
 import { useListingBySlug, useToggleFavorite, useSimilarListings, useListingsByIds, useMarkSold, useReserveListing, useUnreserveListing, usePriceGuide } from '@/hooks/useListings';
 import { useCreateOffer, useListingOffers, useRespondOffer, useCounterOffer } from '@/hooks/useOffers';
 import { useAuthStore } from '@/store/auth';
+import { api } from '@/lib/api';
 import { formatPrice, timeAgo } from '@/lib/utils';
 import { MapPin, Eye, Heart, Star, ChevronLeft, ChevronRight, Shield, Truck, Users, Share2, Flag, MessageCircle, BellPlus } from 'lucide-react';
 import { useStartConversation } from '@/hooks/useMessages';
@@ -59,6 +61,15 @@ export default function ListingDetailClient() {
   const recentIds = useRecentlyViewedIds(id);
   const { data: recentlyViewed } = useListingsByIds(recentIds);
   const { data: priceGuide } = usePriceGuide(listing?.categoryId, listing?.brandId ?? undefined);
+  const sellerId = listing?.seller?.id ?? '';
+  const { data: sellerProfile } = useQuery({
+    queryKey: ['seller-other-listings', sellerId],
+    queryFn: () => api.get(`/users/${sellerId}`).then(r => r.data),
+    enabled: !!sellerId,
+  });
+  const sellerOtherListings = (sellerProfile?.listings ?? [])
+    .filter((l: any) => l.id !== id && l.status === 'ACTIVE')
+    .slice(0, 4);
   const markSold = useMarkSold();
   const reserveListing = useReserveListing();
   const unreserveListing = useUnreserveListing();
@@ -494,6 +505,41 @@ export default function ListingDetailClient() {
             </div>
             <ChevronRight size={18} style={{ color: 'var(--ink-3)' }} />
           </Link>
+
+          {/* Satıcının diğer ilanları */}
+          {sellerOtherListings.length > 0 && (
+            <div className="m-surface" style={{ marginTop: 16, padding: '16px 18px' }}>
+              <p style={{ fontWeight: 600, fontSize: 13.5, margin: '0 0 12px' }}>
+                {listing.seller.displayName}&apos;in diğer ilanları
+              </p>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
+                {sellerOtherListings.map((l: any) => (
+                  <Link key={l.id} href={`/ilan/${l.slug ?? l.id}`} style={{ textDecoration: 'none' }}>
+                    <div style={{ borderRadius: 10, overflow: 'hidden', background: 'var(--bg-1)', border: '1px solid var(--line-soft)' }}>
+                      <div style={{ position: 'relative', aspectRatio: '1/1', background: 'var(--bg-2)' }}>
+                        {l.images?.[0] ? (
+                          <img src={l.images[0].url} alt={l.title} style={{ width: '100%', height: '100%', objectFit: 'cover', position: 'absolute', inset: 0 }} loading="lazy" />
+                        ) : (
+                          <div style={{ position: 'absolute', inset: 0, display: 'grid', placeItems: 'center', color: 'var(--ink-3)', fontSize: 11 }}>Fotoğraf yok</div>
+                        )}
+                      </div>
+                      <div style={{ padding: '8px 10px' }}>
+                        <p style={{ fontSize: 12, fontWeight: 600, margin: '0 0 3px', overflow: 'hidden', display: '-webkit-box', WebkitLineClamp: 1, WebkitBoxOrient: 'vertical' }}>
+                          {l.title}
+                        </p>
+                        <p className="m-price" style={{ fontSize: 13.5 }}>
+                          {Number(l.price).toLocaleString('tr-TR')}<span className="cur" style={{ fontSize: 10 }}>₺</span>
+                        </p>
+                      </div>
+                    </div>
+                  </Link>
+                ))}
+              </div>
+              <Link href={`/kullanici/${listing.seller.id}`} style={{ display: 'block', textAlign: 'center', fontSize: 12.5, color: 'var(--accent)', fontWeight: 600, textDecoration: 'none', marginTop: 12 }}>
+                Tüm ilanlarını gör
+              </Link>
+            </div>
+          )}
 
           {/* Fiyat Alarmı */}
           {!isMine && listing.category && (
