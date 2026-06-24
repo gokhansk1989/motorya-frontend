@@ -69,7 +69,7 @@ export default function ListingDetailClient() {
   });
   const sellerOtherListings = (sellerProfile?.listings ?? [])
     .filter((l: any) => l.id !== id && l.status === 'ACTIVE')
-    .slice(0, 4);
+    .slice(0, 2);
   const markSold = useMarkSold();
   const reserveListing = useReserveListing();
   const unreserveListing = useUnreserveListing();
