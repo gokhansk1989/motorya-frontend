@@ -116,8 +116,12 @@ export const ICON_MAP: Record<string, string> = {
   'bakim-temizlik': '/icons/bakim.png',
 };
 
+// Eski/bozuk veride 'helmet', 'jacket' gibi URL olmayan değerler kalmış olabilir — yalnızca
+// gerçek bir URL/yol formatındaki iconKey'i kullan, diğer her şeyde slug haritasına düş.
+const isValidIconUrl = (v?: string | null): v is string => !!v && /^(https?:\/\/|\/)/.test(v);
+
 export function CategoryIcon({ slug, size = 48, alt = '', className, style, iconUrl }: CategoryIconProps) {
-  const src = iconUrl || ICON_MAP[slug] || '/icons/moto-aksesuar.png';
+  const src = (isValidIconUrl(iconUrl) ? iconUrl : null) || ICON_MAP[slug] || '/icons/moto-aksesuar.png';
   return (
     // eslint-disable-next-line @next/next/no-img-element
     <img
