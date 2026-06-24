@@ -226,6 +226,26 @@ export default function ProfilePage() {
 
   const pushIsOn = permission === 'granted' && subscribed;
 
+  const notificationPrefs = profile?.notificationPrefs ?? { offers: true, messages: true, priceDrops: true, listingStatus: true };
+
+  const updateNotifPrefs = useMutation({
+    mutationFn: (patch: Record<string, boolean>) => api.patch('/users/me/notification-prefs', patch).then(r => r.data),
+    onMutate: (patch) => {
+      qc.setQueryData(['my-profile'], (old: any) => old ? { ...old, notificationPrefs: { ...old.notificationPrefs, ...patch } } : old);
+    },
+    onError: () => {
+      toast.error('Tercih güncellenemedi');
+      qc.invalidateQueries({ queryKey: ['my-profile'] });
+    },
+  });
+
+  const NOTIF_CATEGORIES: { key: 'offers' | 'messages' | 'priceDrops' | 'listingStatus'; label: string }[] = [
+    { key: 'offers', label: 'Teklif bildirimleri' },
+    { key: 'messages', label: 'Mesaj bildirimleri' },
+    { key: 'priceDrops', label: 'Fiyat düşüşü bildirimleri' },
+    { key: 'listingStatus', label: 'İlan durumu bildirimleri' },
+  ];
+
   return (
     <div className="m-wrap" style={{ maxWidth: 700, paddingTop: 36, paddingBottom: 60 }}>
       {/* Header summary */}
@@ -778,15 +798,27 @@ export default function ProfilePage() {
               )}
             </div>
 
-            {/* Per-type status rows */}
-            {['Teklif bildirimleri', 'Mesaj bildirimleri', 'Fiyat düşüşü bildirimleri', 'İlan durumu bildirimleri'].map(label => (
-              <div key={label} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '12px 0', borderBottom: '1px solid var(--line-soft)' }}>
-                <p style={{ fontSize: 13.5, color: 'var(--ink-2)' }}>{label}</p>
-                <span style={{ fontSize: 11.5, fontWeight: 700, fontFamily: 'var(--font-mono)', padding: '2px 10px', borderRadius: 20, background: pushIsOn ? 'color-mix(in oklch, var(--good) 12%, transparent)' : 'var(--bg-2)', color: pushIsOn ? 'var(--good)' : 'var(--ink-3)' }}>
-                  {pushIsOn ? 'Açık' : 'Kapalı'}
-                </span>
-              </div>
-            ))}
+            {/* Kategori bazlı push tercihleri — her biri ayrı, sunucuya kaydedilir */}
+            {NOTIF_CATEGORIES.map(({ key, label }) => {
+              const isOn = notificationPrefs[key] !== false;
+              return (
+                <div key={key} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '12px 0', borderBottom: '1px solid var(--line-soft)' }}>
+                  <p style={{ fontSize: 13.5, color: 'var(--ink-2)' }}>{label}</p>
+                  <button
+                    disabled={!pushIsOn}
+                    onClick={() => updateNotifPrefs.mutate({ [key]: !isOn })}
+                    title={!pushIsOn ? 'Önce tarayıcı bildirimlerini açın' : undefined}
+                    style={{
+                      fontSize: 11.5, fontWeight: 700, fontFamily: 'var(--font-mono)', padding: '2px 10px', borderRadius: 20,
+                      border: 'none', cursor: pushIsOn ? 'pointer' : 'not-allowed', opacity: pushIsOn ? 1 : 0.5,
+                      background: isOn ? 'color-mix(in oklch, var(--good) 12%, transparent)' : 'var(--bg-2)',
+                      color: isOn ? 'var(--good)' : 'var(--ink-3)',
+                    }}>
+                    {isOn ? 'Açık' : 'Kapalı'}
+                  </button>
+                </div>
+              );
+            })}
 
             <p style={{ fontSize: 12, color: 'var(--ink-3)', marginTop: 14, lineHeight: 1.6 }}>
               Uygulama içi bildirimler her zaman aktiftir. Tarayıcı bildirimleri yalnızca sitenin açık olmadığı anlarda çalışır.
