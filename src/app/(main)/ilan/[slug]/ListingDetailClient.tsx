@@ -495,6 +495,33 @@ export default function ListingDetailClient() {
             <ChevronRight size={18} style={{ color: 'var(--ink-3)' }} />
           </Link>
 
+          {/* Fiyat Alarmı */}
+          {!isMine && listing.category && (
+            <div className="m-surface" style={{ marginTop: 16, padding: '16px 18px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 6 }}>
+                <BellPlus size={18} style={{ color: 'var(--accent)', flexShrink: 0 }} />
+                <p style={{ fontWeight: 600, fontSize: 13.5, margin: 0 }}>Bu kategoride benzer ilan çıkınca haber ver</p>
+              </div>
+              <p style={{ fontSize: 12, color: 'var(--ink-3)', margin: '0 0 12px' }}>{listing.category.name} kategorisinde yeni ilan yayınlandığında bildirim al.</p>
+              <button
+                onClick={() => {
+                  if (!user) { toast.error('Alarm kurmak için giriş yapmalısın'); return; }
+                  createAlarm.mutate(
+                    { label: `${listing.category.name} Alarmı`, categoryId: listing.category.id },
+                    {
+                      onSuccess: () => toast.success('Alarm kuruldu!'),
+                      onError: (e: any) => toast.error(e?.response?.data?.message ?? 'Alarm kurulamadı'),
+                    }
+                  );
+                }}
+                disabled={createAlarm.isPending}
+                className="m-btn m-btn-primary"
+                style={{ width: '100%' }}>
+                Alarm Kur
+              </button>
+            </div>
+          )}
+
           {!isMine && (
             <div style={{ display: 'flex', alignItems: 'center', gap: 6, justifyContent: 'center', marginTop: 12, fontSize: 12, color: 'var(--ink-3)' }}>
               <Flag size={13} />
@@ -507,33 +534,6 @@ export default function ListingDetailClient() {
           )}
         </div>
       </div>
-
-      {/* Fiyat Alarmı */}
-      {!isMine && listing.category && (
-        <div style={{ margin: '16px 0', padding: '14px 18px', background: 'var(--bg-2)', borderRadius: 12, border: '1px solid var(--line-soft)', display: 'flex', alignItems: 'center', gap: 14 }}>
-          <BellPlus size={20} style={{ color: 'var(--accent)', flexShrink: 0 }} />
-          <div style={{ flex: 1 }}>
-            <p style={{ fontWeight: 600, fontSize: 13.5, margin: '0 0 2px' }}>Bu kategoride benzer ilan çıkınca haber ver</p>
-            <p style={{ fontSize: 12, color: 'var(--ink-3)', margin: 0 }}>{listing.category.name} kategorisinde yeni ilan yayınlandığında bildirim al.</p>
-          </div>
-          <button
-            onClick={() => {
-              if (!user) { toast.error('Alarm kurmak için giriş yapmalısın'); return; }
-              createAlarm.mutate(
-                { label: `${listing.category.name} Alarmı`, categoryId: listing.category.id },
-                {
-                  onSuccess: () => toast.success('Alarm kuruldu!'),
-                  onError: (e: any) => toast.error(e?.response?.data?.message ?? 'Alarm kurulamadı'),
-                }
-              );
-            }}
-            disabled={createAlarm.isPending}
-            className="m-btn m-btn-primary"
-            style={{ fontSize: 13, padding: '0 14px', height: 36, flexShrink: 0 }}>
-            Alarm Kur
-          </button>
-        </div>
-      )}
 
       <AdSlot
         slot={process.env.NEXT_PUBLIC_ADSENSE_SLOT_DETAIL ?? ''}
