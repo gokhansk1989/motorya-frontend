@@ -1,13 +1,14 @@
 import { cn } from '@/lib/utils';
 
 const conditionMap: Record<string, string> = {
-  NEW: 'Sıfır', LIKE_NEW: 'Çok İyi', GOOD: 'İyi', FAIR: 'İdare Eder',
+  NEW: 'Sıfır', LIKE_NEW: 'Sıfır Gibi', GOOD: 'İyi', FAIR: 'Makul', POOR: 'Kullanılmış',
 };
 const conditionColor: Record<string, string> = {
   NEW: 'bg-emerald-100 text-emerald-700',
   LIKE_NEW: 'bg-blue-100 text-blue-700',
   GOOD: 'bg-yellow-100 text-yellow-700',
   FAIR: 'bg-gray-100 text-gray-600',
+  POOR: 'bg-red-100 text-red-700',
 };
 const statusMap: Record<string, string> = {
   CREATED: 'Oluşturuldu', AWAITING_PAYMENT: 'Ödeme Bekleniyor',

@@ -16,7 +16,7 @@ const CONDITIONS = [
   { value: 'NEW', label: 'Sıfır' },
   { value: 'LIKE_NEW', label: 'Sıfır gibi' },
   { value: 'GOOD', label: 'İyi' },
-  { value: 'FAIR', label: 'Kabul edilebilir' },
+  { value: 'FAIR', label: 'Makul' },
 ];
 
 const GENDERS = [

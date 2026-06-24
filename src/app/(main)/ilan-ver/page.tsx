@@ -38,8 +38,8 @@ const CONDITIONS = [
   { value: 'NEW', label: 'Sıfır' },
   { value: 'LIKE_NEW', label: 'Sıfır Gibi' },
   { value: 'GOOD', label: 'İyi' },
-  { value: 'FAIR', label: 'Orta' },
-  { value: 'POOR', label: 'Kötü' },
+  { value: 'FAIR', label: 'Makul' },
+  { value: 'POOR', label: 'Kullanılmış' },
 ];
 
 const MAX_IMAGES = 8;
