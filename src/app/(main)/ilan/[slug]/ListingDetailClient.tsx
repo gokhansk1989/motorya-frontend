@@ -153,10 +153,15 @@ export default function ListingDetailClient() {
         : listing.category.name)
     : null;
 
+  const conditionLabelMap: Record<string, string> = {
+    NEW: 'Sıfır', LIKE_NEW: 'Sıfır Gibi', GOOD: 'İyi', FAIR: 'Makul', POOR: 'Kullanılmış',
+  };
+
   const specs = [
     listing.brand && ['Marka', listing.brand.name],
     categoryLabel && ['Kategori', categoryLabel],
     listing.sizeLabel && ['Beden', listing.sizeLabel],
+    listing.condition && ['Durum', conditionLabelMap[listing.condition] ?? listing.condition],
     listing.city && ['Konum', listing.city],
     ['İlan no', '#MTR-' + listing.id.slice(-6).toUpperCase()],
   ].filter(Boolean) as [string, string][];

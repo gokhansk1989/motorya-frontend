@@ -76,6 +76,7 @@ export function Header() {
   const mobileNavLinks = [
     { href: '/', label: 'Keşfet', icon: <Home size={19} /> },
     { href: '/blog', label: 'Blog', icon: <Newspaper size={19} /> },
+    { href: '/ara', label: 'Detaylı Ara', icon: <Search size={19} /> },
     ...(user ? [
       { href: '/ilanlarim', label: 'İlanlarım', icon: <Tag size={19} /> },
       { href: '/favoriler', label: 'Favorilerim', icon: <Heart size={19} /> },
@@ -118,6 +119,7 @@ export function Header() {
             {[
               { href: '/', label: 'Keşfet' },
               { href: '/blog', label: 'Blog' },
+              { href: '/ara', label: 'Detaylı Ara' },
               ...(user ? [{ href: '/ilanlarim', label: 'İlanlarım' }] : []),
             ].map(({ href, label }) => (
               <Link key={href} href={href} style={{
