@@ -1,7 +1,7 @@
 'use client';
 import Link from 'next/link';
 import Image from 'next/image';
-import { Heart, MapPin, Eye } from 'lucide-react';
+import { Heart, MapPin, Eye, Star } from 'lucide-react';
 import { formatPrice, timeAgo } from '@/lib/utils';
 import { useToggleFavorite } from '@/hooks/useListings';
 import { useAuthStore } from '@/store/auth';
@@ -50,6 +50,11 @@ export function ListingCard({ listing }: { listing: Listing }) {
             </div>
           )}
           <div style={{ position: 'absolute', top: 10, left: 10, display: 'flex', gap: 6, zIndex: 2 }}>
+            {(listing as any).isFeatured && (
+              <span className="m-badge solid" style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}>
+                <Star size={10} fill="currentColor" strokeWidth={0} /> ÖNE ÇIKAN
+              </span>
+            )}
             {discountPct && discountPct > 0 && (
               <span className="m-badge new">%{discountPct} İNDİRİM</span>
             )}

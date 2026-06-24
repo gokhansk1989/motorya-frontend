@@ -6,7 +6,7 @@ import { useListings } from '@/hooks/useListings';
 import { ListingCard } from '@/components/listings/ListingCard';
 import { AdSlot } from '@/components/ui/AdSlot';
 import { api } from '@/lib/api';
-import { Search, Flame, ChevronRight, Bell } from 'lucide-react';
+import { Search, Flame, ChevronRight, Bell, Star } from 'lucide-react';
 import Link from 'next/link';
 import { useAuthStore } from '@/store/auth';
 import { CategoryIcon } from '@/components/icons/CategoryIcons';
@@ -115,6 +115,28 @@ function SkeletonGrid() {
   );
 }
 
+function FeaturedSection() {
+  const { data } = useListings({ isFeatured: true, limit: 12, sort: 'newest' });
+  const items = data?.items ?? [];
+  if (items.length === 0) return null;
+
+  return (
+    <div>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 14 }}>
+        <Star size={18} fill="var(--accent)" strokeWidth={0} style={{ color: 'var(--accent)' }} />
+        <h2 className="m-display" style={{ fontSize: 18, margin: 0 }}>Öne Çıkan İlanlar</h2>
+      </div>
+      <div style={{ display: 'flex', gap: 14, overflowX: 'auto', paddingBottom: 6 }}>
+        {items.map((l: any) => (
+          <div key={l.id} style={{ width: 220, minWidth: 220, maxWidth: 220, flexShrink: 0 }}>
+            <ListingCard listing={l} />
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 function FiyatAlarmBanner() {
   const { user } = useAuthStore();
   return (
@@ -166,6 +188,9 @@ function HomeContent() {
 
         {/* Kategori grid */}
         <CategoryGrid categories={l1Categories} activeSlug={categorySlug} onSelect={handleSelect} />
+
+        <div style={{ height: 28 }} />
+        <FeaturedSection />
 
         <div style={{ height: 16 }} />
         <FiyatAlarmBanner />

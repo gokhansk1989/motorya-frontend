@@ -15,6 +15,7 @@ export interface Listing {
   viewCount: number;
   favoriteCount: number;
   isFavorited?: boolean;
+  isFeatured?: boolean;
   createdAt: string;
   images: { url: string; sortOrder: number }[];
   seller: { id: string; displayName: string; avatarUrl?: string; ratingAvg: number };
@@ -34,6 +35,7 @@ export interface ListingsQuery {
   page?: number;
   limit?: number;
   sort?: string;
+  isFeatured?: boolean;
 }
 
 export function useListings(query: ListingsQuery = {}) {

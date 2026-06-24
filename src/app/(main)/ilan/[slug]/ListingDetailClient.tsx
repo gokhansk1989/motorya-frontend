@@ -294,7 +294,14 @@ export default function ListingDetailClient() {
         <div className="m-detail-sticky m-detail-right" style={{ position: 'sticky', top: 88 }}>
           <div className="m-surface-2" style={{ padding: '22px 24px' }}>
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
-              <ConditionPill condition={listing.condition} />
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                <ConditionPill condition={listing.condition} />
+                {(listing as any).isFeatured && (
+                  <span className="m-badge solid" style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}>
+                    <Star size={10} fill="currentColor" strokeWidth={0} /> ÖNE ÇIKAN
+                  </span>
+                )}
+              </div>
               <div>
                 <button
                   onClick={() => user && toggleFavorite.mutate(id)}
