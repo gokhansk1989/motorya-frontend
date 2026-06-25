@@ -129,9 +129,6 @@ function CategoryGrid({ categories, allCategories, activeSlug, onSelect }: {
 
   if (!categories.length) return null;
 
-  const expanded = categories.find(c => c.id === expandedId) ?? null;
-  const children = expanded ? allCategories.filter(c => c.parentId === expanded.id) : [];
-
   return (
     <div>
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 14 }}>
@@ -141,9 +138,11 @@ function CategoryGrid({ categories, allCategories, activeSlug, onSelect }: {
         </Link>
       </div>
       <div className="m-category-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: 10 }}>
-        {categories.map(c => {
+        {categories.map((c, i) => {
           const active = activeSlug === c.slug;
-          const hasChildren = allCategories.some(ch => ch.parentId === c.id);
+          const children = allCategories.filter(ch => ch.parentId === c.id);
+          const hasChildren = children.length > 0;
+          const alignRight = i % 7 >= 4;
           return (
             <div
               key={c.id}
@@ -166,44 +165,49 @@ function CategoryGrid({ categories, allCategories, activeSlug, onSelect }: {
                   style={{
                     position: 'absolute', top: 6, right: 6, width: 20, height: 20, borderRadius: '50%',
                     display: 'grid', placeItems: 'center', background: 'var(--bg-2)', border: '1px solid var(--line-soft)',
-                    color: 'var(--ink-3)', cursor: 'pointer', padding: 0,
+                    color: 'var(--ink-3)', cursor: 'pointer', padding: 0, zIndex: 2,
                   }}
                 >
                   <ChevronDown size={12} style={{ transform: expandedId === c.id ? 'rotate(180deg)' : 'none', transition: 'transform .15s' }} />
                 </button>
               )}
+              <AnimatePresence>
+                {expandedId === c.id && hasChildren && (
+                  <motion.div
+                    initial={{ opacity: 0, y: -6 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: -6 }}
+                    transition={{ duration: 0.15, ease: 'easeOut' }}
+                    onMouseEnter={cancelPending}
+                    onMouseLeave={scheduleCollapse}
+                    style={{
+                      position: 'absolute', top: 'calc(100% + 8px)', [alignRight ? 'right' : 'left']: 0,
+                      zIndex: 30, minWidth: 220, maxWidth: 320,
+                    }}
+                  >
+                    <div style={{ background: 'var(--bg-1)', border: '1px solid var(--line-soft)', borderRadius: 12, padding: 10, display: 'flex', flexDirection: 'column', gap: 4, boxShadow: '0 8px 24px -8px rgba(0,0,0,0.18)' }}>
+                      {children.map(ch => (
+                        <button
+                          key={ch.id}
+                          onClick={() => { cancelPending(); onSelect(ch.slug); setExpandedId(null); }}
+                          style={{
+                            textAlign: 'left', padding: '7px 10px', borderRadius: 8, border: 0, background: 'transparent',
+                            color: 'var(--ink-2)', fontSize: 13, cursor: 'pointer', whiteSpace: 'nowrap',
+                          }}
+                          onMouseEnter={(e) => (e.currentTarget.style.background = 'var(--bg-2)')}
+                          onMouseLeave={(e) => (e.currentTarget.style.background = 'transparent')}
+                        >
+                          {ch.name}
+                        </button>
+                      ))}
+                    </div>
+                  </motion.div>
+                )}
+              </AnimatePresence>
             </div>
           );
         })}
       </div>
-
-      <AnimatePresence>
-        {expanded && children.length > 0 && (
-          <motion.div
-            initial={{ opacity: 0, height: 0, marginTop: 0 }}
-            animate={{ opacity: 1, height: 'auto', marginTop: 10 }}
-            exit={{ opacity: 0, height: 0, marginTop: 0 }}
-            transition={{ duration: 0.2, ease: 'easeOut' }}
-            onMouseEnter={cancelPending}
-            onMouseLeave={scheduleCollapse}
-            style={{ overflow: 'hidden' }}
-          >
-            <div style={{ background: 'var(--bg-1)', border: '1px solid var(--line-soft)', borderRadius: 14, padding: '12px 14px', display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
-              <span style={{ fontSize: 12, color: 'var(--ink-3)', fontWeight: 600, flexShrink: 0 }}>{expanded.name}:</span>
-              {children.map(ch => (
-                <button
-                  key={ch.id}
-                  onClick={() => { cancelPending(); onSelect(ch.slug); setExpandedId(null); }}
-                  className="m-chip"
-                  style={{ height: 30, fontSize: 12.5 }}
-                >
-                  {ch.name}
-                </button>
-              ))}
-            </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
     </div>
   );
 }
