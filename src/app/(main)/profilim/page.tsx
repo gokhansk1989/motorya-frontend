@@ -12,6 +12,7 @@ import {
   UserMinus, Camera, Bell, BellOff, Settings, Layers, Search, Trash2, ExternalLink,
   Package, BellPlus, PenSquare,
 } from 'lucide-react';
+import { IL_ILCE, ALL_CITIES } from '@/lib/il-ilce';
 
 function savedSearchToUrl(s: { search?: string; categoryId?: string; city?: string; condition?: string; minPrice?: string; maxPrice?: string }) {
   const p = new URLSearchParams();
@@ -32,21 +33,11 @@ import { usePushNotifications } from '@/hooks/usePushNotifications';
 import Link from 'next/link';
 import toast from 'react-hot-toast';
 
-const CITIES = [
-  'Adana','Adıyaman','Afyonkarahisar','Ağrı','Aksaray','Amasya','Ankara','Antalya','Ardahan','Artvin',
-  'Aydın','Balıkesir','Bartın','Batman','Bayburt','Bilecik','Bingöl','Bitlis','Bolu','Burdur',
-  'Bursa','Çanakkale','Çankırı','Çorum','Denizli','Diyarbakır','Düzce','Edirne','Elazığ','Erzincan',
-  'Erzurum','Eskişehir','Gaziantep','Giresun','Gümüşhane','Hakkari','Hatay','Iğdır','Isparta','İstanbul',
-  'İzmir','Kahramanmaraş','Karabük','Karaman','Kars','Kastamonu','Kayseri','Kilis','Kırıkkale','Kırklareli',
-  'Kırşehir','Kocaeli','Konya','Kütahya','Malatya','Manisa','Mardin','Mersin','Muğla','Muş',
-  'Nevşehir','Niğde','Ordu','Osmaniye','Rize','Sakarya','Samsun','Şanlıurfa','Siirt','Sinop',
-  'Şırnak','Sivas','Tekirdağ','Tokat','Trabzon','Tunceli','Uşak','Van','Yalova','Yozgat','Zonguldak',
-];
-
 const profileSchema = z.object({
   displayName: z.string().min(2, 'En az 2 karakter'),
   bio: z.string().max(200).optional(),
   city: z.string().optional(),
+  district: z.string().optional(),
   avatarUrl: z.string().optional(),
 });
 
@@ -140,6 +131,7 @@ export default function ProfilePage() {
         displayName: profile.displayName ?? '',
         bio: profile.bio ?? '',
         city: profile.city ?? '',
+        district: profile.district ?? '',
         avatarUrl: profile.avatarUrl ?? '',
       });
     }
@@ -380,14 +372,26 @@ export default function ProfilePage() {
                 <textarea {...profileForm.register('bio')} rows={3} style={{ ...inp(), height: 'auto', padding: '10px 14px', resize: 'vertical' }} placeholder="Kendinizden kısaca bahsedin…" />
               </div>
               <div className="m-grid-1-mobile" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14 }}>
-                <div>
-                  <label style={lbl}>Şehir</label>
-                  <div style={{ position: 'relative' }}>
-                    <select {...profileForm.register('city')} style={{ ...inp(), paddingRight: 36, appearance: 'none' }}>
-                      <option value="">Seçin…</option>
-                      {CITIES.map(c => <option key={c} value={c}>{c}</option>)}
-                    </select>
-                    <ChevronDown size={15} style={{ position: 'absolute', right: 12, top: '50%', transform: 'translateY(-50%)', color: 'var(--ink-3)', pointerEvents: 'none' }} />
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
+                  <div>
+                    <label style={lbl}>İl</label>
+                    <div style={{ position: 'relative' }}>
+                      <select {...profileForm.register('city', { onChange: () => profileForm.setValue('district', '') })} style={{ ...inp(), paddingRight: 36, appearance: 'none' }}>
+                        <option value="">İl seçiniz</option>
+                        {ALL_CITIES.map(c => <option key={c} value={c}>{c}</option>)}
+                      </select>
+                      <ChevronDown size={15} style={{ position: 'absolute', right: 12, top: '50%', transform: 'translateY(-50%)', color: 'var(--ink-3)', pointerEvents: 'none' }} />
+                    </div>
+                  </div>
+                  <div>
+                    <label style={lbl}>İlçe</label>
+                    <div style={{ position: 'relative' }}>
+                      <select {...profileForm.register('district')} disabled={!profileForm.watch('city')} style={{ ...inp(), paddingRight: 36, appearance: 'none' }}>
+                        <option value="">{profileForm.watch('city') ? 'İlçe seçiniz' : 'İl seçiniz'}</option>
+                        {(profileForm.watch('city') ? IL_ILCE[profileForm.watch('city') as string] ?? [] : []).map(d => <option key={d} value={d}>{d}</option>)}
+                      </select>
+                      <ChevronDown size={15} style={{ position: 'absolute', right: 12, top: '50%', transform: 'translateY(-50%)', color: 'var(--ink-3)', pointerEvents: 'none' }} />
+                    </div>
                   </div>
                 </div>
                 <div>

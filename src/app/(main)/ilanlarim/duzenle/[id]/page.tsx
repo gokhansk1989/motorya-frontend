@@ -9,6 +9,7 @@ import { Upload, X, ChevronDown, Save, Camera, ImagePlus, ArrowLeft } from 'luci
 import { useRef, useState, useEffect } from 'react';
 import toast from 'react-hot-toast';
 import Link from 'next/link';
+import { IL_ILCE, ALL_CITIES } from '@/lib/il-ilce';
 
 const schema = z.object({
   title: z.string().min(5, 'En az 5 karakter'),
@@ -19,6 +20,7 @@ const schema = z.object({
   price: z.string().min(1, 'Fiyat giriniz').transform(Number),
   originalPrice: z.string().optional().transform(v => v ? Number(v) : undefined),
   city: z.string().optional(),
+  district: z.string().optional(),
   sizeLabel: z.string().optional(),
 });
 
@@ -33,17 +35,6 @@ const CONDITIONS = [
 ];
 
 const MAX_IMAGES = 8;
-
-const CITIES = [
-  'Adana','Adıyaman','Afyonkarahisar','Ağrı','Aksaray','Amasya','Ankara','Antalya','Ardahan','Artvin',
-  'Aydın','Balıkesir','Bartın','Batman','Bayburt','Bilecik','Bingöl','Bitlis','Bolu','Burdur',
-  'Bursa','Çanakkale','Çankırı','Çorum','Denizli','Diyarbakır','Düzce','Edirne','Elazığ','Erzincan',
-  'Erzurum','Eskişehir','Gaziantep','Giresun','Gümüşhane','Hakkari','Hatay','Iğdır','Isparta','İstanbul',
-  'İzmir','Kahramanmaraş','Karabük','Karaman','Kars','Kastamonu','Kayseri','Kilis','Kırıkkale','Kırklareli',
-  'Kırşehir','Kocaeli','Konya','Kütahya','Malatya','Manisa','Mardin','Mersin','Muğla','Muş',
-  'Nevşehir','Niğde','Ordu','Osmaniye','Rize','Sakarya','Samsun','Şanlıurfa','Siirt','Sinop',
-  'Şırnak','Sivas','Tekirdağ','Tokat','Trabzon','Tunceli','Uşak','Van','Yalova','Yozgat','Zonguldak',
-];
 
 const card: React.CSSProperties = {
   background: 'var(--bg-1)', border: '1px solid var(--line)',
@@ -91,9 +82,10 @@ export default function EditListingPage() {
     queryFn: () => api.get('/listings/meta/brands').then(r => r.data),
   });
 
-  const { register, handleSubmit, reset, formState: { errors, isSubmitting } } = useForm<any>({
+  const { register, handleSubmit, reset, watch, setValue, formState: { errors, isSubmitting } } = useForm<any>({
     resolver: zodResolver(schema),
   });
+  const watchedCity = watch('city');
 
   useEffect(() => {
     if (listing && !initialized) {
@@ -106,6 +98,7 @@ export default function EditListingPage() {
         price: String(listing.price ?? ''),
         originalPrice: listing.originalPrice ? String(listing.originalPrice) : '',
         city: listing.city ?? '',
+        district: listing.district ?? '',
         sizeLabel: listing.sizeLabel ?? '',
       });
       setImageUrls(listing.images?.map((img: any) => img.url) ?? []);
@@ -290,11 +283,21 @@ export default function EditListingPage() {
             <input {...register('sizeLabel')} style={inputSt()} placeholder="S, M, 42, XL…" />
           </div>
           <div>
-            <label style={label}>Şehir</label>
+            <label style={label}>İl</label>
             <div style={{ position: 'relative' }}>
-              <select {...register('city')} style={selectSt}>
-                <option value="">Seçin…</option>
-                {CITIES.map(c => <option key={c} value={c}>{c}</option>)}
+              <select {...register('city', { onChange: () => setValue('district', '') })} style={selectSt}>
+                <option value="">İl seçiniz</option>
+                {ALL_CITIES.map(c => <option key={c} value={c}>{c}</option>)}
+              </select>
+              <ChevronDown size={15} style={{ position: 'absolute', right: 12, top: '50%', transform: 'translateY(-50%)', color: 'var(--ink-3)', pointerEvents: 'none' }} />
+            </div>
+          </div>
+          <div>
+            <label style={label}>İlçe</label>
+            <div style={{ position: 'relative' }}>
+              <select {...register('district')} disabled={!watchedCity} style={selectSt}>
+                <option value="">{watchedCity ? 'İlçe seçiniz' : 'İl seçiniz'}</option>
+                {(watchedCity ? IL_ILCE[watchedCity] ?? [] : []).map((d: string) => <option key={d} value={d}>{d}</option>)}
               </select>
               <ChevronDown size={15} style={{ position: 'absolute', right: 12, top: '50%', transform: 'translateY(-50%)', color: 'var(--ink-3)', pointerEvents: 'none' }} />
             </div>

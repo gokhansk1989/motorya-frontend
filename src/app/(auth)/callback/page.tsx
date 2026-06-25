@@ -12,11 +12,12 @@ function CallbackHandler() {
   useEffect(() => {
     const token = params.get('token');
     const userParam = params.get('user');
+    const needsConsent = params.get('needsConsent') === 'true';
     if (token && userParam) {
       try {
         const user = JSON.parse(decodeURIComponent(userParam));
         setAuth(user, token);
-        router.replace('/');
+        router.replace(needsConsent ? '/onaylar' : '/');
       } catch {
         router.replace('/giris');
       }

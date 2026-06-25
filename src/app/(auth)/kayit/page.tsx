@@ -8,7 +8,7 @@ import Link from 'next/link';
 import toast from 'react-hot-toast';
 import { Zap, Eye, EyeOff, User, Mail, Lock, CreditCard, Phone } from 'lucide-react';
 import { useState } from 'react';
-import { ALL_CITIES } from '@/lib/cities';
+import { IL_ILCE, ALL_CITIES } from '@/lib/il-ilce';
 
 function validateTcKimlik(tc: string): boolean {
   if (!/^[1-9][0-9]{10}$/.test(tc)) return false;
@@ -71,11 +71,13 @@ export default function RegisterPage() {
   const [showPwd, setShowPwd] = useState(false);
   const [showPwd2, setShowPwd2] = useState(false);
 
-  const { register, handleSubmit, formState: { errors, isSubmitting }, watch } = useForm<FormData>({
+  const { register, handleSubmit, formState: { errors, isSubmitting }, watch, setValue } = useForm<FormData>({
     resolver: zodResolver(schema),
   });
 
   const tcValue = watch('tcKimlik') || '';
+  const cityValue = watch('city') || '';
+  const districts = cityValue ? IL_ILCE[cityValue] ?? [] : [];
 
   const onSubmit = async (data: FormData) => {
     try {
@@ -232,13 +234,25 @@ export default function RegisterPage() {
 
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14 }}>
               <FieldWrapper label="İl (opsiyonel)" error={errors.city?.message}>
-                <select {...register('city')} style={{ ...plainInputStyle(!!errors.city), appearance: 'none' }} onFocus={focusGlow} onBlur={blurGlow}>
-                  <option value="">Seçiniz</option>
+                <select
+                  {...register('city', { onChange: () => setValue('district', '') })}
+                  style={{ ...plainInputStyle(!!errors.city), appearance: 'none' }}
+                  onFocus={focusGlow} onBlur={blurGlow}
+                >
+                  <option value="">İl seçiniz</option>
                   {ALL_CITIES.map(c => <option key={c} value={c}>{c}</option>)}
                 </select>
               </FieldWrapper>
               <FieldWrapper label="İlçe (opsiyonel)" error={errors.district?.message}>
-                <input {...register('district')} placeholder="İlçe" style={plainInputStyle(!!errors.district)} onFocus={focusGlow} onBlur={blurGlow} />
+                <select
+                  {...register('district')}
+                  disabled={!cityValue}
+                  style={{ ...plainInputStyle(!!errors.district), appearance: 'none' }}
+                  onFocus={focusGlow} onBlur={blurGlow}
+                >
+                  <option value="">{cityValue ? 'İlçe seçiniz' : 'İl seçiniz'}</option>
+                  {districts.map(d => <option key={d} value={d}>{d}</option>)}
+                </select>
               </FieldWrapper>
             </div>
 
