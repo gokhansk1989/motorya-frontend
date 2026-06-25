@@ -6,9 +6,8 @@ import { useListings } from '@/hooks/useListings';
 import { ListingCard } from '@/components/listings/ListingCard';
 import { AdSlot } from '@/components/ui/AdSlot';
 import { api } from '@/lib/api';
-import { Search, Flame, ChevronRight, Bell, Star } from 'lucide-react';
+import { Search, Flame, ChevronRight, Star } from 'lucide-react';
 import Link from 'next/link';
-import { useAuthStore } from '@/store/auth';
 import { CategoryIcon } from '@/components/icons/CategoryIcons';
 import { motion } from 'framer-motion';
 
@@ -167,26 +166,6 @@ function FeaturedSection() {
   );
 }
 
-function FiyatAlarmBanner() {
-  const { user } = useAuthStore();
-  return (
-    <Link href="/fiyat-alarm" style={{ textDecoration: 'none', display: 'block' }}>
-      <div style={{ display: 'flex', alignItems: 'center', gap: 14, padding: '14px 18px', background: 'color-mix(in oklch, var(--accent) 10%, var(--bg-1))', border: '1px solid color-mix(in oklch, var(--accent) 25%, var(--line-soft))', borderRadius: 14, cursor: 'pointer' }}>
-        <div style={{ width: 38, height: 38, borderRadius: 10, background: 'color-mix(in oklch, var(--accent) 18%, var(--bg-2))', display: 'grid', placeItems: 'center', flexShrink: 0 }}>
-          <Bell size={18} style={{ color: 'var(--accent)' }} />
-        </div>
-        <div style={{ flex: 1 }}>
-          <p style={{ fontWeight: 700, fontSize: 14, margin: 0, color: 'var(--ink)' }}>Fiyat Alarmları</p>
-          <p style={{ fontSize: 12, color: 'var(--ink-3)', margin: 0, marginTop: 2 }}>
-            {user ? 'Kayıtlı aramalarını yönet' : 'Kriterlere uyan ilan çıkınca haber al'}
-          </p>
-        </div>
-        <ChevronRight size={16} style={{ color: 'var(--ink-3)', flexShrink: 0 }} />
-      </div>
-    </Link>
-  );
-}
-
 function HomeContent() {
   const router = useRouter();
   const [categorySlug, setCategorySlug] = useState('');
@@ -222,8 +201,6 @@ function HomeContent() {
         <div style={{ height: 28 }} />
         <FeaturedSection />
 
-        <div style={{ height: 16 }} />
-        <FiyatAlarmBanner />
         <div style={{ height: 24 }} />
 
         {/* Listeleme başlığı + sıralama */}

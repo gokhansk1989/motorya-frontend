@@ -518,6 +518,31 @@ function SearchPageInner() {
           <Search size={44} style={{ margin: '0 auto 12px', opacity: 0.2 }} />
           <p style={{ fontWeight: 600, color: 'var(--ink-2)' }}>Sonuç bulunamadı</p>
           <p style={{ fontSize: 13, color: 'var(--ink-3)', marginTop: 4 }}>Farklı anahtar kelime veya filtre deneyin</p>
+
+          {hasActiveFilters || q ? (
+            <button
+              type="button"
+              disabled={createSavedSearch.isPending}
+              onClick={() => {
+                if (!user) { toast.error('Alarm kurmak için giriş yapmalısın'); return; }
+                const categoryName = cats.find((c: any) => c.id === categoryId)?.name;
+                const brandName = brnds.find((b: any) => b.id === brandId)?.name;
+                const label = [q, brandName, categoryName, city].filter(Boolean).join(' · ') || 'Tüm ilanlar';
+                createSavedSearch.mutate(
+                  { label, search: q || undefined, categoryId: categoryId || undefined, brandId: brandId || undefined, condition: condition || undefined, city: city || undefined, minPrice, maxPrice },
+                  {
+                    onSuccess: () => toast.success('Alarm kuruldu — uyan yeni ilan girince haber vereceğiz'),
+                    onError: (err: any) => toast.error(err?.response?.data?.message ?? 'Alarm kurulamadı'),
+                  }
+                );
+              }}
+              className="m-btn m-btn-primary"
+              style={{ gap: 8, margin: '20px auto 0' }}
+            >
+              <BellPlus size={16} />
+              Bu kriterlere uyan ilan çıkınca haber ver
+            </button>
+          ) : null}
         </div>
       ) : (
         <>
