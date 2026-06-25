@@ -6,6 +6,7 @@ import { useAuthStore } from '@/store/auth';
 import { useQueryClient } from '@tanstack/react-query';
 import { io, Socket } from 'socket.io-client';
 import { Send, MessageCircle, Lock, Check, CheckCheck, Circle, ArrowLeft } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
 import Link from 'next/link';
 import { timeAgo } from '@/lib/utils';
 import { api } from '@/lib/api';
@@ -36,6 +37,7 @@ export default function MessagesPage() {
   const [input, setInput] = useState('');
   const [onlineUsers, setOnlineUsers] = useState<Set<string>>(new Set());
   const [typing, setTyping] = useState(false);
+  const [justSent, setJustSent] = useState(false);
   const socketRef = useRef<Socket | null>(null);
   const bottomRef = useRef<HTMLDivElement>(null);
   const msgsContainerRef = useRef<HTMLDivElement>(null);
@@ -107,6 +109,8 @@ export default function MessagesPage() {
     if (!input.trim() || !activeId) return;
     const body = input.trim();
     setInput('');
+    setJustSent(true);
+    setTimeout(() => setJustSent(false), 500);
     sendMessage.mutate({ conversationId: activeId, body }, {
       onError: (err: any) => {
         toast.error(err?.response?.data?.message ?? 'Mesaj gönderilemedi');
@@ -195,7 +199,11 @@ export default function MessagesPage() {
                         {conv.lastMessage?.body ?? (conv.listing ? `📦 ${conv.listing.title}` : 'Yeni konuşma')}
                       </span>
                       {isUnread && (
-                        <span style={{ marginLeft: 'auto', width: 8, height: 8, borderRadius: '50%', background: 'var(--accent)', flexShrink: 0 }} />
+                        <motion.span
+                          animate={{ scale: [1, 1.35, 1], opacity: [1, 0.65, 1] }}
+                          transition={{ duration: 1.6, repeat: Infinity, ease: 'easeInOut' }}
+                          style={{ marginLeft: 'auto', width: 8, height: 8, borderRadius: '50%', background: 'var(--accent)', flexShrink: 0 }}
+                        />
                       )}
                     </div>
                   </div>
@@ -252,40 +260,53 @@ export default function MessagesPage() {
 
             {/* Mesajlar */}
             <div ref={msgsContainerRef} style={{ flex: 1, overflowY: 'auto', padding: '16px 18px', display: 'flex', flexDirection: 'column', gap: 6 }}>
-              {messages.map((msg, i) => {
-                const isMine = msg.sender.id === user.id;
-                const showAvatar = !isMine && (i === 0 || messages[i - 1]?.sender.id !== msg.sender.id);
-                return (
-                  <div key={msg.id} style={{ display: 'flex', justifyContent: isMine ? 'flex-end' : 'flex-start', alignItems: 'flex-end', gap: 6 }}>
-                    {!isMine && (
-                      <div style={{ width: 28, flexShrink: 0 }}>
-                        {showAvatar && <Avatar user={msg.sender} size={28} />}
+              <AnimatePresence initial={false}>
+                {messages.map((msg, i) => {
+                  const isMine = msg.sender.id === user.id;
+                  const showAvatar = !isMine && (i === 0 || messages[i - 1]?.sender.id !== msg.sender.id);
+                  return (
+                    <motion.div
+                      key={msg.id}
+                      initial={{ opacity: 0, x: isMine ? 24 : -24, y: 6, scale: 0.96 }}
+                      animate={{ opacity: 1, x: 0, y: 0, scale: 1 }}
+                      transition={{ duration: 0.28, ease: 'easeOut' }}
+                      style={{ display: 'flex', justifyContent: isMine ? 'flex-end' : 'flex-start', alignItems: 'flex-end', gap: 6 }}
+                    >
+                      {!isMine && (
+                        <div style={{ width: 28, flexShrink: 0 }}>
+                          {showAvatar && <Avatar user={msg.sender} size={28} />}
+                        </div>
+                      )}
+                      <div style={{
+                        maxWidth: '68%', padding: '8px 12px', borderRadius: isMine ? '16px 16px 4px 16px' : '16px 16px 16px 4px',
+                        background: isMine ? 'var(--accent)' : 'var(--bg-2)',
+                        color: isMine ? '#fff' : 'var(--ink)',
+                        fontSize: 14, lineHeight: 1.45,
+                      }}>
+                        {msg.body}
+                        <div style={{ fontSize: 10.5, marginTop: 3, textAlign: 'right', opacity: 0.7, display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: 3 }}>
+                          {new Date(msg.createdAt).toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit' })}
+                          {isMine && <CheckCheck size={12} />}
+                        </div>
                       </div>
-                    )}
-                    <div style={{
-                      maxWidth: '68%', padding: '8px 12px', borderRadius: isMine ? '16px 16px 4px 16px' : '16px 16px 16px 4px',
-                      background: isMine ? 'var(--accent)' : 'var(--bg-2)',
-                      color: isMine ? '#fff' : 'var(--ink)',
-                      fontSize: 14, lineHeight: 1.45,
-                    }}>
-                      {msg.body}
-                      <div style={{ fontSize: 10.5, marginTop: 3, textAlign: 'right', opacity: 0.7, display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: 3 }}>
-                        {new Date(msg.createdAt).toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit' })}
-                        {isMine && <CheckCheck size={12} />}
-                      </div>
-                    </div>
-                  </div>
-                );
-              })}
+                    </motion.div>
+                  );
+                })}
+              </AnimatePresence>
               {typing && (
-                <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                <motion.div
+                  initial={{ opacity: 0, y: 6 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: 6 }}
+                  style={{ display: 'flex', alignItems: 'center', gap: 6 }}
+                >
                   <div style={{ width: 28 }} />
                   <div style={{ padding: '8px 14px', background: 'var(--bg-2)', borderRadius: '16px 16px 16px 4px', display: 'flex', gap: 4 }}>
                     {[0, 1, 2].map(i => (
                       <span key={i} style={{ width: 6, height: 6, borderRadius: '50%', background: 'var(--ink-3)', animation: `bounce 1.2s ease-in-out ${i * 0.2}s infinite` }} />
                     ))}
                   </div>
-                </div>
+                </motion.div>
               )}
               <div ref={bottomRef} />
             </div>
@@ -303,17 +324,42 @@ export default function MessagesPage() {
                   color: 'var(--ink)', fontSize: 14, outline: 'none',
                 }}
               />
-              <button
+              <motion.button
                 onClick={handleSend}
                 disabled={!input.trim() || sendMessage.isPending}
+                whileTap={{ scale: 0.85 }}
                 style={{
                   width: 42, height: 42, borderRadius: '50%', background: 'var(--accent)',
                   border: 0, display: 'grid', placeItems: 'center', color: '#fff', cursor: 'pointer',
-                  opacity: !input.trim() ? 0.5 : 1, flexShrink: 0,
+                  opacity: !input.trim() ? 0.5 : 1, flexShrink: 0, overflow: 'hidden',
                 }}
               >
-                <Send size={16} />
-              </button>
+                <AnimatePresence mode="wait" initial={false}>
+                  {justSent ? (
+                    <motion.span
+                      key="check"
+                      initial={{ scale: 0.4, opacity: 0, rotate: -45 }}
+                      animate={{ scale: 1, opacity: 1, rotate: 0 }}
+                      exit={{ scale: 0.4, opacity: 0 }}
+                      transition={{ duration: 0.25, ease: 'backOut' }}
+                      style={{ display: 'flex' }}
+                    >
+                      <Check size={17} />
+                    </motion.span>
+                  ) : (
+                    <motion.span
+                      key="send"
+                      initial={{ x: -16, opacity: 0 }}
+                      animate={{ x: 0, opacity: 1 }}
+                      exit={{ x: 16, y: -16, opacity: 0, transition: { duration: 0.22, ease: 'easeIn' } }}
+                      transition={{ duration: 0.2, ease: 'easeOut' }}
+                      style={{ display: 'flex' }}
+                    >
+                      <Send size={16} />
+                    </motion.span>
+                  )}
+                </AnimatePresence>
+              </motion.button>
             </div>
           </div>
         )}
