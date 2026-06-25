@@ -11,6 +11,7 @@ import {
 import Link from 'next/link';
 import toast from 'react-hot-toast';
 import { usePullToRefresh } from '@/hooks/usePullToRefresh';
+import { motion, AnimatePresence } from 'framer-motion';
 
 type Notif = {
   id: string;
@@ -109,7 +110,13 @@ function NotificationRow({ n, onClick }: { n: Notif; onClick: (n: Notif) => void
   const clickable = !!getNavTarget(n) || !n.isRead;
 
   return (
-    <div
+    <motion.div
+      layout
+      initial={{ opacity: 0, y: 10, scale: 0.98 }}
+      animate={{ opacity: n.isRead ? 0.65 : 1, y: 0, scale: 1 }}
+      exit={{ opacity: 0, scale: 0.96, transition: { duration: 0.15 } }}
+      transition={{ type: 'spring', stiffness: 380, damping: 32 }}
+      whileTap={clickable ? { scale: 0.985 } : undefined}
       onClick={() => onClick(n)}
       style={{
         display: 'flex', alignItems: 'flex-start', gap: 14, padding: '14px 16px',
@@ -117,27 +124,36 @@ function NotificationRow({ n, onClick }: { n: Notif; onClick: (n: Notif) => void
         border: n.isRead ? '1px solid var(--line-soft)' : `1px solid color-mix(in oklch, var(--accent) 30%, transparent)`,
         borderLeft: n.isRead ? '1px solid var(--line-soft)' : '3px solid var(--accent)',
         background: n.isRead ? 'var(--bg-0)' : 'color-mix(in oklch, var(--accent) 7%, var(--bg-1))',
-        opacity: n.isRead ? 0.65 : 1,
         cursor: clickable ? 'pointer' : 'default',
       }}
     >
-      <div style={{
-        width: 40, height: 40, borderRadius: '50%', flexShrink: 0,
-        display: 'grid', placeItems: 'center',
-        background: n.isRead ? 'var(--bg-2)' : 'color-mix(in oklch, var(--accent) 14%, transparent)',
-        filter: n.isRead ? 'grayscale(1)' : 'none',
-      }}>
+      <motion.div
+        animate={{
+          background: n.isRead ? 'var(--bg-2)' : 'color-mix(in oklch, var(--accent) 14%, transparent)',
+          filter: n.isRead ? 'grayscale(1)' : 'grayscale(0)',
+        }}
+        transition={{ duration: 0.25 }}
+        style={{ width: 40, height: 40, borderRadius: '50%', flexShrink: 0, display: 'grid', placeItems: 'center' }}
+      >
         <Icon size={18} style={{ color: n.isRead ? 'var(--ink-3)' : meta.color }} />
-      </div>
+      </motion.div>
       <div style={{ flex: 1, minWidth: 0 }}>
         <p style={{ fontSize: 14, fontWeight: n.isRead ? 400 : 600, color: n.isRead ? 'var(--ink-2)' : 'var(--ink)', lineHeight: 1.4 }}>{n.title}</p>
         {n.body && <p style={{ fontSize: 12, color: 'var(--ink-3)', marginTop: 3, overflow: 'hidden', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical' }}>{n.body}</p>}
         <p style={{ fontSize: 11, color: 'var(--ink-3)', marginTop: 4, fontFamily: 'var(--font-mono)' }}>{timeAgo(n.createdAt)}</p>
       </div>
-      {!n.isRead && (
-        <div style={{ width: 8, height: 8, borderRadius: '50%', background: 'var(--accent)', marginTop: 8, flexShrink: 0 }} />
-      )}
-    </div>
+      <AnimatePresence>
+        {!n.isRead && (
+          <motion.div
+            initial={{ scale: 0, opacity: 0 }}
+            animate={{ scale: 1, opacity: 1 }}
+            exit={{ scale: 0, opacity: 0 }}
+            transition={{ type: 'spring', stiffness: 500, damping: 25 }}
+            style={{ width: 8, height: 8, borderRadius: '50%', background: 'var(--accent)', marginTop: 8, flexShrink: 0 }}
+          />
+        )}
+      </AnimatePresence>
+    </motion.div>
   );
 }
 
@@ -199,12 +215,13 @@ export default function NotificationsPage() {
           )}
         </h1>
         {unreadCount > 0 && (
-          <button
+          <motion.button
+            whileTap={{ scale: 0.95 }}
             onClick={() => { markRead.mutate(undefined); toast.success('Tümü okundu'); }}
             style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 13, color: 'var(--ink-3)', background: 'none', border: 0, cursor: 'pointer', padding: '6px 10px', borderRadius: 8 }}
           >
             <CheckCheck size={15} /> Tümünü okundu işaretle
-          </button>
+          </motion.button>
         )}
       </div>
 
@@ -216,12 +233,21 @@ export default function NotificationsPage() {
             onClick={() => setTab(key)}
             className="m-chip"
             style={{
-              height: 34, fontSize: 13, border: 0,
-              background: tab === key ? 'var(--accent)' : 'var(--bg-1)',
+              position: 'relative', height: 34, fontSize: 13, border: 0, overflow: 'hidden',
+              background: tab === key ? 'transparent' : 'var(--bg-1)',
               color: tab === key ? '#fff' : 'var(--ink-2)',
             }}
           >
-            {label}{key === 'unread' && unreadCount > 0 ? ` (${unreadCount})` : ''}
+            {tab === key && (
+              <motion.div
+                layoutId="tabPill"
+                transition={{ type: 'spring', stiffness: 500, damping: 35 }}
+                style={{ position: 'absolute', inset: 0, background: 'var(--accent)', borderRadius: 'inherit', zIndex: 0 }}
+              />
+            )}
+            <span style={{ position: 'relative', zIndex: 1 }}>
+              {label}{key === 'unread' && unreadCount > 0 ? ` (${unreadCount})` : ''}
+            </span>
           </button>
         ))}
       </div>
@@ -262,7 +288,9 @@ export default function NotificationsPage() {
                 {group.label}
               </p>
               <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-                {group.items.map(n => <NotificationRow key={n.id} n={n} onClick={handleClick} />)}
+                <AnimatePresence initial={false} mode="popLayout">
+                  {group.items.map(n => <NotificationRow key={n.id} n={n} onClick={handleClick} />)}
+                </AnimatePresence>
               </div>
             </div>
           ))}
