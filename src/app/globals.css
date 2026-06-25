@@ -284,6 +284,20 @@ textarea.m-field { height: auto; padding: 12px 14px; resize: vertical; line-heig
 @keyframes m-fadeUp { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: none; } }
 .m-fade-up { animation: m-fadeUp .4s cubic-bezier(.2,.7,.2,1) both; }
 
+/* ---------- sonsuz kayan vitrin (öne çıkanlar) ---------- */
+@keyframes m-marquee { from { transform: translateX(0); } to { transform: translateX(-50%); } }
+.m-marquee-wrap { overflow: hidden; }
+.m-marquee-track {
+  display: flex;
+  gap: 14px;
+  width: max-content;
+  animation: m-marquee var(--marquee-duration, 40s) linear infinite;
+}
+.m-marquee-wrap:hover .m-marquee-track { animation-play-state: paused; }
+@media (prefers-reduced-motion: reduce) {
+  .m-marquee-track { animation: none; }
+}
+
 /* scrollbar */
 *::-webkit-scrollbar { width: 11px; height: 11px; }
 *::-webkit-scrollbar-thumb { background: var(--bg-3); border-radius: 8px; border: 3px solid var(--bg-0); }

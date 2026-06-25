@@ -143,21 +143,26 @@ function FeaturedSection() {
         </motion.span>
         <h2 className="m-display" style={{ fontSize: 18, margin: 0 }}>Öne Çıkan İlanlar</h2>
       </motion.div>
-      <div style={{ display: 'flex', gap: 14, overflowX: 'auto', paddingBottom: 6 }}>
-        {items.map((l: any, i: number) => (
-          <motion.div
-            key={l.id}
-            initial={{ opacity: 0, y: 18, scale: 0.96 }}
-            animate={{ opacity: 1, y: 0, scale: 1 }}
-            transition={{ duration: 0.35, ease: 'easeOut', delay: 0.05 * Math.min(i, 8) }}
-            whileHover={{ y: -4, transition: { duration: 0.18 } }}
-            whileTap={{ scale: 0.97 }}
-            style={{ width: 220, minWidth: 220, maxWidth: 220, flexShrink: 0 }}
-          >
-            <ListingCard listing={l} />
-          </motion.div>
-        ))}
-      </div>
+      <motion.div
+        initial={{ opacity: 0, y: 18, scale: 0.98 }}
+        animate={{ opacity: 1, y: 0, scale: 1 }}
+        transition={{ duration: 0.35, ease: 'easeOut' }}
+        className="m-marquee-wrap"
+        style={{ paddingTop: 10, paddingBottom: 10, margin: '-10px 0' }}
+      >
+        <div className="m-marquee-track" style={{ '--marquee-duration': `${items.length * 6}s` } as React.CSSProperties}>
+          {[...items, ...items].map((l: any, i: number) => (
+            <motion.div
+              key={`${l.id}-${i}`}
+              whileHover={{ y: -4, transition: { duration: 0.18 } }}
+              whileTap={{ scale: 0.97 }}
+              style={{ width: 220, minWidth: 220, maxWidth: 220, flexShrink: 0 }}
+            >
+              <ListingCard listing={l} />
+            </motion.div>
+          ))}
+        </div>
+      </motion.div>
     </motion.div>
   );
 }
