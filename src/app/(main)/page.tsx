@@ -10,6 +10,7 @@ import { Search, Flame, ChevronRight, Bell, Star } from 'lucide-react';
 import Link from 'next/link';
 import { useAuthStore } from '@/store/auth';
 import { CategoryIcon } from '@/components/icons/CategoryIcons';
+import { motion } from 'framer-motion';
 
 const SORT_OPTIONS = [
   { value: 'newest', label: 'En yeni' },
@@ -121,19 +122,43 @@ function FeaturedSection() {
   if (items.length === 0) return null;
 
   return (
-    <div>
-      <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 14 }}>
-        <Star size={18} fill="var(--accent)" strokeWidth={0} style={{ color: 'var(--accent)' }} />
+    <motion.div
+      initial={{ opacity: 0, y: 16 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.4, ease: 'easeOut' }}
+    >
+      <motion.div
+        initial={{ opacity: 0, x: -8 }}
+        animate={{ opacity: 1, x: 0 }}
+        transition={{ duration: 0.35, ease: 'easeOut' }}
+        style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 14 }}
+      >
+        <motion.span
+          initial={{ scale: 0.5, rotate: -30, opacity: 0 }}
+          animate={{ scale: 1, rotate: 0, opacity: 1 }}
+          transition={{ duration: 0.4, ease: 'backOut', delay: 0.1 }}
+          style={{ display: 'flex' }}
+        >
+          <Star size={18} fill="var(--accent)" strokeWidth={0} style={{ color: 'var(--accent)' }} />
+        </motion.span>
         <h2 className="m-display" style={{ fontSize: 18, margin: 0 }}>Öne Çıkan İlanlar</h2>
-      </div>
+      </motion.div>
       <div style={{ display: 'flex', gap: 14, overflowX: 'auto', paddingBottom: 6 }}>
-        {items.map((l: any) => (
-          <div key={l.id} style={{ width: 220, minWidth: 220, maxWidth: 220, flexShrink: 0 }}>
+        {items.map((l: any, i: number) => (
+          <motion.div
+            key={l.id}
+            initial={{ opacity: 0, y: 18, scale: 0.96 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            transition={{ duration: 0.35, ease: 'easeOut', delay: 0.05 * Math.min(i, 8) }}
+            whileHover={{ y: -4, transition: { duration: 0.18 } }}
+            whileTap={{ scale: 0.97 }}
+            style={{ width: 220, minWidth: 220, maxWidth: 220, flexShrink: 0 }}
+          >
             <ListingCard listing={l} />
-          </div>
+          </motion.div>
         ))}
       </div>
-    </div>
+    </motion.div>
   );
 }
 
