@@ -27,10 +27,7 @@ function PriceDropPanel() {
   if (items.length === 0) return null;
 
   return (
-    <motion.div
-      initial={{ opacity: 0, x: 16 }}
-      animate={{ opacity: 1, x: 0 }}
-      transition={{ duration: 0.4, ease: 'easeOut', delay: 0.1 }}
+    <div
       className="m-hide-mobile"
       style={{ width: 280, flexShrink: 0 }}
     >
@@ -62,7 +59,7 @@ function PriceDropPanel() {
           </div>
         </div>
       </div>
-    </motion.div>
+    </div>
   );
 }
 
