@@ -1,5 +1,5 @@
 'use client';
-import { Suspense, useState } from 'react';
+import { Suspense, useState, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { useQuery } from '@tanstack/react-query';
 import { useListings, usePriceDrops } from '@/hooks/useListings';
@@ -113,6 +113,20 @@ function CategoryGrid({ categories, allCategories, activeSlug, onSelect }: {
   categories: Category[]; allCategories: Category[]; activeSlug: string; onSelect: (slug: string) => void;
 }) {
   const [expandedId, setExpandedId] = useState<string | null>(null);
+  const hoverTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const scheduleExpand = (id: string) => {
+    if (hoverTimer.current) clearTimeout(hoverTimer.current);
+    hoverTimer.current = setTimeout(() => setExpandedId(id), 200);
+  };
+  const scheduleCollapse = () => {
+    if (hoverTimer.current) clearTimeout(hoverTimer.current);
+    hoverTimer.current = setTimeout(() => setExpandedId(null), 200);
+  };
+  const cancelPending = () => {
+    if (hoverTimer.current) clearTimeout(hoverTimer.current);
+  };
+
   if (!categories.length) return null;
 
   const expanded = categories.find(c => c.id === expandedId) ?? null;
@@ -134,8 +148,8 @@ function CategoryGrid({ categories, allCategories, activeSlug, onSelect }: {
             <div
               key={c.id}
               style={{ position: 'relative' }}
-              onMouseEnter={() => hasChildren && setExpandedId(c.id)}
-              onMouseLeave={() => setExpandedId(prev => (prev === c.id ? null : prev))}
+              onMouseEnter={() => hasChildren ? scheduleExpand(c.id) : cancelPending()}
+              onMouseLeave={scheduleCollapse}
             >
               <button onClick={() => onSelect(active ? '' : c.slug)}
                 style={{ width: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8,
@@ -147,7 +161,7 @@ function CategoryGrid({ categories, allCategories, activeSlug, onSelect }: {
               </button>
               {hasChildren && (
                 <button
-                  onClick={(e) => { e.stopPropagation(); setExpandedId(prev => (prev === c.id ? null : c.id)); }}
+                  onClick={(e) => { e.stopPropagation(); cancelPending(); setExpandedId(prev => (prev === c.id ? null : c.id)); }}
                   aria-label="Alt kategorileri göster"
                   style={{
                     position: 'absolute', top: 6, right: 6, width: 20, height: 20, borderRadius: '50%',
@@ -170,8 +184,8 @@ function CategoryGrid({ categories, allCategories, activeSlug, onSelect }: {
             animate={{ opacity: 1, height: 'auto', marginTop: 10 }}
             exit={{ opacity: 0, height: 0, marginTop: 0 }}
             transition={{ duration: 0.2, ease: 'easeOut' }}
-            onMouseEnter={() => setExpandedId(expanded.id)}
-            onMouseLeave={() => setExpandedId(null)}
+            onMouseEnter={cancelPending}
+            onMouseLeave={scheduleCollapse}
             style={{ overflow: 'hidden' }}
           >
             <div style={{ background: 'var(--bg-1)', border: '1px solid var(--line-soft)', borderRadius: 14, padding: '12px 14px', display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
@@ -179,7 +193,7 @@ function CategoryGrid({ categories, allCategories, activeSlug, onSelect }: {
               {children.map(ch => (
                 <button
                   key={ch.id}
-                  onClick={() => { onSelect(ch.slug); setExpandedId(null); }}
+                  onClick={() => { cancelPending(); onSelect(ch.slug); setExpandedId(null); }}
                   className="m-chip"
                   style={{ height: 30, fontSize: 12.5 }}
                 >
