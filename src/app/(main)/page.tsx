@@ -6,10 +6,10 @@ import { useListings, usePriceDrops } from '@/hooks/useListings';
 import { ListingCard } from '@/components/listings/ListingCard';
 import { AdSlot } from '@/components/ui/AdSlot';
 import { api } from '@/lib/api';
-import { Search, Flame, ChevronRight, Star, TrendingDown } from 'lucide-react';
+import { Search, Flame, ChevronRight, ChevronDown, Star, TrendingDown } from 'lucide-react';
 import Link from 'next/link';
 import { CategoryIcon } from '@/components/icons/CategoryIcons';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 
 const SORT_OPTIONS = [
   { value: 'newest', label: 'En yeni' },
@@ -109,10 +109,15 @@ function HeroSection({ onSearch }: { onSearch: (q: string) => void }) {
   );
 }
 
-function CategoryGrid({ categories, activeSlug, onSelect }: {
-  categories: Category[]; activeSlug: string; onSelect: (slug: string) => void;
+function CategoryGrid({ categories, allCategories, activeSlug, onSelect }: {
+  categories: Category[]; allCategories: Category[]; activeSlug: string; onSelect: (slug: string) => void;
 }) {
+  const [expandedId, setExpandedId] = useState<string | null>(null);
   if (!categories.length) return null;
+
+  const expanded = categories.find(c => c.id === expandedId) ?? null;
+  const children = expanded ? allCategories.filter(c => c.parentId === expanded.id) : [];
+
   return (
     <div>
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 14 }}>
@@ -124,8 +129,14 @@ function CategoryGrid({ categories, activeSlug, onSelect }: {
       <div className="m-category-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: 10 }}>
         {categories.map(c => {
           const active = activeSlug === c.slug;
+          const hasChildren = allCategories.some(ch => ch.parentId === c.id);
           return (
-            <div key={c.id} style={{ position: 'relative' }}>
+            <div
+              key={c.id}
+              style={{ position: 'relative' }}
+              onMouseEnter={() => hasChildren && setExpandedId(c.id)}
+              onMouseLeave={() => setExpandedId(prev => (prev === c.id ? null : prev))}
+            >
               <button onClick={() => onSelect(active ? '' : c.slug)}
                 style={{ width: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8,
                   padding: '14px 10px', background: active ? 'color-mix(in oklch, var(--accent) 12%, var(--bg-1))' : 'var(--bg-1)',
@@ -134,10 +145,51 @@ function CategoryGrid({ categories, activeSlug, onSelect }: {
                 <CategoryIcon slug={c.slug} size={52} alt={c.name} />
                 <span style={{ fontSize: 12, fontWeight: 600, color: active ? 'var(--accent)' : 'var(--ink-2)', textAlign: 'center', lineHeight: 1.2 }}>{c.name}</span>
               </button>
+              {hasChildren && (
+                <button
+                  onClick={(e) => { e.stopPropagation(); setExpandedId(prev => (prev === c.id ? null : c.id)); }}
+                  aria-label="Alt kategorileri göster"
+                  style={{
+                    position: 'absolute', top: 6, right: 6, width: 20, height: 20, borderRadius: '50%',
+                    display: 'grid', placeItems: 'center', background: 'var(--bg-2)', border: '1px solid var(--line-soft)',
+                    color: 'var(--ink-3)', cursor: 'pointer', padding: 0,
+                  }}
+                >
+                  <ChevronDown size={12} style={{ transform: expandedId === c.id ? 'rotate(180deg)' : 'none', transition: 'transform .15s' }} />
+                </button>
+              )}
             </div>
           );
         })}
       </div>
+
+      <AnimatePresence>
+        {expanded && children.length > 0 && (
+          <motion.div
+            initial={{ opacity: 0, height: 0, marginTop: 0 }}
+            animate={{ opacity: 1, height: 'auto', marginTop: 10 }}
+            exit={{ opacity: 0, height: 0, marginTop: 0 }}
+            transition={{ duration: 0.2, ease: 'easeOut' }}
+            onMouseEnter={() => setExpandedId(expanded.id)}
+            onMouseLeave={() => setExpandedId(null)}
+            style={{ overflow: 'hidden' }}
+          >
+            <div style={{ background: 'var(--bg-1)', border: '1px solid var(--line-soft)', borderRadius: 14, padding: '12px 14px', display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
+              <span style={{ fontSize: 12, color: 'var(--ink-3)', fontWeight: 600, flexShrink: 0 }}>{expanded.name}:</span>
+              {children.map(ch => (
+                <button
+                  key={ch.id}
+                  onClick={() => { onSelect(ch.slug); setExpandedId(null); }}
+                  className="m-chip"
+                  style={{ height: 30, fontSize: 12.5 }}
+                >
+                  {ch.name}
+                </button>
+              ))}
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }
@@ -239,7 +291,7 @@ function HomeContent() {
       <div className="m-wrap" style={{ paddingTop: 32, paddingBottom: 48 }}>
 
         {/* Kategori grid */}
-        <CategoryGrid categories={l1Categories} activeSlug={categorySlug} onSelect={handleSelect} />
+        <CategoryGrid categories={l1Categories} allCategories={allCategories} activeSlug={categorySlug} onSelect={handleSelect} />
 
         <div style={{ height: 28 }} />
         <FeaturedSection />
