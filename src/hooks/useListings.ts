@@ -154,6 +154,14 @@ export function useUnreserveListing() {
   });
 }
 
+export function usePriceDrops(limit = 12) {
+  return useQuery({
+    queryKey: ['price-drops', limit],
+    queryFn: () => api.get('/listings/price-drops', { params: { limit } }).then((r) => r.data),
+    staleTime: 60 * 1000,
+  });
+}
+
 export function usePriceGuide(categoryId?: string, brandId?: string) {
   return useQuery({
     queryKey: ['price-guide', categoryId, brandId],

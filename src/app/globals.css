@@ -294,8 +294,18 @@ textarea.m-field { height: auto; padding: 12px 14px; resize: vertical; line-heig
   animation: m-marquee var(--marquee-duration, 40s) linear infinite;
 }
 .m-marquee-wrap:hover .m-marquee-track { animation-play-state: paused; }
+
+@keyframes m-marquee-v { from { transform: translateY(0); } to { transform: translateY(-50%); } }
+.m-marquee-track-v {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  animation: m-marquee-v var(--marquee-duration, 24s) linear infinite;
+}
+.m-marquee-wrap:hover .m-marquee-track-v { animation-play-state: paused; }
+
 @media (prefers-reduced-motion: reduce) {
-  .m-marquee-track { animation: none; }
+  .m-marquee-track, .m-marquee-track-v { animation: none; }
 }
 
 /* scrollbar */

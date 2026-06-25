@@ -2,11 +2,11 @@
 import { Suspense, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useQuery } from '@tanstack/react-query';
-import { useListings } from '@/hooks/useListings';
+import { useListings, usePriceDrops } from '@/hooks/useListings';
 import { ListingCard } from '@/components/listings/ListingCard';
 import { AdSlot } from '@/components/ui/AdSlot';
 import { api } from '@/lib/api';
-import { Search, Flame, ChevronRight, Star } from 'lucide-react';
+import { Search, Flame, ChevronRight, Star, TrendingDown } from 'lucide-react';
 import Link from 'next/link';
 import { CategoryIcon } from '@/components/icons/CategoryIcons';
 import { motion } from 'framer-motion';
@@ -21,6 +21,51 @@ const TREND_TAGS = ['AGV K6', 'Akrapovic', 'Alpinestars', 'Dainese', 'Shoei', 'R
 
 interface Category { id: string; name: string; slug: string; parentId: string | null; }
 
+function PriceDropPanel() {
+  const { data } = usePriceDrops(10);
+  const items = data ?? [];
+  if (items.length === 0) return null;
+
+  return (
+    <motion.div
+      initial={{ opacity: 0, x: 16 }}
+      animate={{ opacity: 1, x: 0 }}
+      transition={{ duration: 0.4, ease: 'easeOut', delay: 0.1 }}
+      className="m-hide-mobile"
+      style={{ width: 280, flexShrink: 0 }}
+    >
+      <div style={{ background: 'var(--bg-1)', border: '1px solid var(--line-soft)', borderRadius: 16, padding: '14px 14px 4px', height: 360, display: 'flex', flexDirection: 'column' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 7, marginBottom: 12, flexShrink: 0 }}>
+          <TrendingDown size={15} style={{ color: 'var(--bad)' }} />
+          <span style={{ fontWeight: 700, fontSize: 13, color: 'var(--ink)' }}>Fiyatı Düştü</span>
+        </div>
+        <div className="m-marquee-wrap" style={{ flex: 1, maskImage: 'linear-gradient(to bottom, transparent, black 8%, black 92%, transparent)' }}>
+          <div className="m-marquee-track-v" style={{ '--marquee-duration': `${items.length * 4}s` } as React.CSSProperties}>
+            {[...items, ...items].map((l: any, i: number) => {
+              const discount = Math.round((1 - Number(l.price) / Number(l.originalPrice)) * 100);
+              return (
+                <Link key={`${l.id}-${i}`} href={`/ilan/${l.slug ?? l.id}`} style={{ display: 'flex', alignItems: 'center', gap: 10, textDecoration: 'none', padding: '6px 4px' }}>
+                  <div style={{ width: 40, height: 40, borderRadius: 8, background: 'var(--bg-2)', overflow: 'hidden', flexShrink: 0 }}>
+                    {l.images?.[0] && <img src={l.images[0].url} style={{ width: '100%', height: '100%', objectFit: 'cover' }} alt="" />}
+                  </div>
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <p style={{ fontSize: 12, color: 'var(--ink-2)', margin: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{l.title}</p>
+                    <p style={{ fontSize: 11.5, margin: '2px 0 0', display: 'flex', alignItems: 'center', gap: 5 }}>
+                      <span style={{ color: 'var(--ink-3)', textDecoration: 'line-through' }}>{Number(l.originalPrice).toLocaleString('tr-TR')}₺</span>
+                      <span style={{ color: 'var(--bad)', fontWeight: 700 }}>{Number(l.price).toLocaleString('tr-TR')}₺</span>
+                    </p>
+                  </div>
+                  <span style={{ fontSize: 10.5, fontWeight: 700, color: 'var(--bad)', flexShrink: 0 }}>%{discount}</span>
+                </Link>
+              );
+            })}
+          </div>
+        </div>
+      </div>
+    </motion.div>
+  );
+}
+
 function HeroSection({ onSearch }: { onSearch: (q: string) => void }) {
   const [val, setVal] = useState('');
   return (
@@ -29,8 +74,8 @@ function HeroSection({ onSearch }: { onSearch: (q: string) => void }) {
         'radial-gradient(80% 120% at 12% -10%, color-mix(in oklch, var(--accent) 22%, transparent), transparent 55%),' +
         'radial-gradient(70% 100% at 100% 110%, color-mix(in oklch, var(--accent-2) 18%, transparent), transparent 55%)',
         zIndex: 0 }} />
-      <div className="m-wrap" style={{ position: 'relative', zIndex: 1, paddingTop: 'clamp(28px, 6vw, 54px)', paddingBottom: 'clamp(24px, 4vw, 46px)' }}>
-        <div style={{ maxWidth: 620 }} className="m-fade-up">
+      <div className="m-wrap" style={{ position: 'relative', zIndex: 1, paddingTop: 'clamp(28px, 6vw, 54px)', paddingBottom: 'clamp(24px, 4vw, 46px)', display: 'flex', gap: 32, alignItems: 'flex-start', justifyContent: 'space-between' }}>
+        <div style={{ maxWidth: 620, flex: 1 }} className="m-fade-up">
           <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 20 }}>
             <span className="m-badge new" style={{ display: 'inline-flex', gap: 5 }}>
               <Flame size={12} fill="currentColor" strokeWidth={0} />
@@ -61,6 +106,7 @@ function HeroSection({ onSearch }: { onSearch: (q: string) => void }) {
             ))}
           </div>
         </div>
+        <PriceDropPanel />
       </div>
     </section>
   );
