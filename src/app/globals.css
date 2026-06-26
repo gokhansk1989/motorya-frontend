@@ -394,6 +394,24 @@ textarea.m-field { height: auto; padding: 12px 14px; resize: vertical; line-heig
   }
   .m-category-grid > * button span:first-child { font-size: 20px !important; }
   .m-category-grid > * button span:last-child  { font-size: 11px !important; }
+
+  /* alt kategori paneli — yatay scroll container'ın overflow'una takılmaması için bottom-sheet'e dönüşür */
+  .m-subcat-backdrop { background: oklch(0 0 0 / 0.45) !important; }
+  .m-subcat-panel {
+    position: fixed !important;
+    left: 16px !important;
+    right: 16px !important;
+    bottom: 16px !important;
+    top: auto !important;
+    width: auto !important;
+    min-width: 0 !important;
+    max-width: none !important;
+  }
+  .m-subcat-panel-inner {
+    max-height: 60vh;
+    overflow-y: auto;
+    border-radius: 16px !important;
+  }
 }
 
 /* ---------- footer ---------- */

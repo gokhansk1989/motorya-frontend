@@ -173,35 +173,49 @@ function CategoryGrid({ categories, allCategories, activeSlug, onSelect }: {
               )}
               <AnimatePresence>
                 {expandedId === c.id && hasChildren && (
-                  <motion.div
-                    initial={{ opacity: 0, y: -6 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0, y: -6 }}
-                    transition={{ duration: 0.15, ease: 'easeOut' }}
-                    onMouseEnter={cancelPending}
-                    onMouseLeave={scheduleCollapse}
-                    style={{
-                      position: 'absolute', top: 'calc(100% + 8px)', [alignRight ? 'right' : 'left']: 0,
-                      zIndex: 30, minWidth: 220, maxWidth: 320,
-                    }}
-                  >
-                    <div style={{ background: 'var(--bg-1)', border: '1px solid var(--line-soft)', borderRadius: 12, padding: 10, display: 'flex', flexDirection: 'column', gap: 4, boxShadow: '0 8px 24px -8px rgba(0,0,0,0.18)' }}>
-                      {children.map(ch => (
-                        <button
-                          key={ch.id}
-                          onClick={() => { cancelPending(); onSelect(ch.slug); setExpandedId(null); }}
-                          style={{
-                            textAlign: 'left', padding: '7px 10px', borderRadius: 8, border: 0, background: 'transparent',
-                            color: 'var(--ink-2)', fontSize: 13, cursor: 'pointer', whiteSpace: 'nowrap',
-                          }}
-                          onMouseEnter={(e) => (e.currentTarget.style.background = 'var(--bg-2)')}
-                          onMouseLeave={(e) => (e.currentTarget.style.background = 'transparent')}
-                        >
-                          {ch.name}
-                        </button>
-                      ))}
-                    </div>
-                  </motion.div>
+                  <>
+                    <motion.div
+                      key="backdrop"
+                      className="m-subcat-backdrop"
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: 1 }}
+                      exit={{ opacity: 0 }}
+                      transition={{ duration: 0.15 }}
+                      onClick={() => { cancelPending(); setExpandedId(null); }}
+                      style={{ position: 'fixed', inset: 0, zIndex: 25, background: 'transparent' }}
+                    />
+                    <motion.div
+                      key="panel"
+                      className="m-subcat-panel"
+                      initial={{ opacity: 0, y: -6 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0, y: -6 }}
+                      transition={{ duration: 0.15, ease: 'easeOut' }}
+                      onMouseEnter={cancelPending}
+                      onMouseLeave={scheduleCollapse}
+                      style={{
+                        position: 'absolute', top: 'calc(100% + 8px)', [alignRight ? 'right' : 'left']: 0,
+                        zIndex: 30, minWidth: 220, maxWidth: 320,
+                      }}
+                    >
+                      <div className="m-subcat-panel-inner" style={{ background: 'var(--bg-1)', border: '1px solid var(--line-soft)', borderRadius: 12, padding: 10, display: 'flex', flexDirection: 'column', gap: 4, boxShadow: '0 8px 24px -8px rgba(0,0,0,0.18)' }}>
+                        {children.map(ch => (
+                          <button
+                            key={ch.id}
+                            onClick={() => { cancelPending(); onSelect(ch.slug); setExpandedId(null); }}
+                            style={{
+                              textAlign: 'left', padding: '7px 10px', borderRadius: 8, border: 0, background: 'transparent',
+                              color: 'var(--ink-2)', fontSize: 13, cursor: 'pointer', whiteSpace: 'nowrap',
+                            }}
+                            onMouseEnter={(e) => (e.currentTarget.style.background = 'var(--bg-2)')}
+                            onMouseLeave={(e) => (e.currentTarget.style.background = 'transparent')}
+                          >
+                            {ch.name}
+                          </button>
+                        ))}
+                      </div>
+                    </motion.div>
+                  </>
                 )}
               </AnimatePresence>
             </div>
@@ -231,6 +245,18 @@ function SkeletonGrid() {
 function FeaturedSection() {
   const { data } = useListings({ isFeatured: true, limit: 12, sort: 'newest' });
   const items = data?.items ?? [];
+  const [touchPaused, setTouchPaused] = useState(false);
+  const resumeTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const handleTouchStart = () => {
+    if (resumeTimer.current) clearTimeout(resumeTimer.current);
+    setTouchPaused(true);
+  };
+  const handleTouchEnd = () => {
+    if (resumeTimer.current) clearTimeout(resumeTimer.current);
+    resumeTimer.current = setTimeout(() => setTouchPaused(false), 1500);
+  };
+
   if (items.length === 0) return null;
 
   return (
@@ -261,8 +287,14 @@ function FeaturedSection() {
         transition={{ duration: 0.35, ease: 'easeOut' }}
         className="m-marquee-wrap"
         style={{ paddingTop: 10, paddingBottom: 10, margin: '-10px 0' }}
+        onTouchStart={handleTouchStart}
+        onTouchEnd={handleTouchEnd}
+        onTouchCancel={handleTouchEnd}
       >
-        <div className="m-marquee-track" style={{ '--marquee-duration': `${items.length * 6}s` } as React.CSSProperties}>
+        <div
+          className="m-marquee-track"
+          style={{ '--marquee-duration': `${items.length * 6}s`, animationPlayState: touchPaused ? 'paused' : undefined } as React.CSSProperties}
+        >
           {[...items, ...items].map((l: any, i: number) => (
             <motion.div
               key={`${l.id}-${i}`}
