@@ -284,6 +284,7 @@ function HomeContent() {
   const [categorySlug, setCategorySlug] = useState('');
   const [sort, setSort] = useState('newest');
   const [page, setPage] = useState(1);
+  const listingsRef = useRef<HTMLDivElement | null>(null);
 
   const { data: allCategories = [] } = useQuery<Category[]>({
     queryKey: ['categories'],
@@ -301,7 +302,11 @@ function HomeContent() {
 
   const handleSearch = (val: string) => router.push(`/ara?q=${encodeURIComponent(val)}`);
 
-  const handleSelect = (slug: string) => { setCategorySlug(slug); setPage(1); };
+  const handleSelect = (slug: string) => {
+    setCategorySlug(slug);
+    setPage(1);
+    setTimeout(() => listingsRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 50);
+  };
 
   return (
     <div>
@@ -317,11 +322,11 @@ function HomeContent() {
         <div style={{ height: 24 }} />
 
         {/* Listeleme başlığı + sıralama */}
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 14, marginBottom: 20 }}>
+        <div ref={listingsRef} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 14, marginBottom: 20, scrollMarginTop: 90 }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
             <h2 className="m-display" style={{ fontSize: 22, margin: 0 }}>
               {categorySlug
-                ? (l1Categories.find(c => c.slug === categorySlug)?.name ?? 'İlanlar')
+                ? (allCategories.find(c => c.slug === categorySlug)?.name ?? 'İlanlar')
                 : 'Tüm İlanlar'}
             </h2>
             {data && (
