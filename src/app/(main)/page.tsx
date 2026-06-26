@@ -1,12 +1,12 @@
 'use client';
-import { Suspense, useState, useRef } from 'react';
+import { Suspense, useState, useRef, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useQuery } from '@tanstack/react-query';
 import { useListings, usePriceDrops } from '@/hooks/useListings';
 import { ListingCard } from '@/components/listings/ListingCard';
 import { AdSlot } from '@/components/ui/AdSlot';
 import { api } from '@/lib/api';
-import { Search, Flame, ChevronRight, ChevronDown, Star, TrendingDown } from 'lucide-react';
+import { Search, ChevronRight, ChevronDown, Star, TrendingDown } from 'lucide-react';
 import Link from 'next/link';
 import { CategoryIcon } from '@/components/icons/CategoryIcons';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -16,8 +16,6 @@ const SORT_OPTIONS = [
   { value: 'price_asc', label: 'Fiyat ↑' },
   { value: 'price_desc', label: 'Fiyat ↓' },
 ];
-
-const TREND_TAGS = ['AGV K6', 'Akrapovic', 'Alpinestars', 'Dainese', 'Shoei', 'Rev\'it'];
 
 interface Category { id: string; name: string; slug: string; parentId: string | null; }
 
@@ -74,10 +72,6 @@ function HeroSection({ onSearch }: { onSearch: (q: string) => void }) {
       <div className="m-wrap" style={{ position: 'relative', zIndex: 1, paddingTop: 'clamp(28px, 6vw, 54px)', paddingBottom: 'clamp(24px, 4vw, 46px)', display: 'flex', gap: 32, alignItems: 'flex-start', justifyContent: 'space-between' }}>
         <div style={{ maxWidth: 620, flex: 1 }} className="m-fade-up">
           <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 20 }}>
-            <span className="m-badge new" style={{ display: 'inline-flex', gap: 5 }}>
-              <Flame size={12} fill="currentColor" strokeWidth={0} />
-              HAFTANIN FIRSATLARI
-            </span>
             <span className="m-kicker">Türkiye'nin motosiklet ekipman pazarı</span>
           </div>
           <h1 className="m-display" style={{ fontSize: 'clamp(36px, 5vw, 60px)', margin: 0 }}>
@@ -96,12 +90,6 @@ function HeroSection({ onSearch }: { onSearch: (q: string) => void }) {
               <button type="submit" className="m-btn m-btn-primary" style={{ height: 38, padding: '0 14px', fontSize: 14, flexShrink: 0 }}>Ara</button>
             </div>
           </form>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 18, flexWrap: 'wrap' }}>
-            <span className="m-kicker" style={{ marginRight: 4 }}>Trend:</span>
-            {TREND_TAGS.map(t => (
-              <button key={t} onClick={() => onSearch(t)} className="m-chip" style={{ height: 30, fontSize: 12.5 }}>{t}</button>
-            ))}
-          </div>
         </div>
         <PriceDropPanel />
       </div>
@@ -146,7 +134,16 @@ function CategoryGrid({ categories, allCategories, activeSlug, onSelect }: {
   categories: Category[]; allCategories: Category[]; activeSlug: string; onSelect: (slug: string) => void;
 }) {
   const [expandedId, setExpandedId] = useState<string | null>(null);
+  const [isMobile, setIsMobile] = useState(false);
   const hoverTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  useEffect(() => {
+    const mq = window.matchMedia('(max-width: 767px)');
+    const update = () => setIsMobile(mq.matches);
+    update();
+    mq.addEventListener('change', update);
+    return () => mq.removeEventListener('change', update);
+  }, []);
 
   const scheduleExpand = (id: string) => {
     if (hoverTimer.current) clearTimeout(hoverTimer.current);
@@ -222,10 +219,10 @@ function CategoryGrid({ categories, allCategories, activeSlug, onSelect }: {
                     <motion.div
                       key="panel"
                       className="m-subcat-panel"
-                      initial={{ opacity: 0, y: -6 }}
+                      initial={isMobile ? { opacity: 0, y: 80 } : { opacity: 0, y: -6 }}
                       animate={{ opacity: 1, y: 0 }}
-                      exit={{ opacity: 0, y: -6 }}
-                      transition={{ duration: 0.15, ease: 'easeOut' }}
+                      exit={isMobile ? { opacity: 0, y: 80 } : { opacity: 0, y: -6 }}
+                      transition={isMobile ? { duration: 0.28, ease: [0.32, 0.72, 0, 1] } : { duration: 0.15, ease: 'easeOut' }}
                       onMouseEnter={cancelPending}
                       onMouseLeave={scheduleCollapse}
                       style={{

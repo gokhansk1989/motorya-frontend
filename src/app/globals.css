@@ -286,7 +286,13 @@ textarea.m-field { height: auto; padding: 12px 14px; resize: vertical; line-heig
 
 /* ---------- sonsuz kayan vitrin (öne çıkanlar) ---------- */
 @keyframes m-marquee { from { transform: translateX(0); } to { transform: translateX(-50%); } }
-.m-marquee-wrap { overflow: hidden; }
+.m-marquee-wrap {
+  overflow-x: auto;
+  overflow-y: hidden;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+}
+.m-marquee-wrap::-webkit-scrollbar { display: none; }
 .m-marquee-track {
   display: flex;
   gap: 14px;
