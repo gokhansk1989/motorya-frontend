@@ -109,6 +109,39 @@ function HeroSection({ onSearch }: { onSearch: (q: string) => void }) {
   );
 }
 
+function PriceDropMobileStrip() {
+  const { data } = usePriceDrops(10);
+  const items = data ?? [];
+  if (items.length === 0) return null;
+
+  return (
+    <div className="m-pricedrop-mobile">
+      <div style={{ display: 'flex', alignItems: 'center', gap: 7, marginBottom: 10 }}>
+        <TrendingDown size={15} style={{ color: 'var(--bad)' }} />
+        <span style={{ fontWeight: 700, fontSize: 13, color: 'var(--ink)' }}>Fiyatı Düştü</span>
+      </div>
+      <div className="m-pricedrop-mobile-track">
+        {items.map((l: any) => {
+          const discount = Math.round((1 - Number(l.price) / Number(l.originalPrice)) * 100);
+          return (
+            <Link key={l.id} href={`/ilan/${l.slug ?? l.id}`} className="m-pricedrop-mobile-card">
+              <div className="m-pricedrop-mobile-img">
+                {l.images?.[0] && <img src={l.images[0].url} alt="" />}
+                <span className="m-pricedrop-mobile-badge">%{discount}</span>
+              </div>
+              <p className="m-pricedrop-mobile-title">{l.title}</p>
+              <p className="m-pricedrop-mobile-price">
+                <span className="old">{Number(l.originalPrice).toLocaleString('tr-TR')}₺</span>
+                <span className="new">{Number(l.price).toLocaleString('tr-TR')}₺</span>
+              </p>
+            </Link>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
 function CategoryGrid({ categories, allCategories, activeSlug, onSelect }: {
   categories: Category[]; allCategories: Category[]; activeSlug: string; onSelect: (slug: string) => void;
 }) {
@@ -137,6 +170,7 @@ function CategoryGrid({ categories, allCategories, activeSlug, onSelect }: {
           Tümü <ChevronRight size={14} />
         </Link>
       </div>
+      <div className="m-category-grid-wrap">
       <div className="m-category-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: 10 }}>
         {categories.map((c, i) => {
           const active = activeSlug === c.slug;
@@ -160,6 +194,7 @@ function CategoryGrid({ categories, allCategories, activeSlug, onSelect }: {
               </button>
               {hasChildren && (
                 <button
+                  className="m-subcat-toggle"
                   onClick={(e) => { e.stopPropagation(); cancelPending(); setExpandedId(prev => (prev === c.id ? null : c.id)); }}
                   aria-label="Alt kategorileri göster"
                   style={{
@@ -221,6 +256,7 @@ function CategoryGrid({ categories, allCategories, activeSlug, onSelect }: {
             </div>
           );
         })}
+      </div>
       </div>
     </div>
   );
@@ -344,6 +380,8 @@ function HomeContent() {
     <div>
       <HeroSection onSearch={handleSearch} />
       <div className="m-wrap" style={{ paddingTop: 32, paddingBottom: 48 }}>
+
+        <PriceDropMobileStrip />
 
         <FeaturedSection />
 
