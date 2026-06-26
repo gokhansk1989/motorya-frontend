@@ -187,7 +187,11 @@ function CategoryGrid({ categories, allCategories, activeSlug, onSelect }: {
                   border: '1px solid ' + (active ? 'var(--accent)' : 'var(--line-soft)'),
                   borderRadius: 14, cursor: 'pointer', transition: 'all .15s ease' }}>
                 <CategoryIcon slug={c.slug} size={52} alt={c.name} />
-                <span style={{ fontSize: 12, fontWeight: 600, color: active ? 'var(--accent)' : 'var(--ink-2)', textAlign: 'center', lineHeight: 1.2 }}>{c.name}</span>
+                <span style={{
+                  fontSize: 12, fontWeight: 600, color: active ? 'var(--accent)' : 'var(--ink-2)',
+                  textAlign: 'center', lineHeight: 1.2, height: 'calc(1.2em * 2)',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                }}>{c.name}</span>
               </button>
               {hasChildren && (
                 <button
