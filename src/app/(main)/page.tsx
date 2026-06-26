@@ -313,11 +313,12 @@ function HomeContent() {
       <HeroSection onSearch={handleSearch} />
       <div className="m-wrap" style={{ paddingTop: 32, paddingBottom: 48 }}>
 
-        {/* Kategori grid */}
-        <CategoryGrid categories={l1Categories} allCategories={allCategories} activeSlug={categorySlug} onSelect={handleSelect} />
+        <FeaturedSection />
 
         <div style={{ height: 28 }} />
-        <FeaturedSection />
+
+        {/* Kategori grid */}
+        <CategoryGrid categories={l1Categories} allCategories={allCategories} activeSlug={categorySlug} onSelect={handleSelect} />
 
         <div style={{ height: 24 }} />
 
