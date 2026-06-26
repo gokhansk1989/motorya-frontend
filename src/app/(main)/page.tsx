@@ -177,15 +177,19 @@ function CategoryGrid({ categories, allCategories, activeSlug, onSelect }: {
           return (
             <div
               key={c.id}
-              style={{ position: 'relative' }}
+              style={{
+                position: 'relative', borderRadius: 14,
+                background: active ? 'color-mix(in oklch, var(--accent) 12%, var(--bg-1))' : 'var(--bg-1)',
+                border: '1px solid ' + (active ? 'var(--accent)' : 'var(--line-soft)'),
+                transition: 'all .15s ease',
+              }}
               onMouseEnter={() => hasChildren ? scheduleExpand(c.id) : cancelPending()}
               onMouseLeave={scheduleCollapse}
             >
               <button onClick={() => onSelect(active ? '' : c.slug)}
+                className="m-cat-select-btn"
                 style={{ width: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8,
-                  padding: '14px 10px', background: active ? 'color-mix(in oklch, var(--accent) 12%, var(--bg-1))' : 'var(--bg-1)',
-                  border: '1px solid ' + (active ? 'var(--accent)' : 'var(--line-soft)'),
-                  borderRadius: 14, cursor: 'pointer', transition: 'all .15s ease' }}>
+                  padding: '14px 10px', background: 'transparent', border: 0, cursor: 'pointer' }}>
                 <CategoryIcon slug={c.slug} size={52} alt={c.name} />
                 <span style={{
                   fontSize: 12, fontWeight: 600, color: active ? 'var(--accent)' : 'var(--ink-2)',
@@ -199,12 +203,14 @@ function CategoryGrid({ categories, allCategories, activeSlug, onSelect }: {
                   onClick={(e) => { e.stopPropagation(); cancelPending(); setExpandedId(prev => (prev === c.id ? null : c.id)); }}
                   aria-label="Alt kategorileri göster"
                   style={{
-                    position: 'absolute', top: 6, right: 6, width: 20, height: 20, borderRadius: '50%',
-                    display: 'grid', placeItems: 'center', background: 'var(--bg-2)', border: '1px solid var(--line-soft)',
-                    color: 'var(--ink-3)', cursor: 'pointer', padding: 0, zIndex: 2,
+                    width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 4,
+                    padding: '6px 4px', background: 'var(--bg-2)', border: 0, borderTop: '1px solid var(--line-soft)',
+                    borderRadius: '0 0 13px 13px',
+                    color: 'var(--ink-3)', cursor: 'pointer', fontSize: 10.5, fontWeight: 600,
                   }}
                 >
-                  <ChevronDown size={12} style={{ transform: expandedId === c.id ? 'rotate(180deg)' : 'none', transition: 'transform .15s' }} />
+                  <ChevronDown size={11} style={{ transform: expandedId === c.id ? 'rotate(180deg)' : 'none', transition: 'transform .15s', flexShrink: 0 }} />
+                  <span className="m-subcat-toggle-label">Alt kategoriler</span>
                 </button>
               )}
               <AnimatePresence>

@@ -393,13 +393,12 @@ textarea.m-field { height: auto; padding: 12px 14px; resize: vertical; line-heig
     flex: 0 0 72px;
     width: 72px;
   }
-  .m-category-grid > * button {
+  .m-category-grid > * .m-cat-select-btn {
     padding: 10px 6px !important;
-    border-radius: 12px !important;
     gap: 6px !important;
   }
-  .m-category-grid > * button span:first-child { font-size: 20px !important; }
-  .m-category-grid > * button span:last-child  { font-size: 11px !important; }
+  .m-category-grid > * .m-cat-select-btn span:first-child { font-size: 20px !important; }
+  .m-category-grid > * .m-cat-select-btn span:last-child  { font-size: 11px !important; }
 
   /* alt kategori paneli — yatay scroll container'ın overflow'una takılmaması için bottom-sheet'e dönüşür */
   .m-subcat-backdrop { background: oklch(0 0 0 / 0.45) !important; }
@@ -429,13 +428,8 @@ textarea.m-field { height: auto; padding: 12px 14px; resize: vertical; line-heig
     pointer-events: none;
   }
 
-  /* alt kategori chevron — görsel boyutu küçük kalsın ama dokunma alanı 44x44'e çıksın */
-  .m-subcat-toggle { position: relative; }
-  .m-subcat-toggle::before {
-    content: '';
-    position: absolute;
-    top: -12px; right: -12px; bottom: -12px; left: -12px;
-  }
+  /* alt kategori şeridi — dar kartlarda metin yerine sadece ok ikonu gösterilir */
+  .m-subcat-toggle-label { display: none; }
 }
 
 /* ---------- fiyatı düştü — mobil yatay şerit (masaüstünde gizli, hero'nun yan paneli yeterli) ---------- */
