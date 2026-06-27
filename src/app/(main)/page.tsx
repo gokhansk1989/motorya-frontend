@@ -1,7 +1,8 @@
 'use client';
-import { Suspense, useState, useRef, useEffect } from 'react';
+import { Suspense, useState, useRef, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { PullToRefresh } from '@/components/ui/PullToRefresh';
 import { useListings, usePriceDrops } from '@/hooks/useListings';
 import { ListingCard } from '@/components/listings/ListingCard';
 import { AdSlot } from '@/components/ui/AdSlot';
@@ -356,10 +357,12 @@ function FeaturedSection() {
 
 function HomeContent() {
   const router = useRouter();
+  const queryClient = useQueryClient();
   const [categorySlug, setCategorySlug] = useState('');
   const [sort, setSort] = useState('newest');
   const [page, setPage] = useState(1);
   const listingsRef = useRef<HTMLDivElement | null>(null);
+  const handleRefresh = useCallback(() => queryClient.refetchQueries({ type: 'active' }), [queryClient]);
 
   const { data: allCategories = [] } = useQuery<Category[]>({
     queryKey: ['categories'],
@@ -385,6 +388,7 @@ function HomeContent() {
 
   return (
     <div>
+      <PullToRefresh onRefresh={handleRefresh} />
       <HeroSection onSearch={handleSearch} />
       <div className="m-wrap" style={{ paddingTop: 32, paddingBottom: 48 }}>
 

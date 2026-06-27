@@ -4,11 +4,12 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import { useSearch } from '@/hooks/useSearch';
 import { useCreateSavedSearch } from '@/hooks/useSavedSearches';
 import { ListingCard } from '@/components/listings/ListingCard';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { api } from '@/lib/api';
 import { useAuthStore } from '@/store/auth';
 import { Search, SlidersHorizontal, X, BellPlus } from 'lucide-react';
 import { AdSlot } from '@/components/ui/AdSlot';
+import { PullToRefresh } from '@/components/ui/PullToRefresh';
 import toast from 'react-hot-toast';
 
 const CONDITIONS = [
@@ -216,6 +217,8 @@ function SearchPageInner() {
   const sp = useSearchParams();
   const { user } = useAuthStore();
   const createSavedSearch = useCreateSavedSearch();
+  const queryClient = useQueryClient();
+  const handleRefresh = useCallback(() => queryClient.refetchQueries({ type: 'active' }), [queryClient]);
 
   const q = sp.get('q') ?? '';
   const categoryId = sp.get('categoryId') ?? '';
@@ -310,6 +313,7 @@ function SearchPageInner() {
 
   return (
     <div className="m-wrap" style={{ paddingTop: 28, paddingBottom: 60 }}>
+      <PullToRefresh onRefresh={handleRefresh} />
 
       {/* Search bar — sticky on mobile */}
       <div className="m-search-bar-wrap">
