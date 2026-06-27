@@ -19,6 +19,7 @@ export interface Conversation {
   otherUser: OtherUser | null;
   lastMessage: LastMessage | null;
   lastReadAt: string | null;
+  otherReadAt: string | null;
   updatedAt: string;
   listing?: { id: string; title: string; images?: { url: string }[] } | null;
 }

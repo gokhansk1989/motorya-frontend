@@ -82,6 +82,7 @@ export default function MessagesPage() {
     socket.on('message:read', ({ conversationId, userId: readerId }: any) => {
       if (readerId !== user.id) {
         qc.invalidateQueries({ queryKey: ['messages', conversationId] });
+        qc.invalidateQueries({ queryKey: ['conversations'] });
       }
     });
     socket.on('message:typing', ({ userId: tid, typing: t }: any) => {
@@ -189,7 +190,12 @@ export default function MessagesPage() {
                     </div>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
                       {conv.lastMessage?.senderId === user.id && (
-                        <CheckCheck size={13} style={{ color: 'var(--accent)', flexShrink: 0 }} />
+                        (() => {
+                          const seen = !!conv.otherReadAt && new Date(conv.otherReadAt) >= new Date(conv.lastMessage.createdAt);
+                          return seen
+                            ? <CheckCheck size={13} style={{ color: 'var(--accent)', flexShrink: 0 }} />
+                            : <Check size={13} style={{ color: 'var(--ink-3)', flexShrink: 0 }} />;
+                        })()
                       )}
                       <span style={{
                         fontSize: 12.5, color: isUnread ? 'var(--ink-2)' : 'var(--ink-3)',
@@ -286,7 +292,11 @@ export default function MessagesPage() {
                         {msg.body}
                         <div style={{ fontSize: 10.5, marginTop: 3, textAlign: 'right', opacity: 0.7, display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: 3 }}>
                           {new Date(msg.createdAt).toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit' })}
-                          {isMine && <CheckCheck size={12} />}
+                          {isMine && (
+                            activeConv?.otherReadAt && new Date(activeConv.otherReadAt) >= new Date(msg.createdAt)
+                              ? <CheckCheck size={12} />
+                              : <Check size={12} style={{ opacity: 0.6 }} />
+                          )}
                         </div>
                       </div>
                     </motion.div>
