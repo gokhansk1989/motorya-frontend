@@ -127,9 +127,12 @@ input, textarea, select { font-family: inherit; color: var(--ink); }
   }
   .m-wrap.has-mobile-bar { padding-bottom: 140px; }
 
-  /* Mobile bottom navigation */
+  /* Mobile bottom navigation — FAB flex akışından bağımsız, absolute konumlu.
+     Önceki tasarım FAB'ı flex item olarak negatif margin ile barın üstüne taşırıyordu;
+     bu, contain/align-items gibi parent stil değişikliklerinde kırılgandı (kesilme, taşma).
+     Şimdi nav sadece 4 tab'ı flex ile dizer, FAB tamamen ayrı bir katmanda sabitlenir. */
   .m-bottom-nav {
-    display: flex; align-items: stretch;
+    display: flex; align-items: center;
     position: fixed; bottom: 0; left: 0; right: 0; z-index: 100;
     height: 70px; padding: 0 4px;
     padding-bottom: env(safe-area-inset-bottom);
@@ -137,10 +140,6 @@ input, textarea, select { font-family: inherit; color: var(--ink); }
     border-top: 1px solid var(--line-soft);
     backdrop-filter: blur(12px);
     -webkit-backdrop-filter: blur(12px);
-    /* Scroll esnasında compositing glitch'ine (ikon/yazı üst üste binmesi) yol açan
-       translateZ/will-change GPU-katman hack'i kaldırıldı — contain ile izole ediyoruz */
-    contain: layout style paint;
-    isolation: isolate;
   }
   .m-bottom-nav__tab {
     flex: 1 1 0; min-width: 0; display: flex; flex-direction: column; align-items: center;
@@ -148,7 +147,6 @@ input, textarea, select { font-family: inherit; color: var(--ink); }
     height: 100%; text-decoration: none; color: var(--ink-3);
     transition: color .15s;
     -webkit-tap-highlight-color: transparent;
-    overflow: hidden;
   }
   .m-bottom-nav__tab[data-active="true"] { color: var(--accent); }
   .m-bottom-nav__tab[data-active="true"] .m-bottom-nav__icon::after {
@@ -161,17 +159,21 @@ input, textarea, select { font-family: inherit; color: var(--ink); }
     background: var(--accent);
   }
   .m-bottom-nav__icon { display: flex; align-items: center; justify-content: center; position: relative; flex-shrink: 0; }
-  .m-bottom-nav__label { font-size: 10px; font-weight: 500; letter-spacing: .01em; white-space: nowrap; }
+  .m-bottom-nav__label { font-size: 10px; font-weight: 500; letter-spacing: .01em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%; }
+  /* Tab gruplarının ortada FAB için yer açması amacıyla rezerve edilen boş alan */
+  .m-bottom-nav__spacer { width: 58px; flex-shrink: 0; }
   .m-bottom-nav__fab {
-    flex-shrink: 0; width: 54px; height: 54px; border-radius: 50%;
+    position: absolute; left: 50%; bottom: 22px;
+    transform: translate(-50%, 0);
+    width: 54px; height: 54px; border-radius: 50%; flex-shrink: 0;
     background: #f97316; color: #fff; border: none; cursor: pointer;
-    display: grid; place-items: center; margin: 0 8px;
+    display: grid; place-items: center;
     box-shadow: 0 4px 16px -4px rgba(249,115,22,.65), 0 2px 6px rgba(0,0,0,.2);
     transition: transform .12s, box-shadow .12s;
     -webkit-tap-highlight-color: transparent;
-    position: relative; bottom: 6px;
+    z-index: 101;
   }
-  .m-bottom-nav__fab:active { transform: scale(.91); }
+  .m-bottom-nav__fab:active { transform: translate(-50%, 0) scale(.91); }
 
   /* Sayfa içeriği bottom nav'ın altında kalmasın */
   body { padding-bottom: 70px; }
