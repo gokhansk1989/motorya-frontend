@@ -617,8 +617,8 @@ export default function ListingDetailClient() {
               <Heart size={18} fill={favd ? 'currentColor' : 'none'} />
             </button>
             <button
-              className="m-btn m-btn-ghost lg"
-              style={{ flex: 1 }}
+              className="m-btn lg"
+              style={{ flex: 1, background: 'var(--bg-1)' }}
               onClick={() => {
                 if (!user) { toast.error('Teklif vermek için giriş yapmalısın'); router.push('/giris'); return; }
                 setShowOfferModal(true);
