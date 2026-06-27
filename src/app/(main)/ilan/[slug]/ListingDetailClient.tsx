@@ -227,6 +227,11 @@ export default function ListingDetailClient() {
                 </button>
               </>
             )}
+            {images.length > 1 && (
+              <span style={{ position: 'absolute', bottom: 12, right: 12, padding: '4px 10px', borderRadius: 999, background: 'oklch(0 0 0 / 0.5)', border: '1px solid oklch(1 0 0 / 0.12)', color: '#fff', fontSize: 12, fontFamily: 'var(--font-mono)', backdropFilter: 'blur(6px)' }}>
+                {imgIdx + 1}/{images.length}
+              </span>
+            )}
             <button
               onClick={async () => {
                 const url = `${window.location.origin}/ilan/${id}`;
@@ -600,6 +605,13 @@ export default function ListingDetailClient() {
       {/* Mobile bottom action bar */}
       {!isMine && listing.status === 'ACTIVE' && (
         <div className="m-mobile-bar">
+          <button
+            onClick={() => { if (!user) { toast.error('Favorilemek için giriş yapmalısın'); router.push('/giris'); return; } toggleFavorite.mutate(id); }}
+            style={{ width: 46, height: 46, borderRadius: 8, background: 'var(--bg-1)', border: '1px solid var(--line)', display: 'grid', placeItems: 'center', color: favd ? 'var(--accent)' : 'var(--ink-2)', flexShrink: 0 }}
+            aria-label="Favorile"
+          >
+            <Heart size={18} fill={favd ? 'currentColor' : 'none'} />
+          </button>
           <button
             className="m-btn m-btn-ghost lg"
             style={{ flex: 1 }}
