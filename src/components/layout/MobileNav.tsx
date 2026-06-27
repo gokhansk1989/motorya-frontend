@@ -38,40 +38,48 @@ export function MobileNav() {
   };
 
   return (
-    <nav className="m-bottom-nav">
-      {/* Sol 2 tab */}
-      {tabs.slice(0, 2).map((tab) => (
-        <Link key={tab.href} href={tab.href} className="m-bottom-nav__tab" data-active={isActive(tab.href)}>
-          <span className="m-bottom-nav__icon">{tab.icon}</span>
-          <span className="m-bottom-nav__label">{tab.label}</span>
-        </Link>
-      ))}
+    /* Sayfaya özel sticky CTA bar (ör. ilan detay) ile bottom nav, iOS WebKit'te
+       adres çubuğu açılıp kapanırken iki BAĞIMSIZ position:fixed eleman birbirinden
+       bağımsız hesaplanıp senkron kayıyordu (scroll'da çakışma/bozulma).
+       Tek bir fixed kapsayıcı altında birleştirip her zaman birlikte hareket etmelerini
+       sağlıyoruz — sayfa-özel bar buraya portal ile (#m-mobile-bar-slot) render edilir. */
+    <div className="m-fixed-bottom-stack">
+      <div id="m-mobile-bar-slot" />
+      <nav className="m-bottom-nav">
+        {/* Sol 2 tab */}
+        {tabs.slice(0, 2).map((tab) => (
+          <Link key={tab.href} href={tab.href} className="m-bottom-nav__tab" data-active={isActive(tab.href)}>
+            <span className="m-bottom-nav__icon">{tab.icon}</span>
+            <span className="m-bottom-nav__label">{tab.label}</span>
+          </Link>
+        ))}
 
-      {/* Merkez FAB — İlan Ver (barın kendi içinde, normal flex akışında) */}
-      <button onClick={handleIlanVer} className="m-bottom-nav__fab" aria-label="İlan Ver">
-        <Plus size={26} strokeWidth={2.5} />
-      </button>
+        {/* Merkez FAB — İlan Ver (barın kendi içinde, normal flex akışında) */}
+        <button onClick={handleIlanVer} className="m-bottom-nav__fab" aria-label="İlan Ver">
+          <Plus size={26} strokeWidth={2.5} />
+        </button>
 
-      {/* Sağ 2 tab */}
-      {tabs.slice(2).map((tab) => (
-        <Link key={tab.href} href={tab.href} className="m-bottom-nav__tab" data-active={isActive(tab.href)}>
-          <span className="m-bottom-nav__icon" style={{ position: 'relative' }}>
-            {tab.icon}
-            {tab.badge ? (
-              <span style={{
-                position: 'absolute', top: -4, right: -6,
-                minWidth: 16, height: 16, borderRadius: 8,
-                background: 'var(--accent-2)', color: 'var(--accent-2-ink)',
-                fontSize: 10, fontWeight: 700, display: 'grid', placeItems: 'center',
-                padding: '0 3px', lineHeight: 1,
-              }}>
-                {tab.badge > 9 ? '9+' : tab.badge}
-              </span>
-            ) : null}
-          </span>
-          <span className="m-bottom-nav__label">{tab.label}</span>
-        </Link>
-      ))}
-    </nav>
+        {/* Sağ 2 tab */}
+        {tabs.slice(2).map((tab) => (
+          <Link key={tab.href} href={tab.href} className="m-bottom-nav__tab" data-active={isActive(tab.href)}>
+            <span className="m-bottom-nav__icon" style={{ position: 'relative' }}>
+              {tab.icon}
+              {tab.badge ? (
+                <span style={{
+                  position: 'absolute', top: -4, right: -6,
+                  minWidth: 16, height: 16, borderRadius: 8,
+                  background: 'var(--accent-2)', color: 'var(--accent-2-ink)',
+                  fontSize: 10, fontWeight: 700, display: 'grid', placeItems: 'center',
+                  padding: '0 3px', lineHeight: 1,
+                }}>
+                  {tab.badge > 9 ? '9+' : tab.badge}
+                </span>
+              ) : null}
+            </span>
+            <span className="m-bottom-nav__label">{tab.label}</span>
+          </Link>
+        ))}
+      </nav>
+    </div>
   );
 }

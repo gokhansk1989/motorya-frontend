@@ -11,6 +11,7 @@ import { MapPin, Eye, Heart, Star, ChevronLeft, ChevronRight, Shield, Truck, Use
 import { useStartConversation } from '@/hooks/useMessages';
 import { trackListingView, useRecentlyViewedIds } from '@/hooks/useRecentlyViewed';
 import { ListingCard } from '@/components/listings/ListingCard';
+import { MobileBarPortal } from '@/components/layout/MobileBarPortal';
 import { AdSlot } from '@/components/ui/AdSlot';
 import { useCreateSavedSearch } from '@/hooks/useSavedSearches';
 import toast from 'react-hot-toast';
@@ -602,42 +603,45 @@ export default function ListingDetailClient() {
       <ListingRow title="Benzer ilanlar" listings={similarListings ?? []} />
       <ListingRow title="Son baktıkların" listings={recentlyViewed ?? []} />
 
-      {/* Mobile bottom action bar */}
+      {/* Mobile bottom action bar — bottom nav ile aynı fixed kapsayıcıda (portal),
+          iOS WebKit scroll/adres-çubuğu senkron kayması bu yüzden oluşmaz */}
       {!isMine && listing.status === 'ACTIVE' && (
-        <div className="m-mobile-bar">
-          <button
-            className="m-btn m-btn-icon lg"
-            onClick={() => { if (!user) { toast.error('Favorilemek için giriş yapmalısın'); router.push('/giris'); return; } toggleFavorite.mutate(id); }}
-            style={{ color: favd ? 'var(--accent)' : 'var(--ink-2)', flexShrink: 0 }}
-            aria-label="Favorile"
-          >
-            <Heart size={18} fill={favd ? 'currentColor' : 'none'} />
-          </button>
-          <button
-            className="m-btn m-btn-ghost lg"
-            style={{ flex: 1 }}
-            onClick={() => {
-              if (!user) { toast.error('Teklif vermek için giriş yapmalısın'); router.push('/giris'); return; }
-              setShowOfferModal(true);
-            }}
-          >
-            Teklif Ver
-          </button>
-          <button
-            className="m-btn m-btn-primary lg"
-            style={{ flex: 2, display: 'flex', justifyContent: 'center', gap: 6 }}
-            onClick={async () => {
-              if (!user) { toast.error('Mesaj göndermek için giriş yapmalısın'); router.push('/giris'); return; }
-              try {
-                const conv = await startConversation.mutateAsync({ otherUserId: listing.seller.id, listingId: listing.id });
-                router.push(`/mesajlarim?conv=${conv.id}`);
-              } catch { toast.error('Mesaj başlatılamadı'); }
-            }}
-          >
-            <MessageCircle size={15} />
-            Mesaj Gönder
-          </button>
-        </div>
+        <MobileBarPortal>
+          <div className="m-mobile-bar">
+            <button
+              className="m-btn m-btn-icon lg"
+              onClick={() => { if (!user) { toast.error('Favorilemek için giriş yapmalısın'); router.push('/giris'); return; } toggleFavorite.mutate(id); }}
+              style={{ color: favd ? 'var(--accent)' : 'var(--ink-2)', flexShrink: 0 }}
+              aria-label="Favorile"
+            >
+              <Heart size={18} fill={favd ? 'currentColor' : 'none'} />
+            </button>
+            <button
+              className="m-btn m-btn-ghost lg"
+              style={{ flex: 1 }}
+              onClick={() => {
+                if (!user) { toast.error('Teklif vermek için giriş yapmalısın'); router.push('/giris'); return; }
+                setShowOfferModal(true);
+              }}
+            >
+              Teklif Ver
+            </button>
+            <button
+              className="m-btn m-btn-primary lg"
+              style={{ flex: 2, display: 'flex', justifyContent: 'center', gap: 6 }}
+              onClick={async () => {
+                if (!user) { toast.error('Mesaj göndermek için giriş yapmalısın'); router.push('/giris'); return; }
+                try {
+                  const conv = await startConversation.mutateAsync({ otherUserId: listing.seller.id, listingId: listing.id });
+                  router.push(`/mesajlarim?conv=${conv.id}`);
+                } catch { toast.error('Mesaj başlatılamadı'); }
+              }}
+            >
+              <MessageCircle size={15} />
+              Mesaj Gönder
+            </button>
+          </div>
+        </MobileBarPortal>
       )}
 
       {/* Seller's incoming offers */}

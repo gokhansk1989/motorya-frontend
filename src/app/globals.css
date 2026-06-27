@@ -96,6 +96,7 @@ input, textarea, select { font-family: inherit; color: var(--ink); }
 
 /* ---------- mobile bottom nav ---------- */
 .m-bottom-nav { display: none; }
+.m-fixed-bottom-stack { display: none; }
 
 /* ---------- listing detail ---------- */
 .m-detail-grid { display: grid; grid-template-columns: 1.25fr 0.95fr; gap: 36px; align-items: start; }
@@ -121,18 +122,29 @@ input, textarea, select { font-family: inherit; color: var(--ink); }
   .m-detail-sticky { position: static !important; }
   .m-buy-desktop-actions { display: none !important; }
   .m-mobile-bar {
-    display: flex; position: fixed; bottom: 96px; left: 0; right: 0; z-index: 90;
+    display: flex;
     padding: 12px 16px 12px; background: var(--bg-1); border-top: 1px solid var(--line-soft);
     gap: 8px;
   }
+
+  /* Sayfa-özel sticky CTA bar (m-mobile-bar) ve bottom nav (m-bottom-nav), iOS WebKit'te
+     adres çubuğu açılıp kapanırken iki BAĞIMSIZ position:fixed eleman olarak senkron
+     kayıyordu. Şimdi TEK fixed kapsayıcı (bu) altında flex-column ile birlikte hareket
+     ediyorlar — biri var/yok olsa da diğeri her zaman doğru konumda kalır. */
+  .m-fixed-bottom-stack {
+    display: flex; flex-direction: column;
+    position: fixed; left: 0; right: 0; bottom: 0; z-index: 100;
+    pointer-events: none;
+  }
+  .m-fixed-bottom-stack .m-mobile-bar,
+  .m-fixed-bottom-stack .m-bottom-nav { pointer-events: auto; }
 
   /* Mobile bottom navigation — kenarlardan içeride yüzen, köşeli (rounded-square) ada.
      FAB barın kendi içine gömülü (normal flex akışında), hiçbir yerden taşmıyor —
      önceki tasarımlardaki kesilme/hizalama kırılganlığı kökten ortadan kalkıyor. */
   .m-bottom-nav {
     display: flex; align-items: center; gap: 4px;
-    position: fixed; left: 14px; right: 14px; z-index: 100;
-    bottom: calc(14px + env(safe-area-inset-bottom));
+    margin: 0 14px calc(14px + env(safe-area-inset-bottom));
     padding: 8px 10px;
     background: var(--bg-1);
     border: 1px solid var(--line-soft);
@@ -160,8 +172,8 @@ input, textarea, select { font-family: inherit; color: var(--ink); }
 
   /* Sayfa içeriği bottom nav'ın altında kalmasın (nav yüksekliği ~68px + 14px boşluk) */
   body { padding-bottom: 96px; }
-  /* İlan detay has-mobile-bar zaten ekleniyor, onu yükselt */
-  .m-wrap.has-mobile-bar { padding-bottom: 112px; }
+  /* İlan detay: mobile-bar (~70px) + nav stack'in üstüne biniyor, toplam yüksekliğe göre yükselt */
+  .m-wrap.has-mobile-bar { padding-bottom: 168px; }
 
   /* messages — bottom nav yüksekliğini hesaba kat, dvh klavyeyle birlikte büzülür */
   .m-msg-grid { grid-template-columns: 1fr !important; height: calc(100dvh - 60px - 96px) !important; }
