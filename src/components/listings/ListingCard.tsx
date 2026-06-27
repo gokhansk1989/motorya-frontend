@@ -49,7 +49,7 @@ export function ListingCard({ listing }: { listing: Listing }) {
               </span>
             </div>
           )}
-          <div style={{ position: 'absolute', top: 10, left: 10, display: 'flex', gap: 6, zIndex: 2 }}>
+          <div style={{ position: 'absolute', top: 10, left: 10, right: 56, display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: 6, zIndex: 2 }}>
             {(listing as any).isFeatured && (
               <span className="m-badge solid" style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}>
                 <Star size={10} fill="currentColor" strokeWidth={0} /> ÖNE ÇIKAN

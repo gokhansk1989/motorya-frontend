@@ -606,8 +606,9 @@ export default function ListingDetailClient() {
       {!isMine && listing.status === 'ACTIVE' && (
         <div className="m-mobile-bar">
           <button
+            className="m-btn m-btn-icon lg"
             onClick={() => { if (!user) { toast.error('Favorilemek için giriş yapmalısın'); router.push('/giris'); return; } toggleFavorite.mutate(id); }}
-            style={{ width: 46, height: 46, borderRadius: 8, background: 'var(--bg-1)', border: '1px solid var(--line)', display: 'grid', placeItems: 'center', color: favd ? 'var(--accent)' : 'var(--ink-2)', flexShrink: 0 }}
+            style={{ color: favd ? 'var(--accent)' : 'var(--ink-2)', flexShrink: 0 }}
             aria-label="Favorile"
           >
             <Heart size={18} fill={favd ? 'currentColor' : 'none'} />

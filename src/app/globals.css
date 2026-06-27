@@ -231,7 +231,7 @@ input, textarea, select { font-family: inherit; color: var(--ink); }
 .m-badge.good { background: color-mix(in oklch, var(--good) 18%, transparent); color: var(--good); }
 .m-badge.warn { background: color-mix(in oklch, var(--warn) 20%, transparent); color: var(--warn); }
 .m-badge.bad { background: color-mix(in oklch, var(--bad) 20%, transparent); color: var(--bad); }
-.m-badge.solid { background: var(--accent); color: var(--accent-ink); }
+.m-badge.solid { background: color-mix(in oklch, var(--accent) 85%, transparent); color: var(--accent-ink); backdrop-filter: blur(4px); }
 .m-badge.dark { background: oklch(0 0 0 / 0.6); color: oklch(1 0 0); backdrop-filter: blur(4px); }
 
 /* ---------- cards ---------- */
