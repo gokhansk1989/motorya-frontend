@@ -1,6 +1,6 @@
 'use client';
 import { useState, useEffect } from 'react';
-import { useMyOffers, useReceivedOffers, useRespondOffer, useWithdrawOffer, useCounterOffer, useRespondCounterOffer } from '@/hooks/useOffers';
+import { useMyOffers, useReceivedOffers, useRespondOffer, useWithdrawOffer, useCounterOffer, useRespondCounterOffer, useOfferUpdates } from '@/hooks/useOffers';
 import { useCreateReview } from '@/hooks/useReviews';
 import { formatPrice, timeAgo } from '@/lib/utils';
 import { Tag, UserCheck, Plus } from 'lucide-react';
@@ -294,6 +294,9 @@ function ReceivedOffers() {
                   </button>
                 </div>
               )}
+              {o.status === 'COUNTER_OFFERED' && (
+                <span style={{ fontSize: 12, color: 'var(--ink-3)', fontFamily: 'var(--font-display)' }}>Alıcının yanıtı bekleniyor…</span>
+              )}
             </div>
             {reviewState[o.id]?.open && (
               <ReviewModal
@@ -383,6 +386,7 @@ const TABS = [
 
 export default function OffersPage() {
   const [tab, setTab] = useState<'sent' | 'received'>('sent');
+  useOfferUpdates();
 
   useEffect(() => {
     const p = new URLSearchParams(window.location.search).get('tab');

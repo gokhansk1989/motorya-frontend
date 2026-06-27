@@ -3,7 +3,7 @@ import { useEffect, useRef, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { useQuery } from '@tanstack/react-query';
 import { useListingBySlug, useToggleFavorite, useSimilarListings, useListingsByIds, useMarkSold, useReserveListing, useUnreserveListing, usePriceGuide } from '@/hooks/useListings';
-import { useCreateOffer, useListingOffers, useRespondOffer, useCounterOffer } from '@/hooks/useOffers';
+import { useCreateOffer, useListingOffers, useRespondOffer, useCounterOffer, useOfferUpdates } from '@/hooks/useOffers';
 import { useAuthStore } from '@/store/auth';
 import { api } from '@/lib/api';
 import { formatPrice, timeAgo } from '@/lib/utils';
@@ -57,6 +57,7 @@ export default function ListingDetailClient() {
   const { data: listing, isLoading } = useListingBySlug(slug);
   const id = listing?.id ?? '';
   const { data: offers } = useListingOffers(id);
+  useOfferUpdates();
   const { data: similarListings } = useSimilarListings(id);
   const createAlarm = useCreateSavedSearch();
   const recentIds = useRecentlyViewedIds(id);
@@ -152,8 +153,9 @@ export default function ListingDetailClient() {
     if (!user) { toast.error('Teklif vermek için giriş yapmalısın'); router.push('/giris'); return; }
     try {
       await createOffer.mutateAsync({ listingId: listing.id, amount: parseFloat(offerAmount) });
-      toast.success('Teklifiniz gönderildi!');
+      toast.success('Teklifiniz gönderildi! Tekliflerim sayfasından takip edebilirsin.');
       setShowOfferModal(false);
+      router.push('/tekliflerim?tab=sent');
     } catch (e: any) {
       toast.error(e.response?.data?.message || 'Hata oluştu');
     }
