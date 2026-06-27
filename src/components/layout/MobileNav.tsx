@@ -47,10 +47,9 @@ export function MobileNav() {
         </Link>
       ))}
 
-      {/* FAB için flex akışında rezerve edilen boşluk — buton kendisi absolute konumlu */}
-      <span className="m-bottom-nav__spacer" aria-hidden="true" />
+      {/* Merkez FAB — İlan Ver (barın kendi içinde, normal flex akışında) */}
       <button onClick={handleIlanVer} className="m-bottom-nav__fab" aria-label="İlan Ver">
-        <Plus size={28} strokeWidth={2.5} />
+        <Plus size={26} strokeWidth={2.5} />
       </button>
 
       {/* Sağ 2 tab */}
