@@ -11,7 +11,6 @@ import { MapPin, Eye, Heart, Star, ChevronLeft, ChevronRight, Shield, Truck, Use
 import { useStartConversation } from '@/hooks/useMessages';
 import { trackListingView, useRecentlyViewedIds } from '@/hooks/useRecentlyViewed';
 import { ListingCard } from '@/components/listings/ListingCard';
-import { MobileBarPortal } from '@/components/layout/MobileBarPortal';
 import { AdSlot } from '@/components/ui/AdSlot';
 import { useCreateSavedSearch } from '@/hooks/useSavedSearches';
 import toast from 'react-hot-toast';
@@ -181,7 +180,7 @@ export default function ListingDetailClient() {
   ].filter(Boolean) as [string, string][];
 
   return (
-    <div className={`m-wrap has-mobile-bar`} style={{ paddingBottom: 40 }}>
+    <div className="m-wrap" style={{ paddingBottom: 40 }}>
       {/* Breadcrumb */}
       <div style={{ display: 'flex', alignItems: 'center', gap: 8, color: 'var(--ink-3)', fontSize: 12.5, padding: '20px 0 4px', flexWrap: 'wrap' }}>
         <Link href="/" style={{ color: 'var(--ink-3)' }}>Keşfet</Link>
@@ -381,9 +380,10 @@ export default function ListingDetailClient() {
               </div>
             </div>
 
-            {/* Actions */}
+            {/* Actions — favori (kart başlığında), Teklif Ver, Mesaj Gönder; artık
+                hareketli/fixed bir bar değil, fiyat kartının içinde sabit duruyor */}
             {!isMine && listing.status === 'ACTIVE' && (
-              <div className="m-buy-desktop-actions" style={{ display: 'flex', flexDirection: 'column', gap: 12, marginTop: 20 }}>
+              <div className="m-buy-actions" style={{ display: 'flex', flexDirection: 'column', gap: 12, marginTop: 20 }}>
                 <div style={{ display: 'flex', gap: 8 }}>
                   <button
                     className="m-btn m-btn-ghost"
@@ -396,7 +396,7 @@ export default function ListingDetailClient() {
                     Teklif Ver
                   </button>
                   <button
-                    className="m-btn m-btn-ghost"
+                    className="m-btn m-btn-primary"
                     style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}
                     onClick={async () => {
                       if (!user) { toast.error('Mesaj göndermek için giriş yapmalısın'); router.push('/giris'); return; }
@@ -407,7 +407,7 @@ export default function ListingDetailClient() {
                     }}
                   >
                     <MessageCircle size={15} />
-                    Mesaj
+                    Mesaj Gönder
                   </button>
                 </div>
                 {!user && (
@@ -604,47 +604,6 @@ export default function ListingDetailClient() {
 
       <ListingRow title="Benzer ilanlar" listings={similarListings ?? []} />
       <ListingRow title="Son baktıkların" listings={recentlyViewed ?? []} />
-
-      {/* Mobile bottom action bar — bottom nav ile aynı fixed kapsayıcıda (portal),
-          iOS WebKit scroll/adres-çubuğu senkron kayması bu yüzden oluşmaz */}
-      {!isMine && listing.status === 'ACTIVE' && (
-        <MobileBarPortal>
-          <div className="m-mobile-bar">
-            <button
-              className="m-btn m-btn-icon lg"
-              onClick={() => { if (!user) { toast.error('Favorilemek için giriş yapmalısın'); router.push('/giris'); return; } toggleFavorite.mutate(id); }}
-              style={{ color: favd ? 'var(--accent)' : 'var(--ink-2)', flexShrink: 0 }}
-              aria-label="Favorile"
-            >
-              <Heart size={18} fill={favd ? 'currentColor' : 'none'} />
-            </button>
-            <button
-              className="m-btn lg"
-              style={{ flex: 1, background: 'var(--bg-1)' }}
-              onClick={() => {
-                if (!user) { toast.error('Teklif vermek için giriş yapmalısın'); router.push('/giris'); return; }
-                setShowOfferModal(true);
-              }}
-            >
-              Teklif Ver
-            </button>
-            <button
-              className="m-btn m-btn-primary lg"
-              style={{ flex: 2, display: 'flex', justifyContent: 'center', gap: 6 }}
-              onClick={async () => {
-                if (!user) { toast.error('Mesaj göndermek için giriş yapmalısın'); router.push('/giris'); return; }
-                try {
-                  const conv = await startConversation.mutateAsync({ otherUserId: listing.seller.id, listingId: listing.id });
-                  router.push(`/mesajlarim?conv=${conv.id}`);
-                } catch { toast.error('Mesaj başlatılamadı'); }
-              }}
-            >
-              <MessageCircle size={15} />
-              Mesaj Gönder
-            </button>
-          </div>
-        </MobileBarPortal>
-      )}
 
       {/* Seller's incoming offers */}
       {isMine && offers?.length > 0 && (

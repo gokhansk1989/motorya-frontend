@@ -100,7 +100,6 @@ input, textarea, select { font-family: inherit; color: var(--ink); }
 
 /* ---------- listing detail ---------- */
 .m-detail-grid { display: grid; grid-template-columns: 1.25fr 0.95fr; gap: 36px; align-items: start; }
-.m-mobile-bar { display: none; }
 
 /* ---------- feedback widget ---------- */
 .m-feedback-widget { position: fixed; right: 24px; bottom: 24px; z-index: 90; }
@@ -126,14 +125,9 @@ input, textarea, select { font-family: inherit; color: var(--ink); }
   /* listing detail */
   .m-detail-grid  { grid-template-columns: 1fr !important; gap: 20px !important; }
   .m-detail-sticky { position: static !important; }
-  .m-buy-desktop-actions { display: none !important; }
-  /* Arka plansız — nav ile aynı yatay boşluk/hizalama, her buton kendi gölgesiyle yüzer */
-  .m-mobile-bar {
-    display: flex; gap: 8px;
-    margin: 0 14px 10px;
-  }
-  .m-mobile-bar .m-btn { box-shadow: 0 4px 14px -6px rgba(0,0,0,.22); }
-  .m-mobile-bar .m-btn.m-btn-primary { box-shadow: 0 4px 14px -6px rgba(249,115,22,.45); }
+  /* Favori/Teklif Ver/Mesaj artık fixed bar yerine fiyat kartının içinde — dokunma
+     hedefi büyütülsün diye buton yüksekliği artırılıyor. */
+  .m-buy-actions .m-btn { min-height: 46px; font-size: 15px; }
 
   /* Sayfa-özel sticky CTA bar (m-mobile-bar) ve bottom nav (m-bottom-nav), iOS WebKit'te
      adres çubuğu açılıp kapanırken iki BAĞIMSIZ position:fixed eleman olarak senkron
@@ -180,8 +174,6 @@ input, textarea, select { font-family: inherit; color: var(--ink); }
 
   /* Sayfa içeriği bottom nav'ın altında kalmasın (nav yüksekliği ~68px + 14px boşluk) */
   body { padding-bottom: 96px; }
-  /* İlan detay: mobile-bar (~70px) + nav stack'in üstüne biniyor, toplam yüksekliğe göre yükselt */
-  .m-wrap.has-mobile-bar { padding-bottom: 150px; }
 
   /* messages — bottom nav yüksekliğini hesaba kat, dvh klavyeyle birlikte büzülür */
   .m-msg-grid { grid-template-columns: 1fr !important; height: calc(100dvh - 60px - 96px) !important; }
