@@ -313,8 +313,9 @@ export default function ProfilePage() {
         </div>
       )}
 
-      {/* Tab bar — horizontal scroll on mobile */}
-      <div style={{ display: 'flex', gap: 2, marginBottom: 24, borderBottom: '1px solid var(--line)', overflowX: 'auto', scrollbarWidth: 'none' }}>
+      {/* Tab bar — horizontal scroll on mobile; overflowY+touchAction yatay eksene kilitler,
+          aksi halde dokunmatik kaydırma sırasında sayfa da dikey zıplıyordu */}
+      <div style={{ display: 'flex', gap: 2, marginBottom: 24, borderBottom: '1px solid var(--line)', overflowX: 'auto', overflowY: 'hidden', touchAction: 'pan-x', WebkitOverflowScrolling: 'touch', scrollbarWidth: 'none' }}>
         {TABS.map(t => (
           <button
             key={t.id}
