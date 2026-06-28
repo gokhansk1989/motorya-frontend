@@ -1,7 +1,23 @@
+'use client';
 import Link from 'next/link';
+import { useEffect } from 'react';
+import { usePathname } from 'next/navigation';
 import { Zap, ArrowLeft, Search } from 'lucide-react';
+import { api } from '@/lib/api';
 
 export default function NotFound() {
+  const pathname = usePathname();
+
+  useEffect(() => {
+    api
+      .post('/error-logs', {
+        source: '404',
+        message: `Sayfa bulunamadı: ${pathname}`,
+        path: pathname,
+      })
+      .catch(() => null);
+  }, [pathname]);
+
   return (
     <div style={{ minHeight: '100vh', background: 'var(--bg-0)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 24 }}>
       <div aria-hidden style={{ position: 'fixed', inset: 0, background: 'radial-gradient(50% 50% at 50% 0%, color-mix(in oklch, var(--accent) 10%, transparent), transparent 70%)', pointerEvents: 'none' }} />
