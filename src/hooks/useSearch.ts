@@ -7,6 +7,7 @@ export interface SearchQuery {
   brandId?: string;
   condition?: string;
   city?: string;
+  gender?: string;
   minPrice?: number;
   maxPrice?: number;
   sort?: string;

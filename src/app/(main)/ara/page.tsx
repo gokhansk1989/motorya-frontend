@@ -258,6 +258,7 @@ function SearchPageInner() {
     brandId: brandId || undefined,
     condition: condition || undefined,
     city: city || undefined,
+    gender: gender || undefined,
     minPrice,
     maxPrice,
     sort,
