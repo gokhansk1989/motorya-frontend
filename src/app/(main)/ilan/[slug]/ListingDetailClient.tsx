@@ -386,7 +386,7 @@ export default function ListingDetailClient() {
               <div className="m-buy-actions" style={{ display: 'flex', flexDirection: 'column', gap: 12, marginTop: 20 }}>
                 <div style={{ display: 'flex', gap: 8 }}>
                   <button
-                    className="m-btn m-btn-ghost"
+                    className="m-btn m-btn-soft-accent"
                     style={{ flex: 1 }}
                     onClick={() => {
                       if (!user) { toast.error('Teklif vermek için giriş yapmalısın'); router.push('/giris'); return; }

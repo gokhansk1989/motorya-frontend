@@ -206,6 +206,11 @@ input, textarea, select { font-family: inherit; color: var(--ink); }
 .m-btn-primary:hover { filter: brightness(1.08); }
 .m-btn-ghost { background: transparent !important; border-color: var(--line) !important; color: var(--ink) !important; }
 .m-btn-ghost:hover { background: var(--bg-2) !important; }
+.m-btn-soft-accent {
+  background: color-mix(in oklch, var(--accent) 16%, var(--bg-1)) !important;
+  color: var(--accent) !important; border-color: transparent !important;
+}
+.m-btn-soft-accent:hover { background: color-mix(in oklch, var(--accent) 24%, var(--bg-1)) !important; }
 .m-btn-icon { width: 44px !important; padding: 0 !important; }
 .m-btn-icon.sm { width: 36px !important; }
 
