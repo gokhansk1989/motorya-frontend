@@ -102,6 +102,12 @@ input, textarea, select { font-family: inherit; color: var(--ink); }
 .m-detail-grid { display: grid; grid-template-columns: 1.25fr 0.95fr; gap: 36px; align-items: start; }
 .m-mobile-bar { display: none; }
 
+/* ---------- feedback widget ---------- */
+.m-feedback-widget { position: fixed; right: 24px; bottom: 24px; z-index: 90; }
+@media (max-width: 768px) {
+  .m-feedback-widget { display: none; }
+}
+
 /* ---------- messages ---------- */
 .m-msg-grid { display: grid; grid-template-columns: 320px 1fr; height: calc(100dvh - 72px); gap: 0; border-radius: var(--radius); overflow: hidden; border: 1px solid var(--line-soft); margin-top: 16px; }
 
