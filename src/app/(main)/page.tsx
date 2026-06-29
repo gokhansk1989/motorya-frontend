@@ -55,8 +55,26 @@ function PriceDropPanel() {
   );
 }
 
-function HeroSection({ onSearch }: { onSearch: (q: string) => void }) {
+function HeroSection({ onSearch, categories }: { onSearch: (q: string) => void; categories: Category[] }) {
+  const router = useRouter();
   const [val, setVal] = useState('');
+  const [focused, setFocused] = useState(false);
+  const blurTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const query = val.trim().toLocaleLowerCase('tr');
+  const matches = query
+    ? categories.filter(c => c.name.toLocaleLowerCase('tr').includes(query)).slice(0, 5)
+    : [];
+  const showSuggestions = focused && matches.length > 0;
+
+  const handleFocus = () => {
+    if (blurTimer.current) clearTimeout(blurTimer.current);
+    setFocused(true);
+  };
+  const handleBlur = () => {
+    blurTimer.current = setTimeout(() => setFocused(false), 120);
+  };
+
   return (
     <section style={{ position: 'relative', overflow: 'hidden', borderBottom: '1px solid var(--line-soft)' }}>
       <div aria-hidden style={{ position: 'absolute', inset: 0, background:
@@ -76,13 +94,39 @@ function HeroSection({ onSearch }: { onSearch: (q: string) => void }) {
             ya da güvenli buluşma noktasında yüz yüze.
           </p>
           <form onSubmit={e => { e.preventDefault(); onSearch(val); }}
-            style={{ marginTop: 28, maxWidth: 540, display: 'flex', gap: 8 }}>
+            style={{ marginTop: 28, maxWidth: 540, position: 'relative' }}>
             <div style={{ display: 'flex', flex: 1, height: 54, background: 'var(--bg-1)', border: '1px solid var(--line)', borderRadius: 11, padding: '0 8px 0 16px', gap: 8, alignItems: 'center' }}>
               <Search size={20} style={{ color: 'var(--ink-3)', flexShrink: 0 }} />
-              <input value={val} onChange={e => setVal(e.target.value)} placeholder="Ne arıyorsun?"
+              <input value={val} onChange={e => setVal(e.target.value)} onFocus={handleFocus} onBlur={handleBlur} placeholder="Ne arıyorsun?"
                 style={{ flex: 1, background: 'none', border: 0, color: 'var(--ink)', fontSize: 15, outline: 'none', minWidth: 0 }} />
               <button type="submit" className="m-btn m-btn-primary" style={{ height: 38, padding: '0 14px', fontSize: 14, flexShrink: 0 }}>Ara</button>
             </div>
+            {showSuggestions && (
+              <div style={{
+                position: 'absolute', top: 'calc(100% + 6px)', left: 0, right: 0, zIndex: 20,
+                background: 'var(--bg-1)', border: '1px solid var(--line)', borderRadius: 11,
+                boxShadow: '0 12px 32px -10px rgba(0,0,0,0.22)', overflow: 'hidden',
+              }}>
+                <p style={{ fontSize: 11, fontWeight: 600, color: 'var(--ink-3)', margin: 0, padding: '10px 16px 6px' }}>Kategoriler</p>
+                {matches.map(c => (
+                  <button
+                    key={c.id}
+                    type="button"
+                    onClick={() => router.push(`/kategori/${c.slug}`)}
+                    style={{
+                      width: '100%', display: 'flex', alignItems: 'center', gap: 10,
+                      padding: '8px 16px', background: 'transparent', border: 0, cursor: 'pointer',
+                      fontSize: 14, color: 'var(--ink)', textAlign: 'left',
+                    }}
+                    onMouseEnter={(e) => (e.currentTarget.style.background = 'var(--bg-2)')}
+                    onMouseLeave={(e) => (e.currentTarget.style.background = 'transparent')}
+                  >
+                    <CategoryIcon slug={c.slug} size={24} alt={c.name} />
+                    {c.name}
+                  </button>
+                ))}
+              </div>
+            )}
           </form>
         </div>
         <PriceDropPanel />
@@ -355,7 +399,7 @@ function HomeContent() {
   return (
     <div>
       <PullToRefresh onRefresh={handleRefresh} />
-      <HeroSection onSearch={handleSearch} />
+      <HeroSection onSearch={handleSearch} categories={allCategories} />
       <div className="m-wrap" style={{ paddingTop: 32, paddingBottom: 48 }}>
 
         <PriceDropMobileStrip />
