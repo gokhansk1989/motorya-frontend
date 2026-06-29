@@ -2,13 +2,16 @@
 import Link from 'next/link';
 import { useRouter, usePathname } from 'next/navigation';
 import { useState, useEffect, useRef } from 'react';
+import { useQuery } from '@tanstack/react-query';
 import { useAuthStore } from '@/store/auth';
+import { api } from '@/lib/api';
 import {
   Search, Bell, MessageSquare, User, Plus, Zap, LogOut,
   Menu, X, Home, Tag, Newspaper, Heart, ListPlus,
   BellPlus, ChevronDown,
 } from 'lucide-react';
 import { useNotifications } from '@/hooks/useNotifications';
+import { matchCategories, CategorySuggestionsDropdown, type CategoryLite } from '@/components/ui/CategorySuggestions';
 
 export function Logo() {
   return (
@@ -35,7 +38,23 @@ export function Header() {
   const [menuOpen, setMenuOpen] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
   const [userDropOpen, setUserDropOpen] = useState(false);
+  const [searchFocused, setSearchFocused] = useState(false);
   const userDropRef = useRef<HTMLDivElement>(null);
+  const searchBlurTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const { data: headerCategories = [] } = useQuery<CategoryLite[]>({
+    queryKey: ['categories'],
+    queryFn: () => api.get('/listings/meta/categories').then(r => r.data),
+  });
+  const searchMatches = matchCategories(headerCategories, searchVal);
+  const showSearchSuggestions = searchFocused && searchMatches.length > 0;
+  const handleSearchFocus = () => {
+    if (searchBlurTimer.current) clearTimeout(searchBlurTimer.current);
+    setSearchFocused(true);
+  };
+  const handleSearchBlur = () => {
+    searchBlurTimer.current = setTimeout(() => setSearchFocused(false), 120);
+  };
 
   useEffect(() => {
     const handler = (e: MouseEvent) => {
@@ -99,19 +118,23 @@ export function Header() {
           <Logo />
 
           {/* Desktop arama */}
-          <form onSubmit={handleSearch} className="desktop-search" style={{
-            display: 'flex', alignItems: 'center',
-            flex: 1, maxWidth: 520, height: 44,
-            background: 'var(--bg-1)', border: '1px solid var(--line)', borderRadius: 10,
-            padding: '0 10px 0 14px', gap: 8,
-          }}>
-            <Search size={17} style={{ color: 'var(--ink-3)', flexShrink: 0 }} />
-            <input
-              value={searchVal}
-              onChange={e => setSearchVal(e.target.value)}
-              placeholder="Kask, mont, egzoz ara…"
-              style={{ flex: 1, background: 'none', border: 0, color: 'var(--ink)', fontSize: 14, outline: 'none' }}
-            />
+          <form onSubmit={handleSearch} className="desktop-search" style={{ position: 'relative', flex: 1, maxWidth: 520 }}>
+            <div style={{
+              display: 'flex', alignItems: 'center', height: 44,
+              background: 'var(--bg-1)', border: '1px solid var(--line)', borderRadius: 10,
+              padding: '0 10px 0 14px', gap: 8,
+            }}>
+              <Search size={17} style={{ color: 'var(--ink-3)', flexShrink: 0 }} />
+              <input
+                value={searchVal}
+                onChange={e => setSearchVal(e.target.value)}
+                onFocus={handleSearchFocus}
+                onBlur={handleSearchBlur}
+                placeholder="Kask, mont, egzoz ara…"
+                style={{ flex: 1, background: 'none', border: 0, color: 'var(--ink)', fontSize: 14, outline: 'none' }}
+              />
+            </div>
+            {showSearchSuggestions && <CategorySuggestionsDropdown matches={searchMatches} />}
           </form>
 
           {/* Desktop nav */}
@@ -230,20 +253,25 @@ export function Header() {
         {/* Mobil arama genişletme */}
         {searchOpen && (
           <div style={{ borderTop: '1px solid var(--line-soft)', padding: '10px 16px', background: 'var(--header-bg)' }}>
-            <form onSubmit={handleSearch} style={{
-              display: 'flex', alignItems: 'center', height: 46,
-              background: 'var(--bg-1)', border: '1px solid var(--line)', borderRadius: 10,
-              padding: '0 10px 0 14px', gap: 8,
-            }}>
-              <Search size={17} style={{ color: 'var(--ink-3)', flexShrink: 0 }} />
-              <input
-                autoFocus
-                value={searchVal}
-                onChange={e => setSearchVal(e.target.value)}
-                placeholder="Kask, mont, egzoz ara…"
-                style={{ flex: 1, background: 'none', border: 0, color: 'var(--ink)', fontSize: 15, outline: 'none' }}
-              />
-              <button type="submit" className="m-btn m-btn-primary" style={{ height: 36, padding: '0 14px', fontSize: 13, flexShrink: 0 }}>Ara</button>
+            <form onSubmit={handleSearch} style={{ position: 'relative' }}>
+              <div style={{
+                display: 'flex', alignItems: 'center', height: 46,
+                background: 'var(--bg-1)', border: '1px solid var(--line)', borderRadius: 10,
+                padding: '0 10px 0 14px', gap: 8,
+              }}>
+                <Search size={17} style={{ color: 'var(--ink-3)', flexShrink: 0 }} />
+                <input
+                  autoFocus
+                  value={searchVal}
+                  onChange={e => setSearchVal(e.target.value)}
+                  onFocus={handleSearchFocus}
+                  onBlur={handleSearchBlur}
+                  placeholder="Kask, mont, egzoz ara…"
+                  style={{ flex: 1, background: 'none', border: 0, color: 'var(--ink)', fontSize: 15, outline: 'none' }}
+                />
+                <button type="submit" className="m-btn m-btn-primary" style={{ height: 36, padding: '0 14px', fontSize: 13, flexShrink: 0 }}>Ara</button>
+              </div>
+              {showSearchSuggestions && <CategorySuggestionsDropdown matches={searchMatches} />}
             </form>
           </div>
         )}

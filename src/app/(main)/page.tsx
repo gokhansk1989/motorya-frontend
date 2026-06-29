@@ -10,6 +10,7 @@ import { Search, ChevronRight, ChevronDown, Star, TrendingDown } from 'lucide-re
 import Link from 'next/link';
 import { CategoryIcon } from '@/components/icons/CategoryIcons';
 import { motion, AnimatePresence } from 'framer-motion';
+import { matchCategories, CategorySuggestionsDropdown } from '@/components/ui/CategorySuggestions';
 
 interface Category { id: string; name: string; slug: string; parentId: string | null; }
 
@@ -56,15 +57,11 @@ function PriceDropPanel() {
 }
 
 function HeroSection({ onSearch, categories }: { onSearch: (q: string) => void; categories: Category[] }) {
-  const router = useRouter();
   const [val, setVal] = useState('');
   const [focused, setFocused] = useState(false);
   const blurTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  const query = val.trim().toLocaleLowerCase('tr');
-  const matches = query
-    ? categories.filter(c => c.name.toLocaleLowerCase('tr').includes(query)).slice(0, 5)
-    : [];
+  const matches = matchCategories(categories, val);
   const showSuggestions = focused && matches.length > 0;
 
   const handleFocus = () => {
@@ -76,7 +73,7 @@ function HeroSection({ onSearch, categories }: { onSearch: (q: string) => void; 
   };
 
   return (
-    <section style={{ position: 'relative', overflow: 'hidden', borderBottom: '1px solid var(--line-soft)' }}>
+    <section style={{ position: 'relative', borderBottom: '1px solid var(--line-soft)' }}>
       <div aria-hidden style={{ position: 'absolute', inset: 0, background:
         'radial-gradient(80% 120% at 12% -10%, color-mix(in oklch, var(--accent) 22%, transparent), transparent 55%),' +
         'radial-gradient(70% 100% at 100% 110%, color-mix(in oklch, var(--accent-2) 18%, transparent), transparent 55%)',
@@ -101,32 +98,7 @@ function HeroSection({ onSearch, categories }: { onSearch: (q: string) => void; 
                 style={{ flex: 1, background: 'none', border: 0, color: 'var(--ink)', fontSize: 15, outline: 'none', minWidth: 0 }} />
               <button type="submit" className="m-btn m-btn-primary" style={{ height: 38, padding: '0 14px', fontSize: 14, flexShrink: 0 }}>Ara</button>
             </div>
-            {showSuggestions && (
-              <div style={{
-                position: 'absolute', top: 'calc(100% + 6px)', left: 0, right: 0, zIndex: 20,
-                background: 'var(--bg-1)', border: '1px solid var(--line)', borderRadius: 11,
-                boxShadow: '0 12px 32px -10px rgba(0,0,0,0.22)', overflow: 'hidden',
-              }}>
-                <p style={{ fontSize: 11, fontWeight: 600, color: 'var(--ink-3)', margin: 0, padding: '10px 16px 6px' }}>Kategoriler</p>
-                {matches.map(c => (
-                  <button
-                    key={c.id}
-                    type="button"
-                    onClick={() => router.push(`/kategori/${c.slug}`)}
-                    style={{
-                      width: '100%', display: 'flex', alignItems: 'center', gap: 10,
-                      padding: '8px 16px', background: 'transparent', border: 0, cursor: 'pointer',
-                      fontSize: 14, color: 'var(--ink)', textAlign: 'left',
-                    }}
-                    onMouseEnter={(e) => (e.currentTarget.style.background = 'var(--bg-2)')}
-                    onMouseLeave={(e) => (e.currentTarget.style.background = 'transparent')}
-                  >
-                    <CategoryIcon slug={c.slug} size={24} alt={c.name} />
-                    {c.name}
-                  </button>
-                ))}
-              </div>
-            )}
+            {showSuggestions && <CategorySuggestionsDropdown matches={matches} />}
           </form>
         </div>
         <PriceDropPanel />
