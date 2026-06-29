@@ -3,7 +3,8 @@ import { useState } from 'react';
 import Link from 'next/link';
 import { useQuery } from '@tanstack/react-query';
 import { api } from '@/lib/api';
-import { Clock, ChevronRight, ArrowRight } from 'lucide-react';
+import { Clock, ChevronRight, ArrowRight, Newspaper } from 'lucide-react';
+import { EmptyState } from '@/components/ui/EmptyState';
 
 const COVER_IMAGES: Record<string, string> = {
   'motosiklet-botu-rehberi':
@@ -106,7 +107,7 @@ export default function BlogPage() {
           ))}
         </div>
       ) : posts.length === 0 ? (
-        <div style={{ textAlign: 'center', padding: '60px 0', color: 'var(--ink-3)' }}>Henüz blog yazısı yok.</div>
+        <EmptyState icon={<Newspaper size={44} />} title="Henüz blog yazısı yok" sub="Yakında burada olacak." />
       ) : (
         <>
           {featured && (

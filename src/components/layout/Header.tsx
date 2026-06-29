@@ -11,7 +11,7 @@ import {
   BellPlus, ChevronDown,
 } from 'lucide-react';
 import { useNotifications } from '@/hooks/useNotifications';
-import { matchCategories, CategorySuggestionsDropdown, type CategoryLite } from '@/components/ui/CategorySuggestions';
+import { matchCategories, matchBrands, CategorySuggestionsDropdown, type CategoryLite, type BrandLite } from '@/components/ui/CategorySuggestions';
 
 export function Logo() {
   return (
@@ -48,7 +48,12 @@ export function Header() {
     queryKey: ['categories'],
     queryFn: () => api.get('/listings/meta/categories').then(r => r.data),
   });
+  const { data: headerBrands = [] } = useQuery<BrandLite[]>({
+    queryKey: ['brands'],
+    queryFn: () => api.get('/listings/meta/brands').then(r => r.data),
+  });
   const searchMatches = matchCategories(headerCategories, searchVal);
+  const searchBrandMatches = matchBrands(headerBrands, searchVal);
   const handleSearchFocus = () => {
     if (searchBlurTimer.current) clearTimeout(searchBlurTimer.current);
     setSearchFocused(true);
@@ -138,7 +143,7 @@ export function Header() {
                 style={{ flex: 1, background: 'none', border: 0, color: 'var(--ink)', fontSize: 14, outline: 'none' }}
               />
             </div>
-            {searchFocused && <CategorySuggestionsDropdown query={searchVal} matches={searchMatches} anchorRef={desktopSearchBoxRef} onSearchQuery={navigateSearch} />}
+            {searchFocused && <CategorySuggestionsDropdown query={searchVal} matches={searchMatches} brandMatches={searchBrandMatches} anchorRef={desktopSearchBoxRef} onSearchQuery={navigateSearch} />}
           </form>
 
           {/* Desktop nav */}
@@ -275,7 +280,7 @@ export function Header() {
                 />
                 <button type="submit" className="m-btn m-btn-primary" style={{ height: 36, padding: '0 14px', fontSize: 13, flexShrink: 0 }}>Ara</button>
               </div>
-              {searchFocused && <CategorySuggestionsDropdown query={searchVal} matches={searchMatches} anchorRef={mobileSearchBoxRef} onSearchQuery={navigateSearch} />}
+              {searchFocused && <CategorySuggestionsDropdown query={searchVal} matches={searchMatches} brandMatches={searchBrandMatches} anchorRef={mobileSearchBoxRef} onSearchQuery={navigateSearch} />}
             </form>
           </div>
         )}

@@ -1,8 +1,9 @@
 import { notFound } from 'next/navigation';
 import Link from 'next/link';
 import Image from 'next/image';
-import { ChevronRight } from 'lucide-react';
+import { ChevronRight, PackageSearch } from 'lucide-react';
 import { CategoryIcon as CatIcon } from '@/components/icons/CategoryIcons';
+import { EmptyState } from '@/components/ui/EmptyState';
 
 const API = process.env.NEXT_PUBLIC_API_URL || 'https://motorya.com.tr/api-backend';
 
@@ -144,12 +145,13 @@ export default async function CategoryBrandPage({ params }: Props) {
 
         {/* İlan grid */}
         {listings.length === 0 ? (
-          <div style={{ textAlign: 'center', padding: '64px 0', color: 'var(--ink-3)' }}>
-            <p style={{ fontSize: 18, marginBottom: 8 }}>Henüz {brand.name} {category.name} ilanı yok</p>
-            <p style={{ fontSize: 14, marginBottom: 20 }}>İlk ilanı sen ver!</p>
-            <Link href="/ilan-ver" className="m-btn m-btn-primary" style={{ display: 'inline-flex', textDecoration: 'none' }}>
-              İlan Ver
-            </Link>
+          <div style={{ padding: '40px 0' }}>
+            <EmptyState icon={<PackageSearch size={44} />} title={`Henüz ${brand.name} ${category.name} ilanı yok`} sub="İlk ilanı sen ver!" />
+            <div style={{ textAlign: 'center', marginTop: 4 }}>
+              <Link href="/ilan-ver" className="m-btn m-btn-primary" style={{ display: 'inline-flex', textDecoration: 'none' }}>
+                İlan Ver
+              </Link>
+            </div>
           </div>
         ) : (
           <div className="m-listing-grid">

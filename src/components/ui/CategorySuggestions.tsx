@@ -6,6 +6,7 @@ import { Search } from 'lucide-react';
 import { CategoryIcon } from '@/components/icons/CategoryIcons';
 
 export interface CategoryLite { id: string; name: string; slug: string; parentId: string | null; }
+export interface BrandLite { id: string; name: string; }
 
 export function matchCategories(categories: CategoryLite[], query: string, limit = 5): CategoryLite[] {
   const q = query.trim().toLocaleLowerCase('tr');
@@ -13,9 +14,16 @@ export function matchCategories(categories: CategoryLite[], query: string, limit
   return categories.filter(c => c.name.toLocaleLowerCase('tr').includes(q)).slice(0, limit);
 }
 
+export function matchBrands(brands: BrandLite[], query: string, limit = 4): BrandLite[] {
+  const q = query.trim().toLocaleLowerCase('tr');
+  if (!q) return [];
+  return brands.filter(b => b.name.toLocaleLowerCase('tr').includes(q)).slice(0, limit);
+}
+
 interface Props {
   query: string;
   matches: CategoryLite[];
+  brandMatches?: BrandLite[];
   anchorRef: RefObject<HTMLElement | null>;
   onSearchQuery: (q: string) => void;
 }
@@ -23,7 +31,7 @@ interface Props {
 // Portal'a taşınıyor çünkü kapsayıcı sayfa bölümleri (Hero, header) farklı stacking
 // context'lere sahip — z-index ile yarışmak yerine document.body'de sabit konumlandırıp
 // her zaman en üstte göstermek daha güvenilir (MobileBarPortal ile aynı yaklaşım).
-export function CategorySuggestionsDropdown({ query, matches, anchorRef, onSearchQuery }: Props) {
+export function CategorySuggestionsDropdown({ query, matches, brandMatches = [], anchorRef, onSearchQuery }: Props) {
   const router = useRouter();
   const [mounted, setMounted] = useState(false);
   const [rect, setRect] = useState<{ top: number; left: number; width: number } | null>(null);
@@ -92,6 +100,30 @@ export function CategorySuggestionsDropdown({ query, matches, anchorRef, onSearc
             >
               <CategoryIcon slug={c.slug} size={24} alt={c.name} />
               {c.name}
+            </button>
+          ))}
+        </>
+      )}
+      {brandMatches.length > 0 && (
+        <>
+          <div style={{ height: 1, background: 'var(--line-soft)' }} />
+          <p style={{ fontSize: 11, fontWeight: 600, color: 'var(--ink-3)', margin: 0, padding: '10px 16px 6px' }}>Markalar</p>
+          {brandMatches.map(b => (
+            <button
+              key={b.id}
+              type="button"
+              onMouseDown={(e) => e.preventDefault()}
+              onClick={() => router.push(`/ara?brandId=${b.id}`)}
+              style={{
+                width: '100%', display: 'flex', alignItems: 'center', gap: 10,
+                padding: '8px 16px', background: 'transparent', border: 0, cursor: 'pointer',
+                fontSize: 14, color: 'var(--ink)', textAlign: 'left',
+              }}
+              onMouseEnter={(e) => (e.currentTarget.style.background = 'var(--bg-2)')}
+              onMouseLeave={(e) => (e.currentTarget.style.background = 'transparent')}
+            >
+              <Search size={16} style={{ color: 'var(--ink-3)', flexShrink: 0 }} />
+              {b.name}
             </button>
           ))}
         </>

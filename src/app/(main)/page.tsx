@@ -10,7 +10,7 @@ import { Search, ChevronRight, ChevronDown, Star, TrendingDown } from 'lucide-re
 import Link from 'next/link';
 import { CategoryIcon } from '@/components/icons/CategoryIcons';
 import { motion, AnimatePresence } from 'framer-motion';
-import { matchCategories, CategorySuggestionsDropdown } from '@/components/ui/CategorySuggestions';
+import { matchCategories, matchBrands, CategorySuggestionsDropdown, type BrandLite } from '@/components/ui/CategorySuggestions';
 
 interface Category { id: string; name: string; slug: string; parentId: string | null; }
 
@@ -56,13 +56,14 @@ function PriceDropPanel() {
   );
 }
 
-function HeroSection({ onSearch, categories }: { onSearch: (q: string) => void; categories: Category[] }) {
+function HeroSection({ onSearch, categories, brands }: { onSearch: (q: string) => void; categories: Category[]; brands: BrandLite[] }) {
   const [val, setVal] = useState('');
   const [focused, setFocused] = useState(false);
   const blurTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const searchBoxRef = useRef<HTMLDivElement | null>(null);
 
   const matches = matchCategories(categories, val);
+  const brandMatches = matchBrands(brands, val);
 
   const handleFocus = () => {
     if (blurTimer.current) clearTimeout(blurTimer.current);
@@ -97,7 +98,7 @@ function HeroSection({ onSearch, categories }: { onSearch: (q: string) => void; 
                 style={{ flex: 1, background: 'none', border: 0, color: 'var(--ink)', fontSize: 15, outline: 'none', minWidth: 0 }} />
               <button type="submit" className="m-btn m-btn-primary" style={{ height: 38, padding: '0 14px', fontSize: 14, flexShrink: 0 }}>Ara</button>
             </div>
-            {focused && <CategorySuggestionsDropdown query={val} matches={matches} anchorRef={searchBoxRef} onSearchQuery={onSearch} />}
+            {focused && <CategorySuggestionsDropdown query={val} matches={matches} brandMatches={brandMatches} anchorRef={searchBoxRef} onSearchQuery={onSearch} />}
           </form>
         </div>
         <PriceDropPanel />
@@ -278,8 +279,51 @@ function CategoryGrid({ categories, allCategories, activeSlug, onSelect }: {
   );
 }
 
+function CategoryGridSkeleton() {
+  return (
+    <div>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 14 }}>
+        <h2 className="m-display" style={{ fontSize: 18, margin: 0 }}>Kategoriler</h2>
+      </div>
+      <div className="m-category-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: 10 }}>
+        {Array.from({ length: 14 }).map((_, i) => (
+          <div key={i} style={{
+            borderRadius: 14, border: '1px solid var(--line-soft)', background: 'var(--bg-1)',
+            padding: '14px 10px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8,
+          }}>
+            <div style={{ width: 52, height: 52, borderRadius: 12, background: 'var(--bg-2)', animation: 'm-pulse 1.5s ease-in-out infinite' }} />
+            <div style={{ height: 10, width: '70%', borderRadius: 6, background: 'var(--bg-2)', animation: 'm-pulse 1.5s ease-in-out infinite' }} />
+          </div>
+        ))}
+      </div>
+      <style>{`@keyframes m-pulse { 0%,100%{opacity:1} 50%{opacity:.5} }`}</style>
+    </div>
+  );
+}
+
+function FeaturedSectionSkeleton() {
+  return (
+    <div>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 14 }}>
+        <Star size={18} style={{ color: 'var(--line)' }} />
+        <h2 className="m-display" style={{ fontSize: 18, margin: 0 }}>Öne Çıkan İlanlar</h2>
+      </div>
+      <div style={{ display: 'flex', gap: 14, overflow: 'hidden' }}>
+        {Array.from({ length: 5 }).map((_, i) => (
+          <div key={i} style={{ width: 220, minWidth: 220, maxWidth: 220, flexShrink: 0 }}>
+            <div style={{ height: 150, borderRadius: 12, background: 'var(--bg-2)', animation: 'm-pulse 1.5s ease-in-out infinite' }} />
+            <div style={{ height: 12, marginTop: 10, borderRadius: 6, background: 'var(--bg-2)', width: '80%', animation: 'm-pulse 1.5s ease-in-out infinite' }} />
+            <div style={{ height: 12, marginTop: 8, borderRadius: 6, background: 'var(--bg-2)', width: '40%', animation: 'm-pulse 1.5s ease-in-out infinite' }} />
+          </div>
+        ))}
+      </div>
+      <style>{`@keyframes m-pulse { 0%,100%{opacity:1} 50%{opacity:.5} }`}</style>
+    </div>
+  );
+}
+
 function FeaturedSection() {
-  const { data } = useListings({ isFeatured: true, limit: 12, sort: 'newest' });
+  const { data, isLoading } = useListings({ isFeatured: true, limit: 12, sort: 'newest' });
   const items = data?.items ?? [];
   const [touchPaused, setTouchPaused] = useState(false);
   const resumeTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -293,6 +337,7 @@ function FeaturedSection() {
     resumeTimer.current = setTimeout(() => setTouchPaused(false), 1500);
   };
 
+  if (isLoading) return <FeaturedSectionSkeleton />;
   if (items.length === 0) return null;
 
   return (
@@ -352,9 +397,14 @@ function HomeContent() {
   const queryClient = useQueryClient();
   const handleRefresh = useCallback(() => queryClient.refetchQueries({ type: 'active' }), [queryClient]);
 
-  const { data: allCategories = [] } = useQuery<Category[]>({
+  const { data: allCategories = [], isLoading: categoriesLoading } = useQuery<Category[]>({
     queryKey: ['categories'],
     queryFn: () => api.get('/listings/meta/categories').then(r => r.data),
+  });
+
+  const { data: allBrands = [] } = useQuery<BrandLite[]>({
+    queryKey: ['brands'],
+    queryFn: () => api.get('/listings/meta/brands').then(r => r.data),
   });
 
   const l1Categories = allCategories.filter(c => !c.parentId);
@@ -370,7 +420,7 @@ function HomeContent() {
   return (
     <div>
       <PullToRefresh onRefresh={handleRefresh} />
-      <HeroSection onSearch={handleSearch} categories={allCategories} />
+      <HeroSection onSearch={handleSearch} categories={allCategories} brands={allBrands} />
       <div className="m-wrap" style={{ paddingTop: 32, paddingBottom: 48 }}>
 
         <PriceDropMobileStrip />
@@ -380,7 +430,11 @@ function HomeContent() {
         <div style={{ height: 28 }} />
 
         {/* Kategori grid */}
-        <CategoryGrid categories={l1Categories} allCategories={allCategories} activeSlug="" onSelect={handleSelect} />
+        {categoriesLoading ? (
+          <CategoryGridSkeleton />
+        ) : (
+          <CategoryGrid categories={l1Categories} allCategories={allCategories} activeSlug="" onSelect={handleSelect} />
+        )}
 
       </div>
     </div>
