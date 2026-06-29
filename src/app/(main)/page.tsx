@@ -5,18 +5,11 @@ import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { PullToRefresh } from '@/components/ui/PullToRefresh';
 import { useListings, usePriceDrops } from '@/hooks/useListings';
 import { ListingCard } from '@/components/listings/ListingCard';
-import { AdSlot } from '@/components/ui/AdSlot';
 import { api } from '@/lib/api';
 import { Search, ChevronRight, ChevronDown, Star, TrendingDown } from 'lucide-react';
 import Link from 'next/link';
 import { CategoryIcon } from '@/components/icons/CategoryIcons';
 import { motion, AnimatePresence } from 'framer-motion';
-
-const SORT_OPTIONS = [
-  { value: 'newest', label: 'En yeni' },
-  { value: 'price_asc', label: 'Fiyat ↑' },
-  { value: 'price_desc', label: 'Fiyat ↓' },
-];
 
 interface Category { id: string; name: string; slug: string; parentId: string | null; }
 
@@ -270,22 +263,6 @@ function CategoryGrid({ categories, allCategories, activeSlug, onSelect }: {
   );
 }
 
-function SkeletonGrid() {
-  return (
-    <div className="m-listing-grid">
-      {Array.from({ length: 8 }).map((_, i) => (
-        <div key={i} className="m-card" style={{ opacity: 0.5 }}>
-          <div className="m-card-media" style={{ background: 'var(--bg-2)' }} />
-          <div className="m-card-body" style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-            <div style={{ height: 12, background: 'var(--bg-3)', borderRadius: 6, width: '70%' }} />
-            <div style={{ height: 10, background: 'var(--bg-3)', borderRadius: 6, width: '45%' }} />
-          </div>
-        </div>
-      ))}
-    </div>
-  );
-}
-
 function FeaturedSection() {
   const { data } = useListings({ isFeatured: true, limit: 12, sort: 'newest' });
   const items = data?.items ?? [];
@@ -358,10 +335,6 @@ function FeaturedSection() {
 function HomeContent() {
   const router = useRouter();
   const queryClient = useQueryClient();
-  const [categorySlug, setCategorySlug] = useState('');
-  const [sort, setSort] = useState('newest');
-  const [page, setPage] = useState(1);
-  const listingsRef = useRef<HTMLDivElement | null>(null);
   const handleRefresh = useCallback(() => queryClient.refetchQueries({ type: 'active' }), [queryClient]);
 
   const { data: allCategories = [] } = useQuery<Category[]>({
@@ -371,19 +344,12 @@ function HomeContent() {
 
   const l1Categories = allCategories.filter(c => !c.parentId);
 
-  const { data, isLoading } = useListings({
-    categorySlug: categorySlug || undefined,
-    sort: sort as any,
-    page,
-    limit: 24,
-  });
-
   const handleSearch = (val: string) => router.push(`/ara?q=${encodeURIComponent(val)}`);
 
+  // Kategori seçildiğinde anasayfada filtrelemek yerine direkt kategori sayfasına gidiyoruz —
+  // anasayfa artık sadece öne çıkanlar + kategori vitrini, ağır ilan listesi/sayfalama taşımıyor.
   const handleSelect = (slug: string) => {
-    setCategorySlug(slug);
-    setPage(1);
-    setTimeout(() => listingsRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 50);
+    if (slug) router.push(`/kategori/${slug}`);
   };
 
   return (
@@ -399,78 +365,7 @@ function HomeContent() {
         <div style={{ height: 28 }} />
 
         {/* Kategori grid */}
-        <CategoryGrid categories={l1Categories} allCategories={allCategories} activeSlug={categorySlug} onSelect={handleSelect} />
-
-        <div style={{ height: 24 }} />
-
-        {/* Listeleme başlığı + sıralama */}
-        <div ref={listingsRef} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 14, marginBottom: 20, scrollMarginTop: 90 }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-            <h2 className="m-display" style={{ fontSize: 22, margin: 0 }}>
-              {categorySlug
-                ? (allCategories.find(c => c.slug === categorySlug)?.name ?? 'İlanlar')
-                : 'Tüm İlanlar'}
-            </h2>
-            {data && (
-              <span className="m-badge" style={{ background: 'var(--bg-2)', color: 'var(--ink-2)' }}>
-                {(data.meta?.total ?? data.items?.length ?? 0).toLocaleString('tr-TR')} ilan
-              </span>
-            )}
-          </div>
-          <div style={{ display: 'flex', gap: 8 }}>
-            {SORT_OPTIONS.map(s => (
-              <button key={s.value} className={'m-chip' + (sort === s.value ? ' active' : '')}
-                onClick={() => { setSort(s.value); setPage(1); }} style={{ height: 36 }}>
-                {s.label}
-              </button>
-            ))}
-          </div>
-        </div>
-
-        {isLoading ? (
-          <SkeletonGrid />
-        ) : data?.items?.length ? (
-          <>
-            <div className="m-listing-grid">
-              {data.items.map((l: any, i: number) => (
-                <>
-                  <ListingCard key={l.id} listing={l} />
-                  {(i + 1) % 8 === 0 && (
-                    <div key={`ad-${i}`} style={{ gridColumn: '1/-1' }}>
-                      <AdSlot slot={process.env.NEXT_PUBLIC_ADSENSE_SLOT_LISTING ?? ''} format="auto" />
-                    </div>
-                  )}
-                </>
-              ))}
-            </div>
-
-            {/* Kategori sayfasına git */}
-            {categorySlug && (
-              <div style={{ textAlign: 'center', marginTop: 24 }}>
-                <Link href={`/kategori/${categorySlug}`} className="m-btn"
-                  style={{ textDecoration: 'none', display: 'inline-flex' }}>
-                  {l1Categories.find(c => c.slug === categorySlug)?.name} ilanlarının tümünü gör
-                </Link>
-              </div>
-            )}
-
-            {(data.meta?.totalPages ?? 1) > 1 && (
-              <div style={{ display: 'flex', justifyContent: 'center', gap: 8, marginTop: 32 }}>
-                <button className="m-btn m-btn-ghost sm" disabled={page === 1} onClick={() => setPage(p => p - 1)}>Önceki</button>
-                <span style={{ display: 'flex', alignItems: 'center', padding: '0 16px', fontSize: 14, color: 'var(--ink-2)' }}>
-                  {page} / {data.meta.totalPages}
-                </span>
-                <button className="m-btn m-btn-ghost sm" disabled={page === data.meta?.totalPages} onClick={() => setPage(p => p + 1)}>Sonraki</button>
-              </div>
-            )}
-          </>
-        ) : (
-          <div style={{ textAlign: 'center', padding: '96px 0', color: 'var(--ink-3)' }}>
-            <img src="/icons/no-results.png" alt="" width={120} height={120} style={{ objectFit: 'contain', marginBottom: 16, opacity: 0.85, display: 'block', margin: '0 auto 16px' }} />
-            <p className="m-display" style={{ fontSize: 20, color: 'var(--ink-2)', margin: '0 0 8px' }}>Uygun ilan bulunamadı</p>
-            <p style={{ fontSize: 14 }}>Farklı bir kategori dene</p>
-          </div>
-        )}
+        <CategoryGrid categories={l1Categories} allCategories={allCategories} activeSlug="" onSelect={handleSelect} />
 
       </div>
     </div>
