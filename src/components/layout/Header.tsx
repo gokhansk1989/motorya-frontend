@@ -41,13 +41,14 @@ export function Header() {
   const [searchFocused, setSearchFocused] = useState(false);
   const userDropRef = useRef<HTMLDivElement>(null);
   const searchBlurTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const desktopSearchBoxRef = useRef<HTMLDivElement | null>(null);
+  const mobileSearchBoxRef = useRef<HTMLDivElement | null>(null);
 
   const { data: headerCategories = [] } = useQuery<CategoryLite[]>({
     queryKey: ['categories'],
     queryFn: () => api.get('/listings/meta/categories').then(r => r.data),
   });
   const searchMatches = matchCategories(headerCategories, searchVal);
-  const showSearchSuggestions = searchFocused && searchMatches.length > 0;
   const handleSearchFocus = () => {
     if (searchBlurTimer.current) clearTimeout(searchBlurTimer.current);
     setSearchFocused(true);
@@ -73,10 +74,13 @@ export function Header() {
     return () => { document.body.style.overflow = ''; };
   }, [menuOpen]);
 
+  const navigateSearch = (q: string) => {
+    setSearchOpen(false);
+    router.push(`/ara?q=${encodeURIComponent(q)}`);
+  };
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
-    setSearchOpen(false);
-    router.push(`/ara?q=${encodeURIComponent(searchVal)}`);
+    navigateSearch(searchVal);
   };
 
   const badgeDot: React.CSSProperties = {
@@ -118,8 +122,8 @@ export function Header() {
           <Logo />
 
           {/* Desktop arama */}
-          <form onSubmit={handleSearch} className="desktop-search" style={{ position: 'relative', flex: 1, maxWidth: 520 }}>
-            <div style={{
+          <form onSubmit={handleSearch} className="desktop-search" style={{ flex: 1, maxWidth: 520 }}>
+            <div ref={desktopSearchBoxRef} style={{
               display: 'flex', alignItems: 'center', height: 44,
               background: 'var(--bg-1)', border: '1px solid var(--line)', borderRadius: 10,
               padding: '0 10px 0 14px', gap: 8,
@@ -134,7 +138,7 @@ export function Header() {
                 style={{ flex: 1, background: 'none', border: 0, color: 'var(--ink)', fontSize: 14, outline: 'none' }}
               />
             </div>
-            {showSearchSuggestions && <CategorySuggestionsDropdown matches={searchMatches} />}
+            {searchFocused && <CategorySuggestionsDropdown query={searchVal} matches={searchMatches} anchorRef={desktopSearchBoxRef} onSearchQuery={navigateSearch} />}
           </form>
 
           {/* Desktop nav */}
@@ -253,8 +257,8 @@ export function Header() {
         {/* Mobil arama genişletme */}
         {searchOpen && (
           <div style={{ borderTop: '1px solid var(--line-soft)', padding: '10px 16px', background: 'var(--header-bg)' }}>
-            <form onSubmit={handleSearch} style={{ position: 'relative' }}>
-              <div style={{
+            <form onSubmit={handleSearch}>
+              <div ref={mobileSearchBoxRef} style={{
                 display: 'flex', alignItems: 'center', height: 46,
                 background: 'var(--bg-1)', border: '1px solid var(--line)', borderRadius: 10,
                 padding: '0 10px 0 14px', gap: 8,
@@ -271,7 +275,7 @@ export function Header() {
                 />
                 <button type="submit" className="m-btn m-btn-primary" style={{ height: 36, padding: '0 14px', fontSize: 13, flexShrink: 0 }}>Ara</button>
               </div>
-              {showSearchSuggestions && <CategorySuggestionsDropdown matches={searchMatches} />}
+              {searchFocused && <CategorySuggestionsDropdown query={searchVal} matches={searchMatches} anchorRef={mobileSearchBoxRef} onSearchQuery={navigateSearch} />}
             </form>
           </div>
         )}

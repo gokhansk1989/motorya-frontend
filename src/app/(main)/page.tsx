@@ -60,9 +60,9 @@ function HeroSection({ onSearch, categories }: { onSearch: (q: string) => void; 
   const [val, setVal] = useState('');
   const [focused, setFocused] = useState(false);
   const blurTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const searchBoxRef = useRef<HTMLDivElement | null>(null);
 
   const matches = matchCategories(categories, val);
-  const showSuggestions = focused && matches.length > 0;
 
   const handleFocus = () => {
     if (blurTimer.current) clearTimeout(blurTimer.current);
@@ -90,15 +90,14 @@ function HeroSection({ onSearch, categories }: { onSearch: (q: string) => void; 
             İkinci el kask, mont, egzoz ve parça al-sat. Güvenli ödeme, kargo takibi
             ya da güvenli buluşma noktasında yüz yüze.
           </p>
-          <form onSubmit={e => { e.preventDefault(); onSearch(val); }}
-            style={{ marginTop: 28, maxWidth: 540, position: 'relative' }}>
-            <div style={{ display: 'flex', flex: 1, height: 54, background: 'var(--bg-1)', border: '1px solid var(--line)', borderRadius: 11, padding: '0 8px 0 16px', gap: 8, alignItems: 'center' }}>
+          <form onSubmit={e => { e.preventDefault(); onSearch(val); }} style={{ marginTop: 28, maxWidth: 540 }}>
+            <div ref={searchBoxRef} style={{ display: 'flex', flex: 1, height: 54, background: 'var(--bg-1)', border: '1px solid var(--line)', borderRadius: 11, padding: '0 8px 0 16px', gap: 8, alignItems: 'center' }}>
               <Search size={20} style={{ color: 'var(--ink-3)', flexShrink: 0 }} />
               <input value={val} onChange={e => setVal(e.target.value)} onFocus={handleFocus} onBlur={handleBlur} placeholder="Ne arıyorsun?"
                 style={{ flex: 1, background: 'none', border: 0, color: 'var(--ink)', fontSize: 15, outline: 'none', minWidth: 0 }} />
               <button type="submit" className="m-btn m-btn-primary" style={{ height: 38, padding: '0 14px', fontSize: 14, flexShrink: 0 }}>Ara</button>
             </div>
-            {showSuggestions && <CategorySuggestionsDropdown matches={matches} />}
+            {focused && <CategorySuggestionsDropdown query={val} matches={matches} anchorRef={searchBoxRef} onSearchQuery={onSearch} />}
           </form>
         </div>
         <PriceDropPanel />
