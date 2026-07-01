@@ -16,7 +16,7 @@ const schema = z.object({
   description: z.string().min(20, 'En az 20 karakter'),
   categoryId: z.string().min(1, 'Kategori seçin'),
   brandId: z.string().optional(),
-  condition: z.enum(['NEW', 'LIKE_NEW', 'GOOD', 'FAIR', 'POOR']),
+  condition: z.enum(['NEW', 'LIKE_NEW', 'GOOD', 'FAIR']),
   price: z.string().min(1, 'Fiyat giriniz').transform(Number),
   originalPrice: z.string().optional().transform(v => v ? Number(v) : undefined),
   city: z.string().optional(),
@@ -31,7 +31,6 @@ const CONDITIONS = [
   { value: 'LIKE_NEW', label: 'Sıfır Gibi' },
   { value: 'GOOD', label: 'İyi' },
   { value: 'FAIR', label: 'Makul' },
-  { value: 'POOR', label: 'Kullanılmış' },
 ];
 
 const MAX_IMAGES = 8;
