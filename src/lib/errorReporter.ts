@@ -35,13 +35,27 @@ export function installErrorReporter() {
   api.interceptors.response.use(
     (res) => res,
     (err) => {
-      if (err.response?.status >= 500) {
+      const status = err.response?.status;
+      const method = err.config?.method?.toUpperCase();
+      const url = err.config?.url;
+
+      if (status >= 500) {
         report(
-          `API ${err.response.status}: ${err.config?.method?.toUpperCase()} ${err.config?.url}`,
+          `API ${status}: ${method} ${url}`,
           err.stack,
-          { status: err.response.status, url: err.config?.url },
+          { status, url, body: err.response?.data },
+        );
+      } else if (status === 400 || status === 422) {
+        // Validation hataları — sunucu hatası değil ama hangi form alanlarının sorun çıkardığını görmek için logla
+        const msg = err.response?.data?.message;
+        const msgStr = Array.isArray(msg) ? msg.join('; ') : String(msg ?? '');
+        report(
+          `Validation ${status}: ${method} ${url} — ${msgStr}`,
+          undefined,
+          { status, url, validationErrors: msg },
         );
       }
+
       return Promise.reject(err);
     },
   );
