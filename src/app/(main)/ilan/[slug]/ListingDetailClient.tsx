@@ -510,6 +510,9 @@ export default function ListingDetailClient() {
             <div style={{ flex: 1 }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}>
                 <span className="m-display" style={{ fontSize: 16, fontWeight: 600 }}>{listing.seller.displayName}</span>
+                {(sellerProfile?.badges ?? []).filter((b: any) => ['email_verified', 'identity_verified', 'phone_verified'].includes(b.key)).map((b: any) => (
+                  <span key={b.key} title={b.label} style={{ fontSize: 14 }}>{b.icon}</span>
+                ))}
               </div>
               <div style={{ display: 'flex', alignItems: 'center', gap: 6, color: 'var(--ink-3)', fontSize: 12.5 }}>
                 <Star size={12} fill="var(--accent)" stroke="none" style={{ color: 'var(--accent)' }} />
