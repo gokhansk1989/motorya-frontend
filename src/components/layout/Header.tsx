@@ -16,13 +16,14 @@ import { matchCategories, matchBrands, CategorySuggestionsDropdown, type Categor
 export function Logo() {
   return (
     <Link href="/" style={{ display: 'flex', alignItems: 'center', gap: 10, textDecoration: 'none' }}>
-      <span style={{
-        width: 34, height: 34, borderRadius: 9, display: 'grid', placeItems: 'center',
-        background: 'var(--accent)', color: 'var(--accent-ink)', boxShadow: '0 6px 18px -8px var(--accent)',
-        flexShrink: 0,
-      }}>
-        <Zap size={20} fill="currentColor" strokeWidth={0} />
-      </span>
+      {/* eslint-disable-next-line @next/next/no-img-element */}
+      <img
+        src="/logo.png"
+        alt="Motorya"
+        width={34}
+        height={34}
+        style={{ borderRadius: 9, boxShadow: '0 6px 18px -8px var(--accent)', flexShrink: 0 }}
+      />
       <span className="m-display" style={{ fontSize: 22, letterSpacing: '-0.03em', color: 'var(--ink)' }}>
         MOTOR<span className="m-accent">YA</span>
       </span>
