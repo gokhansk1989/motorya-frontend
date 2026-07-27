@@ -1,5 +1,6 @@
 'use client';
 import { useEffect, useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -93,7 +94,8 @@ const inp = (err?: boolean): React.CSSProperties => ({
 });
 
 export default function ProfilePage() {
-  const { user, setAuth, token } = useAuthStore();
+  const { user, setAuth, token, logout } = useAuthStore();
+  const router = useRouter();
   const [tab, setTab] = useState<Tab>('profil');
   const [showPwd, setShowPwd] = useState(false);
   const [showNewPwd, setShowNewPwd] = useState(false);
@@ -147,6 +149,22 @@ export default function ProfilePage() {
     mutationFn: (data: PasswordData) => api.patch('/users/me/password', data),
     onSuccess: () => { toast.success('Şifre değiştirildi'); passwordForm.reset(); },
     onError: () => toast.error('Şifre değiştirilemedi'),
+  });
+
+  const [confirmDelete, setConfirmDelete] = useState(false);
+  const [deletePassword, setDeletePassword] = useState('');
+
+  const deleteAccount = useMutation({
+    mutationFn: (password: string) => api.delete('/users/me', { data: { password } }),
+    onSuccess: () => {
+      toast.success('Hesabınız silindi.');
+      logout();
+      router.replace('/');
+    },
+    onError: (err: any) => {
+      const status = err?.response?.status;
+      toast.error(status === 401 ? 'Şifre hatalı' : 'Hesap silinemedi');
+    },
   });
 
   const qc = useQueryClient();
@@ -459,6 +477,64 @@ export default function ProfilePage() {
                 {changePassword.isPending ? <span style={{ width: 16, height: 16, border: '2px solid var(--ink)', borderTopColor: 'transparent', borderRadius: '50%', animation: 'spin .7s linear infinite', display: 'inline-block' }} /> : 'Şifreyi Değiştir'}
               </button>
             </form>
+          </div>
+
+          {/* Hesap silme — KVKK unutulma hakkı */}
+          <div style={{ ...card, borderColor: 'var(--bad)' }}>
+            <p style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 15, fontWeight: 700, color: 'var(--bad)', fontFamily: 'var(--font-display)', marginBottom: 10 }}>
+              <Trash2 size={16} />Hesabımı Sil
+            </p>
+            <p style={{ fontSize: 13.5, color: 'var(--ink-2)', lineHeight: 1.6, marginBottom: 16 }}>
+              Hesabınız kapatılır, açık ilanlarınız yayından kaldırılır ve kişisel
+              bilgileriniz (ad, e-posta, telefon, konum) kalıcı olarak silinir.
+              Bu işlem geri alınamaz.
+            </p>
+            <p style={{ fontSize: 12.5, color: 'var(--ink-3)', lineHeight: 1.6, marginBottom: 18 }}>
+              Karşı tarafın da verisi olduğu için mesajlaşma geçmişi ve
+              bıraktığınız değerlendirmeler, kimliğinizden arındırılmış şekilde
+              korunur.
+            </p>
+            {!confirmDelete ? (
+              <button
+                type="button"
+                onClick={() => setConfirmDelete(true)}
+                style={{ height: 46, borderRadius: 10, fontSize: 14, fontWeight: 700, width: '100%', background: 'transparent', color: 'var(--bad)', border: '1.5px solid var(--bad)', cursor: 'pointer' }}
+              >
+                Hesabımı Silmek İstiyorum
+              </button>
+            ) : (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+                <div>
+                  <label style={lbl}>Onaylamak için şifrenizi girin</label>
+                  <input
+                    type="password"
+                    value={deletePassword}
+                    onChange={e => setDeletePassword(e.target.value)}
+                    placeholder="Şifreniz"
+                    style={inp(false)}
+                    autoComplete="current-password"
+                  />
+                </div>
+                <div style={{ display: 'flex', gap: 10 }}>
+                  <button
+                    type="button"
+                    onClick={() => { setConfirmDelete(false); setDeletePassword(''); }}
+                    className="m-btn m-btn-ghost"
+                    style={{ flex: 1, height: 46, borderRadius: 10, fontSize: 14, fontWeight: 700 }}
+                  >
+                    Vazgeç
+                  </button>
+                  <button
+                    type="button"
+                    disabled={deleteAccount.isPending || !deletePassword}
+                    onClick={() => deleteAccount.mutate(deletePassword)}
+                    style={{ flex: 1, height: 46, borderRadius: 10, fontSize: 14, fontWeight: 700, background: 'var(--bad)', color: '#fff', border: 0, cursor: deletePassword ? 'pointer' : 'not-allowed', opacity: deletePassword ? 1 : 0.5 }}
+                  >
+                    {deleteAccount.isPending ? 'Siliniyor…' : 'Kalıcı Olarak Sil'}
+                  </button>
+                </div>
+              </div>
+            )}
           </div>
         </>
       )}

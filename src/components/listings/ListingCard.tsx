@@ -28,6 +28,7 @@ export function ListingCard({ listing }: { listing: Listing }) {
   const { user } = useAuthStore();
   const toggle = useToggleFavorite();
   const thumb = listing.images?.[0]?.url;
+  const views = (listing as any).viewCount ?? 0;
   const discountPct = listing.originalPrice
     ? Math.round((1 - Number(listing.price) / Number(listing.originalPrice)) * 100)
     : null;
@@ -102,17 +103,25 @@ export function ListingCard({ listing }: { listing: Listing }) {
           )}
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginTop: 9, color: 'var(--ink-3)', fontSize: 12, whiteSpace: 'nowrap', overflow: 'hidden' }}>
+          {/* Öncelik sırası: şehir > tarih > görüntülenme. Dar kartlarda (mobil
+              2 sütun) daralmayı yalnızca tarih emer; şehir hiç kısalmaz —
+              önceden tek esnek öğe şehir olduğu için "Bursa" 6px'e inip "B"
+              olarak görünüyordu. Görüntülenme 0 ise gürültü, gösterilmiyor. */}
           {listing.city && (
             <>
               <MapPin size={13} style={{ flexShrink: 0 }} />
-              <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: 72 }}>{listing.city}</span>
-              <span style={{ width: 3, height: 3, borderRadius: '50%', background: 'currentColor', opacity: 0.6, flexShrink: 0 }} />
+              <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: 72, flexShrink: 0 }}>{listing.city}</span>
             </>
           )}
-          <Eye size={13} style={{ flexShrink: 0 }} />
-          <span style={{ flexShrink: 0 }}>{(listing as any).viewCount ?? 0}</span>
-          <div style={{ flex: 1 }} />
-          <span style={{ flexShrink: 0 }}>{timeAgo(listing.createdAt)}</span>
+          {views > 0 && (
+            <>
+              {listing.city && <span style={{ width: 3, height: 3, borderRadius: '50%', background: 'currentColor', opacity: 0.6, flexShrink: 0 }} />}
+              <Eye size={13} style={{ flexShrink: 0 }} />
+              <span style={{ flexShrink: 0 }}>{views}</span>
+            </>
+          )}
+          <div style={{ flex: 1, minWidth: 0 }} />
+          <span style={{ flexShrink: 1, minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis' }}>{timeAgo(listing.createdAt)}</span>
         </div>
       </div>
     </article>

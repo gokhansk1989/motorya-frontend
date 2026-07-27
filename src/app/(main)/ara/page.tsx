@@ -7,7 +7,7 @@ import { ListingCard } from '@/components/listings/ListingCard';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { api } from '@/lib/api';
 import { useAuthStore } from '@/store/auth';
-import { Search, SlidersHorizontal, X, BellPlus } from 'lucide-react';
+import { Search, SlidersHorizontal, X, BellPlus, Info } from 'lucide-react';
 import { AdSlot } from '@/components/ui/AdSlot';
 import { PullToRefresh } from '@/components/ui/PullToRefresh';
 import toast from 'react-hot-toast';
@@ -458,6 +458,19 @@ function SearchPageInner() {
               </button>
             </div>
           </div>
+        </div>
+      )}
+
+      {/* Tam eşleşme bulunamayıp sorgu gevşetildiyse kullanıcıya söyle —
+          aksi halde alakasız görünen sonuçlar aramanın bozuk olduğu
+          izlenimi veriyor. */}
+      {!isLoading && (meta as any)?.relaxed && (
+        <div style={{ display: 'flex', alignItems: 'flex-start', gap: 10, marginBottom: 14, padding: '12px 14px', borderRadius: 10, background: 'color-mix(in oklch, var(--warn) 8%, var(--bg-1))', border: '1px solid color-mix(in oklch, var(--warn) 25%, transparent)' }}>
+          <Info size={16} style={{ color: 'var(--warn)', flexShrink: 0, marginTop: 1 }} />
+          <p style={{ fontSize: 13.5, color: 'var(--ink-2)', lineHeight: 1.55, margin: 0 }}>
+            <strong style={{ color: 'var(--ink)' }}>&ldquo;{q}&rdquo;</strong> için tam eşleşme bulunamadı.
+            Aramanızdaki kelimelerin bir kısmına uyan benzer ilanları gösteriyoruz.
+          </p>
         </div>
       )}
 

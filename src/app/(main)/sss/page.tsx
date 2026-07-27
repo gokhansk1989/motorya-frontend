@@ -165,6 +165,7 @@ function AccordionItem({ q, a }: FAQ) {
     <div style={{ borderBottom: '1px solid var(--line-soft)' }}>
       <button
         onClick={() => setOpen(v => !v)}
+        aria-expanded={open}
         style={{
           width: '100%', background: 'none', border: 0, padding: '16px 0',
           display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12,
@@ -177,18 +178,45 @@ function AccordionItem({ q, a }: FAQ) {
           style={{ flexShrink: 0, color: 'var(--ink-3)', transition: 'transform .2s', transform: open ? 'rotate(180deg)' : 'none' }}
         />
       </button>
-      {open && (
-        <div style={{ paddingBottom: 16, fontSize: 14, color: 'var(--ink-2)', lineHeight: 1.7 }}>
-          {a}
+      {/* Cevap her zaman DOM'da; açılıp kapanma CSS ile yapılıyor. Koşullu
+          render edildiğinde 500+ kelimelik SSS içeriği arama motorlarına ve
+          ekran okuyuculara hiç ulaşmıyordu. */}
+      <div
+        style={{
+          display: 'grid',
+          gridTemplateRows: open ? '1fr' : '0fr',
+          transition: 'grid-template-rows .22s ease',
+        }}
+      >
+        <div style={{ overflow: 'hidden' }}>
+          <div style={{ paddingBottom: 16, fontSize: 14, color: 'var(--ink-2)', lineHeight: 1.7 }}>
+            {a}
+          </div>
         </div>
-      )}
+      </div>
     </div>
   );
 }
 
 export default function SSSPage() {
+  // FAQPage yapısal verisi — Google zengin sonuçları ve AI asistanları için.
+  const faqSchema = {
+    '@context': 'https://schema.org',
+    '@type': 'FAQPage',
+    mainEntity: sections.flatMap(sec =>
+      sec.items
+        .filter((item): item is { q: string; a: string } => typeof item.a === 'string')
+        .map(item => ({
+          '@type': 'Question',
+          name: item.q,
+          acceptedAnswer: { '@type': 'Answer', text: item.a },
+        })),
+    ),
+  };
+
   return (
     <div className="m-wrap" style={{ maxWidth: 720, paddingTop: 48, paddingBottom: 80 }}>
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(faqSchema) }} />
       {/* Header */}
       <div style={{ marginBottom: 48, textAlign: 'center' }}>
         <div style={{ display: 'inline-flex', alignItems: 'center', gap: 8, marginBottom: 16, padding: '6px 14px', borderRadius: 20, background: 'color-mix(in oklch, var(--accent) 10%, transparent)', border: '1px solid color-mix(in oklch, var(--accent) 25%, transparent)' }}>
