@@ -69,13 +69,16 @@ export async function generateMetadata({ params }: Props) {
   if (!brand?.name) return {};
   const catName = category.name as string;
   const brandName = brand.name as string;
-  const title = `İkinci El ${brandName} ${catName} | Motorya`;
+  // Marka soneki kök layout'taki title template'inden gelir; OG başlığı
+  // template'ten geçmediği için markayı ona ayrıca ekliyoruz.
+  const title = `İkinci El ${brandName} ${catName}`;
+  const socialTitle = `${title} | Motorya`;
   const description = `Motorya'da ${brandName} ${catName} ilanları. İkinci el ${brandName} ${catName.toLowerCase()} al sat, güvenli ödeme ve kargo ile.`;
   return {
     title,
     description,
     keywords: `${brandName} ${catName} ikinci el, ${brandName} ${catName.toLowerCase()} fiyatları, ikinci el ${brandName}`,
-    openGraph: { title, description, url: `https://motorya.com.tr/kategori/${slug}/marka/${brandSlug}` },
+    openGraph: { title: socialTitle, description, url: `https://motorya.com.tr/kategori/${slug}/marka/${brandSlug}` },
   };
 }
 

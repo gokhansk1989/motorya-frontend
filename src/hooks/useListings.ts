@@ -53,11 +53,16 @@ export function useListing(id: string) {
   });
 }
 
-export function useListingBySlug(slug: string) {
+// initialData: sayfanın sunucu bileşeni ilanı zaten çekiyor (metadata için).
+// Onu buraya geçirmek, ilk HTML'in dolu render edilmesini sağlar — aksi halde
+// SSR sırasında veri olmadığı için yalnızca yükleniyor iskeleti HTML'e yazılır
+// ve arama motorları boş sayfa görür.
+export function useListingBySlug(slug: string, initialData?: unknown) {
   return useQuery({
     queryKey: ['listing-slug', slug],
     queryFn: () => api.get('/listings/by-slug', { params: { s: slug } }).then((r) => r.data),
     enabled: !!slug,
+    initialData: initialData ?? undefined,
   });
 }
 

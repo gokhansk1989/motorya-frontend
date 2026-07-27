@@ -48,7 +48,11 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
   const cityPart = listing.city ? ` ${listing.city}'da` : '';
   const brandPart = listing.brand ? ` ${listing.brand.name}` : '';
   const catPart = listing.category ? ` ${listing.category.name}` : '';
-  const title = `${listing.title} — ${price} ₺ | Motorya`;
+  // Marka soneki kök layout'taki title template'i ('%s | Motorya') tarafından
+  // eklenir; burada elle eklemek başlıkta çift "Motorya" oluşturur.
+  // OG/Twitter başlıkları template'ten geçmediği için markayı onlara ayrıca veriyoruz.
+  const title = `${listing.title} — ${price} ₺`;
+  const socialTitle = `${title} | Motorya`;
   const autoDesc = `${conditionLabel}${brandPart}${catPart} satılık.${cityPart} ${price} ₺. Motorya'da güvenli al-sat.`;
   const description = listing.description
     ? listing.description.slice(0, 148) + (listing.description.length > 148 ? '…' : '')
@@ -70,7 +74,7 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
     keywords,
     alternates: { canonical },
     openGraph: {
-      title,
+      title: socialTitle,
       description,
       url: canonical,
       type: 'website',
@@ -78,7 +82,7 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
     },
     twitter: {
       card: 'summary_large_image',
-      title,
+      title: socialTitle,
       description,
     },
   };
@@ -149,7 +153,9 @@ export default async function ListingDetailPage({ params }: { params: Promise<{ 
       {jsonLd.map((schema, i) => (
         <script key={i} type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(schema) }} />
       ))}
-      <ListingDetailClient />
+      {/* Sunucuda çekilen ilan client'a devrediliyor: ilk HTML dolu render
+          edilir (SEO + LCP), hydration sonrası React Query tazeler. */}
+      <ListingDetailClient initialListing={listing} />
     </>
   );
 }

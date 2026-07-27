@@ -70,8 +70,11 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
   if (!data || !city) return { title: 'Sayfa Bulunamadı' };
 
   const { category } = data;
-  const title = `${city} İkinci El ${category.name} | Motorya`;
-  const description = `${city} ilanlarında ikinci el motosiklet ${category.name.toLowerCase()} al ya da sat. Güvenli ödeme ve kargo ile Motorya'da.`;
+  // Marka soneki kök layout'taki title template'inden gelir; OG başlığı
+  // template'ten geçmediği için markayı ona ayrıca ekliyoruz.
+  const title = `${city} İkinci El ${category.name}`;
+  const socialTitle = `${title} | Motorya`;
+  const description = `${city} ilanlarında ikinci el motosiklet ${category.name.toLowerCase()} al ya da sat. Doğrulanmış satıcılar, ücretsiz ilan — Motorya'da.`;
   const canonical = `${BASE_URL}/kategori/${slug}/${sehir}`;
 
   return {
@@ -79,7 +82,7 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
     description,
     alternates: { canonical },
     keywords: [`${city} ${category.name}`, `${city} ikinci el ${category.name}`],
-    openGraph: { title, description, url: canonical, type: 'website' },
+    openGraph: { title: socialTitle, description, url: canonical, type: 'website' },
   };
 }
 

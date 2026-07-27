@@ -78,7 +78,8 @@ export async function generateMetadata({ params }: Props) {
   const post = await getPost(slug);
   if (!post) return {};
   return {
-    title: `${post.title} | Motorya Blog`,
+    // "| Motorya" soneki kök layout template'inden gelir.
+    title: post.title,
     description: post.excerpt,
     keywords: post.tags?.join(', '),
     authors: [{ name: post.author }],
@@ -193,7 +194,7 @@ export default async function BlogPostPage({ params }: Props) {
             </div>
             <div className="m-surface-2" style={{ padding: '28px 32px', marginTop: 36, borderRadius: 'var(--radius-l)' }}>
               <h3 className="m-display" style={{ fontSize: 20, margin: '0 0 10px' }}>İkinci el ekipman arıyor musun?</h3>
-              <p style={{ color: 'var(--ink-2)', fontSize: 14.5, marginBottom: 20 }}>Motorya'da binlerce ikinci el motosiklet ekipmanı seni bekliyor. Güvenli ödeme, kargo takibi.</p>
+              <p style={{ color: 'var(--ink-2)', fontSize: 14.5, marginBottom: 20 }}>Motorya'da binlerce ikinci el motosiklet ekipmanı seni bekliyor. Doğrulanmış satıcılar, ücretsiz ilan.</p>
               <Link href="/" className="m-btn m-btn-primary" style={{ textDecoration: 'none', display: 'inline-flex', gap: 8, alignItems: 'center', height: 44, padding: '0 24px', borderRadius: 8 }}>
                 İlanları Gör <ArrowRight size={16} />
               </Link>

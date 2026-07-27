@@ -49,11 +49,11 @@ function ConditionPill({ condition }: { condition: string }) {
   );
 }
 
-export default function ListingDetailClient() {
+export default function ListingDetailClient({ initialListing }: { initialListing?: unknown } = {}) {
   const { slug } = useParams<{ slug: string }>();
   const router = useRouter();
   const { user } = useAuthStore();
-  const { data: listing, isLoading } = useListingBySlug(slug);
+  const { data: listing, isLoading } = useListingBySlug(slug, initialListing);
   const id = listing?.id ?? '';
   const { data: offers } = useListingOffers(id);
   useOfferUpdates();

@@ -4,10 +4,23 @@ import { CITY_MAP } from '@/lib/cities';
 const BASE_URL = 'https://motorya.com.tr';
 const API = process.env.NEXT_PUBLIC_API_URL || 'https://motorya.com.tr/api-backend';
 
-const CITY_SLUGS = Object.keys(CITY_MAP);
+// Şehir adı ("İstanbul") -> slug ("istanbul"). İlan kayıtları şehri görünen
+// adıyla tuttuğu için sitemap'te slug'a çevirmek gerekiyor.
+const CITY_SLUG_BY_NAME = new Map(
+  Object.entries(CITY_MAP).map(([slug, name]) => [name.toLocaleLowerCase('tr'), slug]),
+);
+
+interface SitemapListing {
+  id: string;
+  slug?: string;
+  updatedAt?: string;
+  createdAt: string;
+  categoryId?: string;
+  city?: string;
+}
 
 async function fetchAllListings() {
-  const items: { id: string; slug?: string; updatedAt?: string; createdAt: string }[] = [];
+  const items: SitemapListing[] = [];
   let page = 1;
   const limit = 50;
   try {
@@ -65,6 +78,41 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const l1Cats = categories.filter(c => !c.parentId);
   const l2Cats = categories.filter(c => c.parentId);
 
+  // --- Envanter haritası -------------------------------------------------
+  // Sitemap yalnızca gerçekten ilan barındıran sayfaları bildirir. Aksi halde
+  // kategori × şehir kombinasyonlarının büyük çoğunluğu "sonuç bulunamadı"
+  // gösterir; arama motorları bunu thin content / doorway page olarak
+  // değerlendirip site geneline zarar verebilir. İlan eklendikçe ilgili
+  // sayfalar sitemap'e kendiliğinden girer.
+  const catById = new Map(categories.map(c => [c.id, c]));
+
+  // Bir kategoride ilan varsa üst kategorileri de dolu sayılır.
+  const catChain = (id?: string) => {
+    const chain: typeof categories = [];
+    let cur = id ? catById.get(id) : undefined;
+    while (cur) {
+      chain.push(cur);
+      cur = cur.parentId ? catById.get(cur.parentId) : undefined;
+    }
+    return chain;
+  };
+
+  const populatedCatSlugs = new Set<string>();
+  const populatedCityPaths = new Set<string>();
+
+  for (const listing of listings) {
+    const chain = catChain(listing.categoryId);
+    chain.forEach(c => populatedCatSlugs.add(c.slug));
+
+    const citySlug = listing.city
+      ? CITY_SLUG_BY_NAME.get(listing.city.toLocaleLowerCase('tr'))
+      : undefined;
+    if (!citySlug) continue;
+    // Şehir sayfaları yalnızca L1 kategoriler için üretiliyor.
+    const l1 = chain.find(c => !c.parentId);
+    if (l1) populatedCityPaths.add(`${l1.slug}/${citySlug}`);
+  }
+
   // Static pages
   const staticPages: MetadataRoute.Sitemap = [
     { url: BASE_URL,                   lastModified: new Date(), changeFrequency: 'daily',   priority: 1.0 },
@@ -84,23 +132,23 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     priority: 0.85,
   }));
 
-  // L2 kategori sayfaları
-  const l2Pages: MetadataRoute.Sitemap = l2Cats.map(c => ({
-    url: `${BASE_URL}/kategori/${c.slug}`,
-    lastModified: new Date(),
-    changeFrequency: 'daily' as const,
-    priority: 0.75,
-  }));
-
-  // Şehir × L1 kategori sayfaları (en önemli long-tail)
-  const cityPages: MetadataRoute.Sitemap = l1Cats.flatMap(c =>
-    CITY_SLUGS.map(sehir => ({
-      url: `${BASE_URL}/kategori/${c.slug}/${sehir}`,
+  // L2 kategori sayfaları — yalnızca ilan barındıranlar
+  const l2Pages: MetadataRoute.Sitemap = l2Cats
+    .filter(c => populatedCatSlugs.has(c.slug))
+    .map(c => ({
+      url: `${BASE_URL}/kategori/${c.slug}`,
       lastModified: new Date(),
       changeFrequency: 'daily' as const,
-      priority: 0.7,
-    }))
-  );
+      priority: 0.75,
+    }));
+
+  // Şehir × L1 kategori sayfaları (en önemli long-tail) — yalnızca ilan barındıranlar
+  const cityPages: MetadataRoute.Sitemap = [...populatedCityPaths].map(path => ({
+    url: `${BASE_URL}/kategori/${path}`,
+    lastModified: new Date(),
+    changeFrequency: 'daily' as const,
+    priority: 0.7,
+  }));
 
   // Blog yazıları
   const blogPages: MetadataRoute.Sitemap = blogPosts.map(p => ({

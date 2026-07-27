@@ -88,8 +88,8 @@ function HeroSection({ onSearch, categories, brands }: { onSearch: (q: string) =
             Garajındaki ekipman,<br /><span className="m-accent">başkasının</span> sıradaki yolculuğu.
           </h1>
           <p style={{ fontSize: 'clamp(14px, 3vw, 17px)', maxWidth: 480, marginTop: 18, lineHeight: 1.55, color: 'var(--ink-2)' }}>
-            İkinci el kask, mont, egzoz ve parça al-sat. Güvenli ödeme, kargo takibi
-            ya da güvenli buluşma noktasında yüz yüze.
+            İkinci el kask, mont, egzoz ve parça al-sat. Doğrulanmış satıcılarla
+            mesajlaş, kargoyla ya da güvenli buluşma noktasında yüz yüze anlaş.
           </p>
           <form onSubmit={e => { e.preventDefault(); onSearch(val); }} style={{ marginTop: 28, maxWidth: 540 }}>
             <div ref={searchBoxRef} style={{ display: 'flex', flex: 1, height: 54, background: 'var(--bg-1)', border: '1px solid var(--line)', borderRadius: 11, padding: '0 8px 0 16px', gap: 8, alignItems: 'center' }}>

@@ -21,7 +21,8 @@ export async function generateMetadata({ params }: Props) {
   const page = await getPage(slug);
   if (!page) return {};
   return {
-    title: `${page.title} | Motorya`,
+    // Marka soneki kök layout'taki title template'i tarafından eklenir.
+    title: page.title,
     description: page.content.slice(0, 160).replace(/[#*`]/g, ''),
   };
 }

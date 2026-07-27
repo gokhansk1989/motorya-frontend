@@ -79,7 +79,7 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
 
   const { category } = data;
   const title = `İkinci El ${category.name} — Motorya`;
-  const description = `İkinci el motosiklet ${category.name.toLowerCase()} al ya da sat. Türkiye genelinde güvenli ödeme, kargo takibi ile. Motorya'da ${category.name} ilanlarını incele.`;
+  const description = `İkinci el motosiklet ${category.name.toLowerCase()} al ya da sat. Türkiye genelinde doğrulanmış satıcılar, ücretsiz ilan. Motorya'da ${category.name} ilanlarını incele.`;
   const canonical = `${BASE_URL}/kategori/${slug}`;
 
   return {
