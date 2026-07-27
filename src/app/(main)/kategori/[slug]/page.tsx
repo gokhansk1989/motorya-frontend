@@ -78,7 +78,10 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
   if (!data) return { title: 'Kategori Bulunamadı' };
 
   const { category } = data;
-  const title = `İkinci El ${category.name} — Motorya`;
+  // Marka soneki kök layout'taki title template'inden gelir; OG başlığı
+  // template'ten geçmediği için markayı ona ayrıca ekliyoruz.
+  const title = `İkinci El ${category.name}`;
+  const socialTitle = `${title} | Motorya`;
   const description = `İkinci el motosiklet ${category.name.toLowerCase()} al ya da sat. Türkiye genelinde doğrulanmış satıcılar, ücretsiz ilan. Motorya'da ${category.name} ilanlarını incele.`;
   const canonical = `${BASE_URL}/kategori/${slug}`;
 
@@ -87,7 +90,7 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
     description,
     keywords: [`ikinci el ${category.name}`, `motosiklet ${category.name}`, `${category.name} satış`, `${category.name} fiyatları`],
     alternates: { canonical },
-    openGraph: { title, description, url: canonical, type: 'website' },
+    openGraph: { title: socialTitle, description, url: canonical, type: 'website' },
   };
 }
 
