@@ -7,6 +7,7 @@ import { ListingCard } from '@/components/listings/ListingCard';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { api } from '@/lib/api';
 import { useAuthStore } from '@/store/auth';
+import { analytics } from '@/lib/analytics';
 import { Search, SlidersHorizontal, X, BellPlus, Info } from 'lucide-react';
 import { AdSlot } from '@/components/ui/AdSlot';
 import { PullToRefresh } from '@/components/ui/PullToRefresh';
@@ -278,6 +279,7 @@ function SearchPageInner() {
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
+    if (inputVal.trim()) analytics.search(inputVal.trim());
     push({ q: inputVal, page: 1 });
   };
 

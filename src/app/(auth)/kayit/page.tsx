@@ -9,6 +9,7 @@ import toast from 'react-hot-toast';
 import { Zap, Eye, EyeOff, User, Mail, Lock, CreditCard, Phone } from 'lucide-react';
 import { useState } from 'react';
 import { IL_ILCE, ALL_CITIES } from '@/lib/il-ilce';
+import { analytics } from '@/lib/analytics';
 
 function validateTcKimlik(tc: string): boolean {
   if (!/^[1-9][0-9]{10}$/.test(tc)) return false;
@@ -95,6 +96,7 @@ export default function RegisterPage() {
         acceptedKvkk: data.acceptedKvkk,
         acceptedMarketing: !!data.acceptedMarketing,
       });
+      analytics.signUp('email');
       router.push(`/email-gonderildi?email=${encodeURIComponent(data.email)}`);
     } catch (e: any) {
       const msg = e.response?.data?.message;

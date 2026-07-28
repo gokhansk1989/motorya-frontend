@@ -11,6 +11,7 @@ import { useRef, useState, useMemo, useEffect } from 'react';
 import toast from 'react-hot-toast';
 import { CoverCropModal } from '@/components/listings/CoverCropModal';
 import { IL_ILCE, ALL_CITIES } from '@/lib/il-ilce';
+import { analytics } from '@/lib/analytics';
 
 type Category = { id: string; name: string; slug: string; parentId: string | null; };
 
@@ -225,6 +226,7 @@ export default function CreateListingPage() {
         gender: gender || undefined,
         imageUrls,
       });
+      analytics.listingCreated({ price: Number(data.price) || undefined });
       toast.success('İlanınız oluşturuldu! Onaylandığında yayına alınacak.');
       router.push('/ilanlarim');
     } catch (err: any) {

@@ -13,6 +13,7 @@ import { trackListingView, useRecentlyViewedIds } from '@/hooks/useRecentlyViewe
 import { ListingCard } from '@/components/listings/ListingCard';
 import { AdSlot } from '@/components/ui/AdSlot';
 import { useCreateSavedSearch } from '@/hooks/useSavedSearches';
+import { analytics } from '@/lib/analytics';
 import toast from 'react-hot-toast';
 import Link from 'next/link';
 
@@ -83,7 +84,13 @@ export default function ListingDetailClient({ initialListing }: { initialListing
   const [counterMessage, setCounterMessage] = useState('');
 
   useEffect(() => {
-    if (listing?.id) trackListingView(listing.id);
+    if (!listing?.id) return;
+    trackListingView(listing.id);
+    analytics.listingViewed({
+      listingId: listing.id,
+      categoryName: listing.category?.name,
+      price: Number(listing.price),
+    });
   }, [listing?.id]);
 
   const [imgIdx, setImgIdx] = useState(0);
@@ -164,6 +171,7 @@ export default function ListingDetailClient({ initialListing }: { initialListing
     if (!user) { toast.error('Teklif vermek için giriş yapmalısın'); router.push('/giris'); return; }
     try {
       await createOffer.mutateAsync({ listingId: listing.id, amount: parseFloat(offerAmount) });
+      analytics.offerMade({ listingId: listing.id, amount: parseFloat(offerAmount) });
       toast.success('Teklifiniz gönderildi! Tekliflerim sayfasından takip edebilirsin.');
       setShowOfferModal(false);
       router.push('/tekliflerim?tab=sent');
@@ -414,6 +422,7 @@ export default function ListingDetailClient({ initialListing }: { initialListing
                       if (!user) { toast.error('Mesaj göndermek için giriş yapmalısın'); router.push('/giris'); return; }
                       try {
                         const conv = await startConversation.mutateAsync({ otherUserId: listing.seller.id, listingId: listing.id });
+                        analytics.conversationStarted({ listingId: listing.id, price: Number(listing.price) });
                         router.push(`/mesajlarim?conv=${conv.id}`);
                       } catch { toast.error('Mesaj başlatılamadı'); }
                     }}

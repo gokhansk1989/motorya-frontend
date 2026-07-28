@@ -3,6 +3,7 @@ import { Footer } from '@/components/layout/Footer';
 import { PushPrompt } from '@/components/PushPrompt';
 import { MobileNav } from '@/components/layout/MobileNav';
 import { EmailVerificationBanner } from '@/components/ui/EmailVerificationBanner';
+import { CookieConsent } from '@/components/ui/CookieConsent';
 
 export default function MainLayout({ children }: { children: React.ReactNode }) {
   return (
@@ -13,6 +14,7 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
       <Footer />
       <PushPrompt />
       <MobileNav />
+      <CookieConsent />
     </>
   );
 }

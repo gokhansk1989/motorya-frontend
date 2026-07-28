@@ -79,6 +79,20 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       </head>
       <body className="min-h-full antialiased">
         <Providers>{children}</Providers>
+        {/* Consent Mode varsayılanları GA'dan ÖNCE yüklenmeli: aksi halde
+            onay sorulmadan çerez yazılır (KVKK). 'denied' modda GA çerezsiz
+            çalışır, kullanıcı kabul edince CookieConsent tam moda geçirir. */}
+        <Script id="gtag-consent-default" strategy="beforeInteractive">{`
+          window.dataLayer = window.dataLayer || [];
+          function gtag(){dataLayer.push(arguments);}
+          gtag('consent', 'default', {
+            analytics_storage: 'denied',
+            ad_storage: 'denied',
+            ad_user_data: 'denied',
+            ad_personalization: 'denied',
+            wait_for_update: 500
+          });
+        `}</Script>
         <Script src="https://www.googletagmanager.com/gtag/js?id=G-S0BXZLVQ26" strategy="afterInteractive" />
         <Script id="gtag-init" strategy="afterInteractive">{`
           window.dataLayer = window.dataLayer || [];

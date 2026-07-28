@@ -2,6 +2,7 @@
 import { useEffect, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useAuthStore } from '@/store/auth';
+import { analytics } from '@/lib/analytics';
 import { Zap } from 'lucide-react';
 
 function CallbackHandler() {
@@ -17,6 +18,10 @@ function CallbackHandler() {
       try {
         const user = JSON.parse(decodeURIComponent(userParam));
         setAuth(user, token);
+        // needsConsent yalnızca sözleşmeleri henüz onaylamamış, yani ilk kez
+        // giren Google kullanıcıları için true dönüyor — kayıt sinyali olarak
+        // güvenilir.
+        if (needsConsent) analytics.signUp('google');
         router.replace(needsConsent ? '/onaylar' : '/');
       } catch {
         router.replace('/giris');
