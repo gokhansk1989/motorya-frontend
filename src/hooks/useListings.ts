@@ -135,11 +135,33 @@ export function useListingsByIds(ids: string[]) {
   });
 }
 
+export interface BuyerCandidate {
+  id: string;
+  displayName: string;
+  avatarUrl: string | null;
+  source: 'accepted_offer' | 'offer' | 'message';
+}
+
+// Satıcının "satıldı" ekranında alıcıyı seçebilmesi için teklif verenler
+// ve mesajlaşanlar. Alıcının kaydedilmesi karşılıklı yorum hakkını açar.
+export function useBuyerCandidates(listingId: string, enabled = false) {
+  return useQuery<BuyerCandidate[]>({
+    queryKey: ['buyer-candidates', listingId],
+    queryFn: () => api.get(`/listings/${listingId}/buyer-candidates`).then((r) => r.data),
+    enabled: enabled && !!listingId,
+  });
+}
+
 export function useMarkSold() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: (id: string) => api.patch(`/listings/${id}/sold`).then((r) => r.data),
-    onSuccess: () => { qc.invalidateQueries({ queryKey: ['listing'] }); qc.invalidateQueries({ queryKey: ['my-listings'] }); },
+    mutationFn: ({ id, buyerId }: { id: string; buyerId?: string }) =>
+      api.patch(`/listings/${id}/sold`, buyerId ? { buyerId } : {}).then((r) => r.data),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['listing'] });
+      qc.invalidateQueries({ queryKey: ['listing-slug'] });
+      qc.invalidateQueries({ queryKey: ['my-listings'] });
+    },
   });
 }
 

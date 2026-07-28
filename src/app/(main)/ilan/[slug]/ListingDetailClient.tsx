@@ -2,7 +2,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { useQuery } from '@tanstack/react-query';
-import { useListingBySlug, useToggleFavorite, useSimilarListings, useListingsByIds, useMarkSold, useReserveListing, useUnreserveListing, usePriceGuide } from '@/hooks/useListings';
+import { useListingBySlug, useToggleFavorite, useSimilarListings, useListingsByIds, useMarkSold, useBuyerCandidates, useReserveListing, useUnreserveListing, usePriceGuide } from '@/hooks/useListings';
 import { useCreateOffer, useListingOffers, useRespondOffer, useCounterOffer, useOfferUpdates } from '@/hooks/useOffers';
 import { useAuthStore } from '@/store/auth';
 import { api } from '@/lib/api';
@@ -90,6 +90,9 @@ export default function ListingDetailClient({ initialListing }: { initialListing
   const galleryTouchX = useRef(0);
   const [showOfferModal, setShowOfferModal] = useState(false);
   const [showReportModal, setShowReportModal] = useState(false);
+  const [showSoldModal, setShowSoldModal] = useState(false);
+  const [selectedBuyer, setSelectedBuyer] = useState<string | null>(null);
+  const { data: buyerCandidates, isLoading: buyersLoading } = useBuyerCandidates(listing?.id ?? '', showSoldModal);
   const [reportReason, setReportReason] = useState('');
   const [reportDesc, setReportDesc] = useState('');
   const [reportSent, setReportSent] = useState(false);
@@ -121,10 +124,19 @@ export default function ListingDetailClient({ initialListing }: { initialListing
     ? Math.round((1 - Number(listing.price) / Number(listing.originalPrice)) * 100)
     : null;
 
-  const handleMarkSold = async () => {
+  // Satıldı işaretlemeden önce alıcı seçtiriyoruz: alıcının kaydedilmesi
+  // her iki tarafa karşılıklı değerlendirme hakkı açıyor. Zorunlu değil —
+  // platform dışından satanlar "belirtmek istemiyorum" diyebilir.
+  const handleMarkSold = async (buyerId?: string) => {
     try {
-      await markSold.mutateAsync(listing.id);
-      toast.success('İlan satıldı olarak işaretlendi!');
+      await markSold.mutateAsync({ id: listing.id, buyerId });
+      setShowSoldModal(false);
+      setSelectedBuyer(null);
+      toast.success(
+        buyerId
+          ? 'İlan satıldı olarak işaretlendi. Alıcıyı değerlendirebilirsiniz.'
+          : 'İlan satıldı olarak işaretlendi!',
+      );
     } catch (e: any) {
       toast.error(e.response?.data?.message || 'Hata oluştu');
     }
@@ -438,7 +450,7 @@ export default function ListingDetailClient({ initialListing }: { initialListing
                       className="m-btn m-btn-primary"
                       style={{ width: '100%' }}
                       disabled={markSold.isPending}
-                      onClick={handleMarkSold}
+                      onClick={() => setShowSoldModal(true)}
                     >
                       Satıldı İşaretle
                     </button>
@@ -458,7 +470,7 @@ export default function ListingDetailClient({ initialListing }: { initialListing
                       className="m-btn m-btn-primary"
                       style={{ width: '100%' }}
                       disabled={markSold.isPending}
-                      onClick={handleMarkSold}
+                      onClick={() => setShowSoldModal(true)}
                     >
                       Satıldı İşaretle
                     </button>
@@ -710,6 +722,82 @@ export default function ListingDetailClient({ initialListing }: { initialListing
       )}
 
       {/* Report Modal */}
+      {/* Satıldı işaretleme — alıcı seçimi karşılıklı değerlendirmeyi açar */}
+      {showSoldModal && (
+        <div className="m-modal-wrap">
+          <div className="m-surface-2 m-modal-sheet" style={{ padding: 24, width: '100%', maxWidth: 440 }}>
+            <h3 className="m-display" style={{ fontSize: 20, margin: '0 0 6px' }}>İlan Satıldı</h3>
+            <p style={{ fontSize: 13, color: 'var(--ink-3)', marginBottom: 20, lineHeight: 1.55 }}>
+              Alıcıyı seçerseniz ikiniz de birbirinizi değerlendirebilirsiniz.
+              Bu, profilinizdeki güven puanını oluşturur.
+            </p>
+
+            {buyersLoading ? (
+              <p style={{ fontSize: 13.5, color: 'var(--ink-3)', padding: '16px 0' }}>Alıcı adayları yükleniyor…</p>
+            ) : (buyerCandidates ?? []).length === 0 ? (
+              <div style={{ padding: '14px 16px', borderRadius: 10, background: 'var(--bg-2)', marginBottom: 18 }}>
+                <p style={{ fontSize: 13.5, color: 'var(--ink-2)', margin: 0, lineHeight: 1.55 }}>
+                  Bu ilanda teklif veren veya mesajlaşan kimse yok, bu yüzden
+                  alıcı seçemiyorsunuz. İlanı yine de satıldı olarak
+                  işaretleyebilirsiniz.
+                </p>
+              </div>
+            ) : (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginBottom: 18, maxHeight: 280, overflowY: 'auto' }}>
+                {(buyerCandidates ?? []).map(c => {
+                  const active = selectedBuyer === c.id;
+                  const sourceLabel = c.source === 'accepted_offer' ? 'Teklifi kabul edildi'
+                    : c.source === 'offer' ? 'Teklif verdi' : 'Mesajlaştı';
+                  return (
+                    <button
+                      key={c.id}
+                      type="button"
+                      onClick={() => setSelectedBuyer(active ? null : c.id)}
+                      style={{
+                        display: 'flex', alignItems: 'center', gap: 12, width: '100%',
+                        padding: '12px 14px', borderRadius: 10, cursor: 'pointer', textAlign: 'left',
+                        background: active ? 'color-mix(in oklch, var(--accent) 10%, transparent)' : 'var(--bg-1)',
+                        border: `1.5px solid ${active ? 'var(--accent)' : 'var(--line)'}`,
+                      }}
+                    >
+                      <span style={{ width: 34, height: 34, borderRadius: '50%', flexShrink: 0, display: 'grid', placeItems: 'center', background: 'var(--accent)', color: 'var(--accent-ink)', fontWeight: 700, fontSize: 14 }}>
+                        {c.displayName?.[0]?.toUpperCase() ?? '?'}
+                      </span>
+                      <span style={{ flex: 1, minWidth: 0 }}>
+                        <span style={{ display: 'block', fontSize: 14, fontWeight: 600, color: 'var(--ink)' }}>{c.displayName}</span>
+                        <span style={{ display: 'block', fontSize: 12, color: 'var(--ink-3)', marginTop: 2 }}>{sourceLabel}</span>
+                      </span>
+                      {active && <Star size={16} style={{ color: 'var(--accent)', flexShrink: 0 }} />}
+                    </button>
+                  );
+                })}
+              </div>
+            )}
+
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+              <button
+                className="m-btn m-btn-primary"
+                style={{ width: '100%' }}
+                disabled={markSold.isPending}
+                onClick={() => handleMarkSold(selectedBuyer ?? undefined)}
+              >
+                {markSold.isPending
+                  ? 'İşaretleniyor…'
+                  : selectedBuyer ? 'Satıldı İşaretle ve Alıcıyı Kaydet' : 'Alıcı Belirtmeden İşaretle'}
+              </button>
+              <button
+                className="m-btn m-btn-ghost"
+                style={{ width: '100%' }}
+                disabled={markSold.isPending}
+                onClick={() => { setShowSoldModal(false); setSelectedBuyer(null); }}
+              >
+                Vazgeç
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {showReportModal && (
         <div className="m-modal-wrap">
           <div className="m-surface-2 m-modal-sheet" style={{ padding: 24, width: '100%', maxWidth: 440 }}>
