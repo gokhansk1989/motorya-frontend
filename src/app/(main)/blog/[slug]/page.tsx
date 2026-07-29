@@ -54,7 +54,7 @@ async function getPost(slug: string) {
   try {
     const res = await fetch(`${API}/blog/${slug}`, { next: { revalidate: 300 } });
     if (!res.ok) return null;
-    return res.json();
+    return await res.json();
   } catch {
     return null;
   }

@@ -14,7 +14,7 @@ async function getCategory(slug: string) {
       console.error(`[kategori/${slug}/marka] category fetch failed: ${res.status}`);
       return null;
     }
-    return res.json();
+    return await res.json();
   } catch (err) {
     console.error(`[kategori/${slug}/marka] category fetch error:`, err);
     return null;
@@ -28,7 +28,7 @@ async function getBrandsForCategory(categorySlug: string) {
       console.error(`[kategori/${categorySlug}/marka] brands fetch failed: ${res.status}`);
       return [];
     }
-    return res.json();
+    return await res.json();
   } catch (err) {
     console.error(`[kategori/${categorySlug}/marka] brands fetch error:`, err);
     return [];
@@ -52,7 +52,7 @@ async function getListings(categorySlug: string, brandSlug: string) {
       console.error(`[kategori/${categorySlug}/marka/${brandSlug}] listings fetch failed: ${res.status}`);
       return { items: [], total: 0 };
     }
-    return res.json();
+    return await res.json();
   } catch (err) {
     console.error(`[kategori/${categorySlug}/marka/${brandSlug}] listings fetch error:`, err);
     return { items: [], total: 0 };

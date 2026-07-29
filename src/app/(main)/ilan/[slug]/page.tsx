@@ -27,7 +27,7 @@ async function fetchListingBySlug(slug: string): Promise<ListingData | null> {
       next: { revalidate: 300 },
     });
     if (!res.ok) return null;
-    return res.json();
+    return await res.json();
   } catch {
     return null;
   }
@@ -36,7 +36,12 @@ async function fetchListingBySlug(slug: string): Promise<ListingData | null> {
 export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }): Promise<Metadata> {
   const { slug } = await params;
   const listing = await fetchListingBySlug(slug);
-  if (!listing) return { title: 'İlan Bulunamadı' };
+  // Sunucuda bulunamayan ilan ya hiç yok ya da henüz onay bekliyor. Sayfa yine
+  // de render ediliyor (sahibi client-side kimlikle görebilsin diye), ama
+  // Google'ın bunu soft 404 olarak işaretlememesi için dizine eklenmemeli.
+  if (!listing) {
+    return { title: 'İlan Bulunamadı', robots: { index: false, follow: false } };
+  }
 
   const canonicalSlug = listing.slug ?? listing.id;
   const canonical = `${BASE_URL}/ilan/${canonicalSlug}`;

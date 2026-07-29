@@ -29,7 +29,7 @@ async function fetchCategoryData(slug: string): Promise<CategoryData | null> {
       console.error(`[kategori/${slug}/sehir] category fetch failed: ${res.status}`);
       return null;
     }
-    return res.json();
+    return await res.json();
   } catch (err) {
     console.error(`[kategori/${slug}/sehir] category fetch error:`, err);
     return null;
