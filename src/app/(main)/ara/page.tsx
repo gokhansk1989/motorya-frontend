@@ -8,6 +8,7 @@ import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { api } from '@/lib/api';
 import { useAuthStore } from '@/store/auth';
 import { analytics } from '@/lib/analytics';
+import Link from 'next/link';
 import { Search, SlidersHorizontal, X, BellPlus, Info } from 'lucide-react';
 import { AdSlot } from '@/components/ui/AdSlot';
 import { PullToRefresh } from '@/components/ui/PullToRefresh';
@@ -536,8 +537,24 @@ function SearchPageInner() {
       ) : items.length === 0 ? (
         <div style={{ textAlign: 'center', padding: '80px 0' }}>
           <Search size={44} style={{ margin: '0 auto 12px', opacity: 0.2 }} />
-          <p style={{ fontWeight: 600, color: 'var(--ink-2)' }}>Sonuç bulunamadı</p>
-          <p style={{ fontSize: 13, color: 'var(--ink-3)', marginTop: 4 }}>Farklı anahtar kelime veya filtre deneyin</p>
+          <p style={{ fontWeight: 600, color: 'var(--ink-2)' }}>
+            {q ? <>&ldquo;{q}&rdquo; için ilan yok</> : 'Bu filtrelerde ilan yok'}
+          </p>
+          {/* Yeni bir pazaryerinde boş sonucun sebebi kullanıcının araması
+              değil, envanterin henüz küçük olması. Bunu dürüstçe söyleyip
+              iki çıkış yolu sunuyoruz: alarm kur ya da kendin ilan ver. */}
+          <p style={{ fontSize: 13.5, color: 'var(--ink-3)', marginTop: 6, maxWidth: 380, marginInline: 'auto', lineHeight: 1.6 }}>
+            Motorya yeni açıldı ve ilanlar her gün artıyor. Alarm kurarsan
+            aradığın ürün eklendiğinde ilk sen haberdar olursun.
+          </p>
+          <div style={{ marginTop: 16 }}>
+            <Link
+              href="/ilan-ver"
+              style={{ fontSize: 13.5, color: 'var(--accent)', textDecoration: 'underline', fontWeight: 600 }}
+            >
+              Sende varsa ilan ver
+            </Link>
+          </div>
 
           {hasActiveFilters || q ? (
             <button

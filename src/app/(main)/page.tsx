@@ -6,6 +6,7 @@ import { PullToRefresh } from '@/components/ui/PullToRefresh';
 import { useListings, usePriceDrops } from '@/hooks/useListings';
 import { ListingCard } from '@/components/listings/ListingCard';
 import { api } from '@/lib/api';
+import { useAuthStore } from '@/store/auth';
 import { Search, ChevronRight, ChevronDown, Star, TrendingDown } from 'lucide-react';
 import Link from 'next/link';
 import { CategoryIcon } from '@/components/icons/CategoryIcons';
@@ -57,6 +58,7 @@ function PriceDropPanel() {
 }
 
 function HeroSection({ onSearch, categories, brands }: { onSearch: (q: string) => void; categories: Category[]; brands: BrandLite[] }) {
+  const { user } = useAuthStore();
   const [val, setVal] = useState('');
   const [focused, setFocused] = useState(false);
   const blurTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -81,8 +83,25 @@ function HeroSection({ onSearch, categories, brands }: { onSearch: (q: string) =
         zIndex: 0 }} />
       <div className="m-wrap" style={{ position: 'relative', zIndex: 1, paddingTop: 'clamp(28px, 6vw, 54px)', paddingBottom: 'clamp(24px, 4vw, 46px)', display: 'flex', gap: 32, alignItems: 'flex-start', justifyContent: 'space-between' }}>
         <div style={{ maxWidth: 620, flex: 1 }} className="m-fade-up">
-          <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 20 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 20, flexWrap: 'wrap' }}>
             <span className="m-kicker">Türkiye'nin motosiklet ekipman pazarı</span>
+            {/* Yeni olduğumuzu pop-up ile kesintiye uğratmadan söylüyoruz;
+                erken gelmeyi dezavantaj yerine kalıcı bir ayrıcalığa çeviriyor. */}
+            {!user && (
+              <Link
+                href="/kayit"
+                style={{
+                  display: 'inline-flex', alignItems: 'center', gap: 6,
+                  fontSize: 12.5, fontWeight: 600, textDecoration: 'none',
+                  color: 'var(--accent)', background: 'color-mix(in oklch, var(--accent) 10%, transparent)',
+                  border: '1px solid color-mix(in oklch, var(--accent) 28%, transparent)',
+                  borderRadius: 20, padding: '5px 12px',
+                }}
+              >
+                <span aria-hidden="true">🚀</span>
+                Yeni açıldık — ilk 100 üye “Kurucu Üye” rozeti alıyor
+              </Link>
+            )}
           </div>
           <h1 className="m-display" style={{ fontSize: 'clamp(36px, 5vw, 60px)', margin: 0 }}>
             Garajındaki ekipman,<br /><span className="m-accent">başkasının</span> sıradaki yolculuğu.
