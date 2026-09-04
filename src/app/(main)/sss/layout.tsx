@@ -1,11 +1,11 @@
 import type { Metadata } from 'next';
 
 export const metadata: Metadata = {
-  title: 'Sıkça Sorulan Sorular — Motorya',
+  title: 'Sıkça Sorulan Sorular',
   description: 'Motorya\'da güvenli alışveriş, ödeme, ilan verme ve kargo hakkında sıkça sorulan sorular ve cevapları.',
   alternates: { canonical: 'https://motorya.com.tr/sss' },
   openGraph: {
-    title: 'Sıkça Sorulan Sorular — Motorya',
+    title: 'Sıkça Sorulan Sorular',
     description: 'Motorya\'da güvenli alışveriş, ödeme, ilan verme ve kargo hakkında sıkça sorulan sorular.',
     url: 'https://motorya.com.tr/sss',
   },

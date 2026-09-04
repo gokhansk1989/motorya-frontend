@@ -6,7 +6,7 @@ export const metadata: Metadata = {
   keywords: ['ikinci el kask ara', 'motosiklet kıyafet ara', 'ikinci el mont', 'motosiklet aksesuar fiyat', 'motosiklet ekipman filtre'],
   alternates: { canonical: 'https://motorya.com.tr/ara' },
   openGraph: {
-    title: 'İlan Ara — Motorya',
+    title: 'İlan Ara',
     description: 'İkinci el motosiklet kıyafet ve aksesuar ara. Fiyata, markaya ve şehre göre filtrele.',
     url: 'https://motorya.com.tr/ara',
   },
