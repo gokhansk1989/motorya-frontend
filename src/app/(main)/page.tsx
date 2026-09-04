@@ -342,10 +342,12 @@ function FeaturedSectionSkeleton() {
 }
 
 function FeaturedSection() {
-  // Envanter az; "öne çıkan" filtresi çoğu zaman 0 dondurup vitrini boş
-  // bırakıyor. Şimdilik son eklenenleri gösteriyoruz. İlan sayısı artıp
-  // gerçek featured mekaniği devreye girince tekrar isFeatured:true olur.
-  const { data, isLoading } = useListings({ limit: 12, sort: 'newest' });
+  // SSR'de bu component'in üst tarafında Zustand persist (useAuthStore)
+  // hydration mismatch tetikliyor ve subtree cokuyor. Mount sonrasi CSR
+  // olarak render edip crash'i engelliyoruz.
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => { setMounted(true); }, []);
+  const { data, isLoading } = useListings({ limit: 12, sort: 'newest' }, mounted);
   const items = data?.items ?? [];
   const [touchPaused, setTouchPaused] = useState(false);
   const resumeTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
