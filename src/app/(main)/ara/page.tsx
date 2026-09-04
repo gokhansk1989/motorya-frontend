@@ -321,8 +321,8 @@ function SearchPageInner() {
 
       {/* Search bar — sticky on mobile */}
       <div className="m-search-bar-wrap">
-        <form onSubmit={handleSearch} style={{ display: 'flex', gap: 8 }}>
-          <div style={{ flex: 1, display: 'flex', alignItems: 'center', gap: 10, height: 48, background: 'var(--bg-1)', border: '1px solid var(--line)', borderRadius: 10, padding: '0 8px 0 14px' }}>
+        <form onSubmit={handleSearch} style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+          <div style={{ flex: '1 1 200px', minWidth: 0, display: 'flex', alignItems: 'center', gap: 10, height: 48, background: 'var(--bg-1)', border: '1px solid var(--line)', borderRadius: 10, padding: '0 8px 0 14px' }}>
             <Search size={18} style={{ color: 'var(--ink-3)', flexShrink: 0 }} />
             <input
               value={inputVal}

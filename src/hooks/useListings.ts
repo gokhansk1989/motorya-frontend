@@ -38,10 +38,11 @@ export interface ListingsQuery {
   isFeatured?: boolean;
 }
 
-export function useListings(query: ListingsQuery = {}) {
+export function useListings(query: ListingsQuery = {}, enabled: boolean = true) {
   return useQuery({
     queryKey: ['listings', query],
     queryFn: () => api.get('/listings', { params: query }).then((r) => r.data),
+    enabled,
   });
 }
 
@@ -88,18 +89,26 @@ export function useToggleFavorite() {
         );
         qc.setQueryData(key, Array.isArray(data) ? updated : { ...data, items: updated });
       }
-      // Tekil ilan
+      // Tekil ilan (id ile)
       qc.setQueriesData<any>({ queryKey: ['listing', id] }, (old: any) =>
         old ? { ...old, isFavorited: !old.isFavorited } : old
       );
+      // İlan detay sayfası slug ile cache'leniyor; hangi slug olduğu bilinmediğinden
+      // eşleşen id'yi bulup güncelle.
+      const slugQueries = qc.getQueriesData<any>({ queryKey: ['listing-slug'] });
+      for (const [key, data] of slugQueries) {
+        if (data && data.id === id) {
+          qc.setQueryData(key, { ...data, isFavorited: !data.isFavorited });
+        }
+      }
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['favorites'] });
     },
     onError: () => {
-      // Hata durumunda geri al
       qc.invalidateQueries({ queryKey: ['listings'] });
       qc.invalidateQueries({ queryKey: ['listing'] });
+      qc.invalidateQueries({ queryKey: ['listing-slug'] });
     },
   });
 }

@@ -342,8 +342,12 @@ function FeaturedSectionSkeleton() {
 }
 
 function FeaturedSection() {
-  const { data, isLoading } = useListings({ isFeatured: true, limit: 12, sort: 'newest' });
-  const items = data?.items ?? [];
+  // Öne çıkan ilan yoksa vitrin komple gizlenmesin; son eklenenlerle doldur.
+  // Bu envanter azken "site boş" hissini engelliyor.
+  const featured = useListings({ isFeatured: true, limit: 12, sort: 'newest' });
+  const fallback = useListings({ limit: 12, sort: 'newest' }, featured.data?.items?.length === 0);
+  const isLoading = featured.isLoading || (featured.data?.items?.length === 0 && fallback.isLoading);
+  const items = featured.data?.items?.length ? featured.data.items : (fallback.data?.items ?? []);
   const [touchPaused, setTouchPaused] = useState(false);
   const resumeTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
