@@ -406,6 +406,16 @@ export default function ListingDetailClient({ initialListing }: { initialListing
               <div className="m-buy-actions" style={{ display: 'flex', flexDirection: 'column', gap: 12, marginTop: 20 }}>
                 <div style={{ display: 'flex', gap: 8 }}>
                   <button
+                    aria-label={favd ? 'Favorilerden çıkar' : 'Favorile'}
+                    onClick={() => {
+                      if (!user) { toast.error('Favorilemek için giriş yapmalısın'); router.push('/giris'); return; }
+                      toggleFavorite.mutate(id);
+                    }}
+                    style={{ width: 44, height: 44, flexShrink: 0, borderRadius: 8, background: 'var(--bg-1)', border: '1px solid var(--line)', display: 'grid', placeItems: 'center', color: favd ? 'var(--accent)' : 'var(--ink-2)', cursor: 'pointer' }}
+                  >
+                    <Heart size={18} fill={favd ? 'currentColor' : 'none'} />
+                  </button>
+                  <button
                     className="m-btn m-btn-soft-accent"
                     style={{ flex: 1 }}
                     onClick={() => {
