@@ -79,7 +79,13 @@ export function useToggleFavorite() {
   return useMutation({
     mutationFn: (id: string) => api.post(`/listings/${id}/favorite`).then((r) => r.data),
     onMutate: async (id: string) => {
-      // Optimistic update: tüm listings cache'lerinde isFavorited'ı hemen tersine çevir
+      // Optimistic update: tüm listings cache'lerinde isFavorited'ı hemen tersine çevir.
+      // cancelQueries yoksa bekleyen bir fetch cevap dönüp optimistic state'i eziyor.
+      await Promise.all([
+        qc.cancelQueries({ queryKey: ['listings'] }),
+        qc.cancelQueries({ queryKey: ['listing'] }),
+        qc.cancelQueries({ queryKey: ['listing-slug'] }),
+      ]);
       const queries = qc.getQueriesData<any>({ queryKey: ['listings'] });
       for (const [key, data] of queries) {
         if (!data) continue;

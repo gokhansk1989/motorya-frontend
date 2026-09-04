@@ -329,19 +329,8 @@ export default function ListingDetailClient({ initialListing }: { initialListing
                   </span>
                 )}
               </div>
-              <div>
-                <button
-                  onClick={() => user && toggleFavorite.mutate(id)}
-                  style={{ width: 38, height: 38, borderRadius: 8, background: 'var(--bg-1)', border: '1px solid var(--line)', display: 'grid', placeItems: 'center', color: favd ? 'var(--accent)' : 'var(--ink-2)' }}
-                >
-                  <Heart size={18} fill={favd ? 'currentColor' : 'none'} />
-                </button>
-                {!favd && user && (
-                  <p style={{ fontSize: 11, color: 'var(--ink-3)', textAlign: 'center', marginTop: 4 }}>
-                    Favorile → fiyat düşünce bildir
-                  </p>
-                )}
-              </div>
+              {/* Favori butonu artık sadece alt aksiyon çubuğunda (Teklif Ver
+                  solunda) — iki farklı kalp kafa karıştırıyordu. */}
             </div>
 
             <h1 className="m-display" style={{ fontSize: 24, margin: '0 0 14px', lineHeight: 1.2 }}>{listing.title}</h1>
