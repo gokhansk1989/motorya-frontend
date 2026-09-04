@@ -12,6 +12,7 @@ import toast from 'react-hot-toast';
 import { CoverCropModal } from '@/components/listings/CoverCropModal';
 import { IL_ILCE, ALL_CITIES } from '@/lib/il-ilce';
 import { analytics } from '@/lib/analytics';
+import { useAuthStore } from '@/store/auth';
 
 type Category = { id: string; name: string; slug: string; parentId: string | null; };
 
@@ -105,6 +106,21 @@ function WizardProgress({ step }: { step: number }) {
 
 export default function CreateListingPage() {
   const router = useRouter();
+  const user = useAuthStore(s => s.user);
+  // Kullanici login degilse dogrudan girise gonder; formu doldurup submitte
+  // 401 gormek yerine baslangicta yonlendiriyoruz. Zustand persist henuz
+  // hydrate olmadan kontrol edilirse false pozitif redirect olur; hydrate'i
+  // bekliyoruz.
+  const [authReady, setAuthReady] = useState(false);
+  useEffect(() => {
+    const check = () => {
+      setAuthReady(true);
+      if (!useAuthStore.getState().user) router.replace('/giris?next=/ilan-ver');
+    };
+    if (useAuthStore.persist.hasHydrated()) check();
+    else return useAuthStore.persist.onFinishHydration(check);
+  }, [router]);
+  if (!authReady || !user) return null;
   const [step, setStep] = useState(1);
   const [imageUrls, setImageUrls] = useState<string[]>([]);
   const [uploading, setUploading] = useState(false);

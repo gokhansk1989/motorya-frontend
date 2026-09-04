@@ -182,10 +182,10 @@ export default function RegisterPage() {
 
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14 }}>
               <FieldWrapper label="Ad" icon={<User size={16} />} error={errors.firstName?.message}>
-                <input {...register('firstName')} placeholder="Gökhan" style={inputStyle(!!errors.firstName)} onFocus={focusGlow} onBlur={blurGlow} />
+                <input {...register('firstName')} placeholder="Adınız" autoComplete="given-name" style={inputStyle(!!errors.firstName)} onFocus={focusGlow} onBlur={blurGlow} />
               </FieldWrapper>
               <FieldWrapper label="Soyad" error={errors.lastName?.message}>
-                <input {...register('lastName')} placeholder="Sarıkaya" style={plainInputStyle(!!errors.lastName)} onFocus={focusGlow} onBlur={blurGlow} />
+                <input {...register('lastName')} placeholder="Soyadınız" autoComplete="family-name" style={plainInputStyle(!!errors.lastName)} onFocus={focusGlow} onBlur={blurGlow} />
               </FieldWrapper>
             </div>
 
