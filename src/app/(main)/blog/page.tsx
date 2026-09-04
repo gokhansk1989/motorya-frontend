@@ -25,8 +25,8 @@ export default function BlogPage() {
   const [activeCategory, setActiveCategory] = useState<string | undefined>(undefined);
   const { data, isLoading } = useBlogPosts(activeCategory);
   const posts: any[] = data?.items ?? [];
-  const featured = posts[0];
-  const rest = posts.slice(1);
+  // Featured hero kaldirildi; tum yazilar esit grid'de listelenir.
+  const rest = posts;
 
   const allCategories = Array.from(new Set(posts.map((p: any) => p.category)));
 
@@ -69,49 +69,6 @@ export default function BlogPage() {
         <EmptyState icon={<Newspaper size={44} />} title="Henüz blog yazısı yok" sub="Yakında burada olacak." />
       ) : (
         <>
-          {featured && (
-            <Link href={`/blog/${featured.slug}`} style={{ textDecoration: 'none', display: 'block', marginBottom: 32 }}>
-              <article className="m-card m-blog-hero" style={{
-                background: 'var(--bg-1)', border: '1px solid var(--line-soft)', borderRadius: 'var(--radius-l)',
-              }}>
-                {getCover(featured) && (
-                  <div className="m-blog-hero-media" style={{
-                    background: 'var(--bg-2)',
-                    display: 'grid', placeItems: 'center', minHeight: 280, position: 'relative',
-                    overflow: 'hidden',
-                  }}>
-                    <img src={getCover(featured)!} alt={featured.title} style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover' }} />
-                    <div style={{ position: 'absolute', top: 16, left: 16 }}>
-                      <span className="m-badge solid">ÖNE ÇIKAN</span>
-                    </div>
-                  </div>
-                )}
-                {!getCover(featured) && (
-                  <div style={{ padding: '20px 36px 0' }}>
-                    <span className="m-badge solid">ÖNE ÇIKAN</span>
-                  </div>
-                )}
-                <div className="m-blog-hero-body" style={{ padding: '32px 36px', display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
-                  <div style={{ display: 'flex', gap: 8, marginBottom: 16 }}>
-                    <span className="m-badge verify">{featured.category}</span>
-                  </div>
-                  <h2 className="m-display" style={{ fontSize: 24, margin: '0 0 14px', lineHeight: 1.2 }}>{featured.title}</h2>
-                  <p style={{ fontSize: 14, color: 'var(--ink-2)', lineHeight: 1.6, marginBottom: 20 }}>{featured.excerpt}</p>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 16, color: 'var(--ink-3)', fontSize: 12.5 }}>
-                    <span style={{ display: 'flex', gap: 5, alignItems: 'center' }}>
-                      <Clock size={13} />{featured.readTime} dakika okuma
-                    </span>
-                    <span>{new Date(featured.publishedAt).toLocaleDateString('tr-TR', { day: 'numeric', month: 'long', year: 'numeric' })}</span>
-                    <div style={{ flex: 1 }} />
-                    <span className="m-accent" style={{ display: 'flex', alignItems: 'center', gap: 4, fontFamily: 'var(--font-display)', fontWeight: 600, fontSize: 13 }}>
-                      Oku <ArrowRight size={14} />
-                    </span>
-                  </div>
-                </div>
-              </article>
-            </Link>
-          )}
-
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: 20 }}>
             {rest.map((post: any) => (
               <Link key={post.slug} href={`/blog/${post.slug}`} style={{ textDecoration: 'none' }}>
