@@ -74,19 +74,23 @@ export default function BlogPage() {
               <article className="m-card m-blog-hero" style={{
                 background: 'var(--bg-1)', border: '1px solid var(--line-soft)', borderRadius: 'var(--radius-l)',
               }}>
-                <div className="m-blog-hero-media" style={{
-                  background: 'var(--bg-2)',
-                  display: 'grid', placeItems: 'center', minHeight: 280, fontSize: 80, position: 'relative',
-                  overflow: 'hidden',
-                }}>
-                  {getCover(featured)
-                    ? <img src={getCover(featured)!} alt={featured.title} style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover' }} />
-                    : featured.coverEmoji}
-
-                  <div style={{ position: 'absolute', top: 16, left: 16 }}>
+                {getCover(featured) && (
+                  <div className="m-blog-hero-media" style={{
+                    background: 'var(--bg-2)',
+                    display: 'grid', placeItems: 'center', minHeight: 280, position: 'relative',
+                    overflow: 'hidden',
+                  }}>
+                    <img src={getCover(featured)!} alt={featured.title} style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover' }} />
+                    <div style={{ position: 'absolute', top: 16, left: 16 }}>
+                      <span className="m-badge solid">ÖNE ÇIKAN</span>
+                    </div>
+                  </div>
+                )}
+                {!getCover(featured) && (
+                  <div style={{ padding: '20px 36px 0' }}>
                     <span className="m-badge solid">ÖNE ÇIKAN</span>
                   </div>
-                </div>
+                )}
                 <div className="m-blog-hero-body" style={{ padding: '32px 36px', display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
                   <div style={{ display: 'flex', gap: 8, marginBottom: 16 }}>
                     <span className="m-badge verify">{featured.category}</span>
@@ -112,15 +116,14 @@ export default function BlogPage() {
             {rest.map((post: any) => (
               <Link key={post.slug} href={`/blog/${post.slug}`} style={{ textDecoration: 'none' }}>
                 <article className="m-card" style={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
-                  <div style={{
-                    background: 'var(--bg-2)',
-                    display: 'grid', placeItems: 'center', height: 140, fontSize: 52, flexShrink: 0,
-                    overflow: 'hidden', position: 'relative',
-                  }}>
-                    {getCover(post)
-                      ? <img src={getCover(post)!} alt={post.title} style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover' }} />
-                      : post.coverEmoji}
-                  </div>
+                  {getCover(post) && (
+                    <div style={{
+                      background: 'var(--bg-2)',
+                      height: 140, flexShrink: 0, overflow: 'hidden', position: 'relative',
+                    }}>
+                      <img src={getCover(post)!} alt={post.title} style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover' }} />
+                    </div>
+                  )}
                   <div className="m-card-body" style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
                     <div style={{ marginBottom: 10 }}>
                       <span className="m-badge verify" style={{ fontSize: 10 }}>{post.category}</span>
