@@ -124,6 +124,9 @@ input, textarea, select { font-family: inherit; color: var(--ink); }
 
   /* listing detail */
   .m-detail-grid  { grid-template-columns: 1fr !important; gap: 20px !important; }
+  /* CSS grid hücreleri default min-width:auto ile içeriğe göre büyür;
+     mobilde uzun bir kelime/URL kolonu ekranı taşırıyordu. */
+  .m-detail-grid > * { min-width: 0; }
   .m-detail-sticky { position: static !important; }
   /* Favori/Teklif Ver/Mesaj artık fixed bar yerine fiyat kartının içinde — dokunma
      hedefi büyütülsün diye buton yüksekliği artırılıyor. */
