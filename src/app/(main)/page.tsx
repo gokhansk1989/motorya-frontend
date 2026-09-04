@@ -342,12 +342,11 @@ function FeaturedSectionSkeleton() {
 }
 
 function FeaturedSection() {
-  // Öne çıkan ilan yoksa vitrin komple gizlenmesin; son eklenenlerle doldur.
-  // Bu envanter azken "site boş" hissini engelliyor.
-  const featured = useListings({ isFeatured: true, limit: 12, sort: 'newest' });
-  const fallback = useListings({ limit: 12, sort: 'newest' }, featured.data?.items?.length === 0);
-  const isLoading = featured.isLoading || (featured.data?.items?.length === 0 && fallback.isLoading);
-  const items = featured.data?.items?.length ? featured.data.items : (fallback.data?.items ?? []);
+  // Envanter az; "öne çıkan" filtresi çoğu zaman 0 dondurup vitrini boş
+  // bırakıyor. Şimdilik son eklenenleri gösteriyoruz. İlan sayısı artıp
+  // gerçek featured mekaniği devreye girince tekrar isFeatured:true olur.
+  const { data, isLoading } = useListings({ limit: 12, sort: 'newest' });
+  const items = data?.items ?? [];
   const [touchPaused, setTouchPaused] = useState(false);
   const resumeTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
