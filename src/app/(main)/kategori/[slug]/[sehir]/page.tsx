@@ -75,17 +75,11 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
   const description = `${city} ilanlarında ikinci el motosiklet ${category.name.toLowerCase()} al ya da sat. Doğrulanmış satıcılar, ücretsiz ilan — Motorya'da.`;
   const canonical = `${BASE_URL}/kategori/${slug}/${sehir}`;
 
-  // 0 ilan varsa GSC "tarandi ama dizinlenmedi" gorunumu olusuyor; noindex ile
-  // Google'a duşuk deger sayfayi indekslememesini soyluyoruz.
-  const listings = await fetchListings(category.id, city);
-  const isEmpty = !listings || listings.length === 0;
-
   return {
     title,
     description,
     alternates: { canonical },
     keywords: [`${city} ${category.name}`, `${city} ikinci el ${category.name}`],
-    robots: isEmpty ? { index: false, follow: true } : undefined,
     openGraph: { title: socialTitle, description, url: canonical, type: 'website' },
   };
 }
