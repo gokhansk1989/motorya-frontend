@@ -120,7 +120,31 @@ export default function CreateListingPage() {
     if (useAuthStore.persist.hasHydrated()) check();
     else return useAuthStore.persist.onFinishHydration(check);
   }, [router]);
+  // TC Kimlik yoksa backend POST /listings 400 doner. Formu doldurup submit
+  // ettikten sonra hata almaktansa acilista kontrol edelim.
+  const { data: me } = useQuery({
+    queryKey: ['me-tc-check'],
+    queryFn: () => api.get('/users/me').then(r => r.data),
+    enabled: !!user,
+    staleTime: 30_000,
+  });
   if (!authReady || !user) return null;
+  if (me && !me.tcKimlik) {
+    return (
+      <div className="m-wrap" style={{ padding: '48px 16px', maxWidth: 560 }}>
+        <div className="m-surface-2" style={{ padding: 28, borderRadius: 16, textAlign: 'center' }}>
+          <h1 style={{ fontSize: 22, margin: '0 0 12px' }}>Once profilini tamamla</h1>
+          <p style={{ color: 'var(--ink-2)', lineHeight: 1.6, marginBottom: 24 }}>
+            Ilan verebilmek icin profilinde T.C. Kimlik numaranin dolu olmasi gerekiyor.
+            Bu bilgi guvenli alisveris ve dolandiricilik onlemleri icin aliniyor; ilanda gorunmez.
+          </p>
+          <button className="m-btn m-btn-primary" onClick={() => router.push('/profilim')} style={{ height: 46, padding: '0 24px' }}>
+            Profilime Git
+          </button>
+        </div>
+      </div>
+    );
+  }
   const [step, setStep] = useState(1);
   const [imageUrls, setImageUrls] = useState<string[]>([]);
   const [uploading, setUploading] = useState(false);

@@ -108,7 +108,9 @@ export default function ProfilePage() {
 
   const { data: myListingsData, isLoading: listingsLoading } = useQuery({
     queryKey: ['my-listings-tab'],
-    queryFn: () => api.get('/listings', { params: { userId: user?.id, limit: 50 } }).then(r => r.data.items ?? r.data),
+    // Onceden /listings?userId=X sorgulaniyordu ama backend DTO'sunda userId
+    // whitelisted degil, forbidNonWhitelisted 400 doner ve ErrorLog'a yazar.
+    queryFn: () => api.get('/listings/mine').then(r => r.data.items ?? r.data),
     enabled: !!user?.id,
   });
   const myListings: any[] = Array.isArray(myListingsData) ? myListingsData : [];
