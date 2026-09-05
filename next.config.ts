@@ -24,6 +24,13 @@ const nextConfig: NextConfig = {
         permanent: true,
       },
       { source: '/pages/:slug', destination: '/sayfa/:slug', permanent: true },
+      // Eski URL yapisi /ilanlar?kategori=X -> /kategori/X (GSC 404 raporundan)
+      {
+        source: '/ilanlar',
+        has: [{ type: 'query', key: 'kategori', value: '(?<slug>.*)' }],
+        destination: '/kategori/:slug',
+        permanent: true,
+      },
     ];
   },
   images: {
