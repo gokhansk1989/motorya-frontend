@@ -40,6 +40,10 @@ const profileSchema = z.object({
   city: z.string().optional(),
   district: z.string().optional(),
   avatarUrl: z.string().optional(),
+  tcKimlik: z.string().regex(/^$|^[1-9][0-9]{10}$/, 'TC Kimlik 11 haneli olmalı').optional().or(z.literal('')),
+  phone: z.string().regex(/^$|^0?5\d{9}$/, 'Geçerli cep no giriniz').optional().or(z.literal('')),
+  birthDate: z.string().optional(),
+  gender: z.enum(['MALE','FEMALE','OTHER']).optional().or(z.literal('' as any)),
 });
 
 const passwordSchema = z.object({
@@ -137,12 +141,24 @@ export default function ProfilePage() {
         city: profile.city ?? '',
         district: profile.district ?? '',
         avatarUrl: profile.avatarUrl ?? '',
+        tcKimlik: profile.tcKimlik ?? '',
+        phone: profile.phone ?? '',
+        birthDate: profile.birthDate ? new Date(profile.birthDate).toISOString().slice(0,10) : '',
+        gender: profile.gender ?? '',
       });
     }
   }, [profile]);
 
   const updateProfile = useMutation({
-    mutationFn: (data: ProfileData) => api.patch('/users/me', data).then(r => r.data),
+    mutationFn: (data: ProfileData) => {
+      // Bos alanlari backend'e gonderme — TC/telefon regex validasyonu bos
+      // string'de patlıyor.
+      const payload: any = {};
+      for (const [k, v] of Object.entries(data)) {
+        if (v !== '' && v != null) payload[k] = v;
+      }
+      return api.patch('/users/me', payload).then(r => r.data);
+    },
     onSuccess: (updated) => { setAuth(updated, token!); toast.success('Profil güncellendi'); },
     onError: () => toast.error('Güncellenemedi'),
   });
@@ -391,6 +407,32 @@ export default function ProfilePage() {
               <div>
                 <label style={lbl}>Hakkımda <span style={{ fontWeight: 400, opacity: 0.5 }}>opsiyonel</span></label>
                 <textarea {...profileForm.register('bio')} rows={3} style={{ ...inp(), height: 'auto', padding: '10px 14px', resize: 'vertical' }} placeholder="Kendinizden kısaca bahsedin…" />
+              </div>
+              <div>
+                <label style={lbl}>T.C. Kimlik No <span style={{ fontWeight: 400, opacity: 0.5 }}>ilan vermek için gerekli</span></label>
+                <input {...profileForm.register('tcKimlik')} inputMode="numeric" maxLength={11} placeholder="10000000000" style={inp(!!profileForm.formState.errors.tcKimlik)} />
+                {profileForm.formState.errors.tcKimlik && <p style={{ marginTop: 5, fontSize: 12, color: 'var(--bad)', fontFamily: 'var(--font-mono)' }}>{profileForm.formState.errors.tcKimlik.message}</p>}
+                <p style={{ marginTop: 5, fontSize: 11, color: 'var(--ink-3)' }}>KVKK kapsamında güvenli alışveriş için alınır; ilanınızda görünmez.</p>
+              </div>
+              <div>
+                <label style={lbl}>Cep Telefonu <span style={{ fontWeight: 400, opacity: 0.5 }}>opsiyonel</span></label>
+                <input {...profileForm.register('phone')} type="tel" inputMode="numeric" maxLength={11} placeholder="05XX 000 00 00" style={inp(!!profileForm.formState.errors.phone)} />
+                {profileForm.formState.errors.phone && <p style={{ marginTop: 5, fontSize: 12, color: 'var(--bad)', fontFamily: 'var(--font-mono)' }}>{profileForm.formState.errors.phone.message}</p>}
+              </div>
+              <div className="m-grid-1-mobile" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14 }}>
+                <div>
+                  <label style={lbl}>Doğum Tarihi <span style={{ fontWeight: 400, opacity: 0.5 }}>opsiyonel</span></label>
+                  <input {...profileForm.register('birthDate')} type="date" style={inp()} />
+                </div>
+                <div>
+                  <label style={lbl}>Cinsiyet <span style={{ fontWeight: 400, opacity: 0.5 }}>opsiyonel</span></label>
+                  <select {...profileForm.register('gender')} style={{ ...inp(), appearance: 'none', paddingRight: 36 }}>
+                    <option value="">Seçiniz</option>
+                    <option value="MALE">Erkek</option>
+                    <option value="FEMALE">Kadın</option>
+                    <option value="OTHER">Diğer</option>
+                  </select>
+                </div>
               </div>
               <div className="m-grid-1-mobile" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14 }}>
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
