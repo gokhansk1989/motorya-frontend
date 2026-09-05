@@ -56,9 +56,6 @@ export function ListingCard({ listing }: { listing: Listing }) {
                 <Star size={10} fill="currentColor" strokeWidth={0} /> ÖNE ÇIKAN
               </span>
             )}
-            {discountPct && discountPct > 0 && (
-              <span className="m-badge new">%{discountPct} İNDİRİM</span>
-            )}
             {(listing as any).status === 'RESERVED' && (
               <span className="m-badge warn">REZERVE</span>
             )}
@@ -94,12 +91,17 @@ export function ListingCard({ listing }: { listing: Listing }) {
         <Link href={`/ilan/${listing.slug ?? listing.id}`} style={{ textDecoration: 'none' }}>
           <h3 className="m-card-title">{listing.title}</h3>
         </Link>
-        <div style={{ display: 'flex', alignItems: 'baseline', gap: 8 }}>
+        <div style={{ display: 'flex', alignItems: 'baseline', gap: 8, flexWrap: 'wrap' }}>
           <span className="m-price">
             {formatPrice(listing.price)}<span className="cur">₺</span>
           </span>
           {listing.originalPrice && (
             <span className="m-price-old">{formatPrice(listing.originalPrice)}</span>
+          )}
+          {discountPct && discountPct > 0 && (
+            <span style={{ fontSize: 11, fontWeight: 700, padding: '2px 6px', borderRadius: 4, background: '#ffe5d3', color: '#c04a12', lineHeight: 1.4 }}>
+              %{discountPct}
+            </span>
           )}
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginTop: 9, color: 'var(--ink-3)', fontSize: 12, whiteSpace: 'nowrap', overflow: 'hidden' }}>
