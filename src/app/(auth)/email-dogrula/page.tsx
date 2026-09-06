@@ -19,7 +19,7 @@ function EmailDogrulaContent() {
 
     api.get(`/auth/verify-email?token=${token}`)
       .then(res => {
-        setAuth(res.data.user, res.data.accessToken);
+        setAuth(res.data.user, res.data.accessToken, res.data.refreshToken, res.data.deviceId);
         setStatus('success');
         setTimeout(() => router.push('/'), 2000);
       })

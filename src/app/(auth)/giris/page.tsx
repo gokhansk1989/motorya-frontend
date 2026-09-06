@@ -29,7 +29,7 @@ export default function LoginPage() {
   const onSubmit = async (data: FormData) => {
     try {
       const res = await api.post('/auth/login', data);
-      setAuth(res.data.user, res.data.accessToken);
+      setAuth(res.data.user, res.data.accessToken, res.data.refreshToken, res.data.deviceId);
       toast.success('Hoş geldin!');
       router.push('/');
     } catch (e: any) {

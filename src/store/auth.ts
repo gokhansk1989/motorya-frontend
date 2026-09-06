@@ -13,7 +13,10 @@ interface User {
 interface AuthState {
   user: User | null;
   token: string | null;
-  setAuth: (user: User, token: string) => void;
+  refreshToken: string | null;
+  deviceId: string | null;
+  setAuth: (user: User, token: string, refreshToken?: string, deviceId?: string) => void;
+  setTokens: (token: string, refreshToken?: string) => void;
   logout: () => void;
   isAuthenticated: () => boolean;
 }
@@ -23,16 +26,35 @@ export const useAuthStore = create<AuthState>()(
     (set, get) => ({
       user: null,
       token: null,
-      setAuth: (user, token) => {
+      refreshToken: null,
+      deviceId: null,
+      setAuth: (user, token, refreshToken, deviceId) => {
         localStorage.setItem('access_token', token);
-        set({ user, token });
+        if (refreshToken) localStorage.setItem('refresh_token', refreshToken);
+        if (deviceId) localStorage.setItem('device_id', deviceId);
+        set({
+          user,
+          token,
+          refreshToken: refreshToken ?? get().refreshToken,
+          deviceId: deviceId ?? get().deviceId,
+        });
+      },
+      setTokens: (token, refreshToken) => {
+        localStorage.setItem('access_token', token);
+        if (refreshToken) localStorage.setItem('refresh_token', refreshToken);
+        set({ token, refreshToken: refreshToken ?? get().refreshToken });
       },
       logout: () => {
         localStorage.removeItem('access_token');
-        set({ user: null, token: null });
+        localStorage.removeItem('refresh_token');
+        localStorage.removeItem('device_id');
+        set({ user: null, token: null, refreshToken: null, deviceId: null });
       },
       isAuthenticated: () => !!get().token,
     }),
-    { name: 'motorya-auth', partialize: (s) => ({ user: s.user, token: s.token }) }
+    {
+      name: 'motorya-auth',
+      partialize: (s) => ({ user: s.user, token: s.token, refreshToken: s.refreshToken, deviceId: s.deviceId }),
+    }
   )
 );
