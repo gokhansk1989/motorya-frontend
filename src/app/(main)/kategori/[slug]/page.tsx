@@ -1,5 +1,7 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
+import React from 'react';
+import { ListingCard } from '@/components/listings/ListingCard';
 import Image from 'next/image';
 import { notFound } from 'next/navigation';
 import { AdSlot } from '@/components/ui/AdSlot';
@@ -215,45 +217,14 @@ export default async function CategoryPage({ params }: { params: Promise<{ slug:
           <>
             <div className="m-listing-grid" style={{ gap: 14 }}>
               {listings.map((listing, i) => (
-                <>
-                  <Link key={listing.id} href={`/ilan/${listing.slug ?? listing.id}`} style={{ textDecoration: 'none' }}>
-                    <div className="m-surface" style={{ overflow: 'hidden', borderRadius: 'var(--radius)', cursor: 'pointer' }}>
-                      <div style={{ position: 'relative', aspectRatio: '4/3', background: 'var(--bg-3)', overflow: 'hidden' }}>
-                        {listing.images?.[0] ? (
-                          <Image src={listing.images[0].url} alt={listing.title} fill
-                            sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 240px"
-                            style={{ objectFit: 'cover' }} loading="lazy" />
-                        ) : (
-                          <div style={{ width: '100%', height: '100%', display: 'grid', placeItems: 'center' }}>
-                            <CatIcon slug={slug} size={48} iconUrl={category.iconKey} />
-                          </div>
-                        )}
-                      </div>
-                      <div style={{ padding: '12px 14px' }}>
-                        <p style={{ fontSize: 13.5, fontWeight: 600, margin: '0 0 6px', lineHeight: 1.3,
-                          overflow: 'hidden', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical' }}>
-                          {listing.title}
-                        </p>
-                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                          <span className="m-price" style={{ fontSize: 17 }}>
-                            {Number(listing.price).toLocaleString('tr-TR')}<span style={{ fontSize: 12 }}> ₺</span>
-                          </span>
-                          <span style={{ fontSize: 11, color: 'var(--ink-3)', fontFamily: 'var(--font-mono)' }}>
-                            {conditionLabel(listing.condition)}
-                          </span>
-                        </div>
-                        {listing.city && (
-                          <p style={{ fontSize: 12, color: 'var(--ink-3)', margin: '4px 0 0' }}>{listing.city}</p>
-                        )}
-                      </div>
-                    </div>
-                  </Link>
+                <React.Fragment key={listing.id}>
+                  <ListingCard listing={listing as any} />
                   {(i + 1) % 8 === 0 && (
-                    <div key={`ad-${i}`} style={{ gridColumn: '1/-1' }}>
+                    <div style={{ gridColumn: '1/-1' }}>
                       <AdSlot slot={process.env.NEXT_PUBLIC_ADSENSE_SLOT_LISTING ?? ''} format="auto" />
                     </div>
                   )}
-                </>
+                </React.Fragment>
               ))}
             </div>
 

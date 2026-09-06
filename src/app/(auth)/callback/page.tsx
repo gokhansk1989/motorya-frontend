@@ -12,12 +12,14 @@ function CallbackHandler() {
 
   useEffect(() => {
     const token = params.get('token');
+    const refreshToken = params.get('refreshToken') ?? undefined;
+    const deviceId = params.get('deviceId') ?? undefined;
     const userParam = params.get('user');
     const needsConsent = params.get('needsConsent') === 'true';
     if (token && userParam) {
       try {
         const user = JSON.parse(decodeURIComponent(userParam));
-        setAuth(user, token);
+        setAuth(user, token, refreshToken, deviceId);
         // needsConsent yalnızca sözleşmeleri henüz onaylamamış, yani ilk kez
         // giren Google kullanıcıları için true dönüyor — kayıt sinyali olarak
         // güvenilir.

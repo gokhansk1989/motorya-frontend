@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
+import { ListingCard } from '@/components/listings/ListingCard';
 import Image from 'next/image';
 import { notFound } from 'next/navigation';
 import { CITY_MAP, CITIES } from '@/lib/cities';
@@ -180,26 +181,7 @@ export default async function CityListingPage({ params }: { params: Promise<{ sl
           </div>
         ) : (
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: 16 }}>
-            {listings.map(l => (
-              <Link key={l.id} href={`/ilan/${l.slug ?? l.id}`} style={{ textDecoration: 'none' }}>
-                <article className="m-card">
-                  <div className="m-card-media">
-                    {l.images?.[0] ? (
-                      <Image src={l.images[0].url} alt={l.title} fill
-                        sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 200px"
-                        style={{ objectFit: 'cover' }} loading="lazy" />
-                    ) : (
-                      <div style={{ position: 'absolute', inset: 0, background: 'var(--bg-2)', display: 'grid', placeItems: 'center', color: 'var(--ink-3)', fontSize: 12 }}>Fotoğraf yok</div>
-                    )}
-                  </div>
-                  <div className="m-card-body">
-                    <p style={{ fontSize: 11, color: 'var(--ink-3)', marginBottom: 4 }}>{conditionLabel(l.condition)}</p>
-                    <h3 style={{ fontSize: 13, fontWeight: 600, color: 'var(--ink)', marginBottom: 6, overflow: 'hidden', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical' }}>{l.title}</h3>
-                    <p className="m-price" style={{ fontSize: 16 }}>{Number(l.price).toLocaleString('tr-TR')}<span className="cur">₺</span></p>
-                  </div>
-                </article>
-              </Link>
-            ))}
+            {listings.map(l => (<ListingCard key={l.id} listing={l as any} />))}
           </div>
         )}
 
