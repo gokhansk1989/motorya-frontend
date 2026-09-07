@@ -1,20 +1,23 @@
 'use client';
-import { useState } from 'react';
+import { useState, useCallback } from 'react';
 import { api } from '@/lib/api';
 import { Mail, ArrowLeft } from 'lucide-react';
 import Link from 'next/link';
 import toast from 'react-hot-toast';
+import { Turnstile } from '@/components/Turnstile';
 
 export default function SifremiUnuttumPage() {
   const [email, setEmail] = useState('');
   const [sent, setSent] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [turnstileToken, setTurnstileToken] = useState('');
+  const onTurnstileVerify = useCallback((t: string) => setTurnstileToken(t), []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
     try {
-      await api.post('/auth/forgot-password', { email });
+      await api.post('/auth/forgot-password', { email, turnstileToken: turnstileToken || undefined });
       setSent(true);
     } catch {
       toast.error('Bir hata oluştu, tekrar dene.');
@@ -42,6 +45,7 @@ export default function SifremiUnuttumPage() {
                   style={{ width: '100%', height: 44, borderRadius: 10, border: '1px solid var(--line)', background: 'var(--bg-1)', color: 'var(--ink)', padding: '0 14px', fontSize: 14, outline: 'none', boxSizing: 'border-box' }}
                 />
               </div>
+              <Turnstile onVerify={onTurnstileVerify} />
               <button type="submit" disabled={loading} className="m-btn m-btn-primary" style={{ height: 46, fontSize: 15 }}>
                 {loading ? 'Gönderiliyor…' : 'Link Gönder'}
               </button>

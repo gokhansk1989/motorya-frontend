@@ -7,7 +7,8 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import toast from 'react-hot-toast';
 import { Zap, Eye, EyeOff, User, Mail, Lock, CreditCard, Phone } from 'lucide-react';
-import { useState } from 'react';
+import { useState, useCallback } from 'react';
+import { Turnstile } from '@/components/Turnstile';
 import { IL_ILCE, ALL_CITIES } from '@/lib/il-ilce';
 import { analytics } from '@/lib/analytics';
 
@@ -71,6 +72,8 @@ export default function RegisterPage() {
   const router = useRouter();
   const [showPwd, setShowPwd] = useState(false);
   const [showPwd2, setShowPwd2] = useState(false);
+  const [turnstileToken, setTurnstileToken] = useState('');
+  const onTurnstileVerify = useCallback((t: string) => setTurnstileToken(t), []);
 
   const { register, handleSubmit, formState: { errors, isSubmitting }, watch, setValue } = useForm<FormData>({
     resolver: zodResolver(schema),
@@ -83,6 +86,7 @@ export default function RegisterPage() {
   const onSubmit = async (data: FormData) => {
     try {
       await api.post('/auth/register', {
+        turnstileToken: turnstileToken || undefined,
         displayName: `${data.firstName.trim()} ${data.lastName.trim()}`,
         email: data.email,
         tcKimlik: data.tcKimlik || undefined,
@@ -311,6 +315,8 @@ export default function RegisterPage() {
                 </span>
               </label>
             </div>
+
+            <Turnstile onVerify={onTurnstileVerify} />
 
             <button
               type="submit"
