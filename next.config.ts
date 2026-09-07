@@ -1,4 +1,5 @@
 import type { NextConfig } from "next";
+import { withSentryConfig } from '@sentry/nextjs';
 
 const securityHeaders = [
   { key: 'Strict-Transport-Security', value: 'max-age=63072000; includeSubDomains; preload' },
@@ -49,4 +50,13 @@ const nextConfig: NextConfig = {
   },
 };
 
-export default nextConfig;
+// SENTRY_AUTH_TOKEN + org/project varsa source maps upload olur; yoksa sadece runtime capture.
+export default process.env.NEXT_PUBLIC_SENTRY_DSN
+  ? withSentryConfig(nextConfig, {
+      org: process.env.SENTRY_ORG,
+      project: process.env.SENTRY_PROJECT,
+      silent: true,
+      widenClientFileUpload: true,
+      disableLogger: true,
+    })
+  : nextConfig;
