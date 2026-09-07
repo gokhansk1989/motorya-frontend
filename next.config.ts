@@ -31,6 +31,13 @@ const nextConfig: NextConfig = {
         destination: '/kategori/:slug',
         permanent: true,
       },
+      // Yeniden adlandırılan kategoriler (GSC 5xx/404 raporu, Eyl 2026)
+      { source: '/kategori/bot', destination: '/kategori/bot-cizme', permanent: true },
+      { source: '/kategori/bot/:sehir', destination: '/kategori/bot-cizme/:sehir', permanent: true },
+      { source: '/kategori/koruyucu', destination: '/kategori/koruma', permanent: true },
+      { source: '/kategori/koruyucu/:sehir', destination: '/kategori/koruma/:sehir', permanent: true },
+      { source: '/kategori/egzoz', destination: '/kategori/parca-egzoz', permanent: true },
+      { source: '/kategori/egzoz/:sehir', destination: '/kategori/parca-egzoz/:sehir', permanent: true },
     ];
   },
   images: {
