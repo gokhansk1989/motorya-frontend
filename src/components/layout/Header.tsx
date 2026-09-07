@@ -236,7 +236,10 @@ export function Header() {
                 </div>
               </>
             ) : (
-              <Link href="/giris" className="m-btn m-btn-ghost" style={{ height: 40, padding: '0 16px', fontSize: 14, textDecoration: 'none' }}>Giriş Yap</Link>
+              <>
+                <Link href="/giris" style={{ height: 40, padding: '0 12px', fontSize: 14, textDecoration: 'none', color: 'var(--ink-2)', display: 'flex', alignItems: 'center' }}>Giriş yap</Link>
+                <Link href="/kayit" className="m-btn m-btn-primary" style={{ height: 40, padding: '0 18px', fontSize: 14, textDecoration: 'none' }}>Kayıt ol</Link>
+              </>
             )}
             <Link href="/ilan-ver" className="m-btn m-btn-primary" style={{ textDecoration: 'none', height: 42, padding: '0 18px', marginLeft: 4 }}>
               <Plus size={17} strokeWidth={2.5} />İlan Ver
@@ -323,9 +326,14 @@ export function Header() {
                 <LogOut size={18} />Çıkış Yap
               </button>
             ) : (
-              <Link href="/giris" className="m-btn m-btn-ghost" style={{ textDecoration: 'none', height: 48, fontSize: 15, display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
-                Giriş Yap
-              </Link>
+              <>
+                <Link href="/kayit" className="m-btn m-btn-primary" style={{ textDecoration: 'none', height: 52, fontSize: 16, borderRadius: 12, display: 'flex', justifyContent: 'center', alignItems: 'center' }} onClick={() => setMenuOpen(false)}>
+                  Kayıt ol
+                </Link>
+                <Link href="/giris" className="m-btn m-btn-ghost" style={{ textDecoration: 'none', height: 48, fontSize: 15, display: 'flex', justifyContent: 'center', alignItems: 'center' }} onClick={() => setMenuOpen(false)}>
+                  Giriş yap
+                </Link>
+              </>
             )}
           </div>
         </div>
