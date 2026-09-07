@@ -8,7 +8,8 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import toast from 'react-hot-toast';
 import { Zap, Eye, EyeOff, Mail, Lock } from 'lucide-react';
-import { useState } from 'react';
+import { useState, useCallback } from 'react';
+import { Turnstile } from '@/components/Turnstile';
 
 const schema = z.object({
   email: z.string().email('Geçerli bir e-posta adresi giriniz'),
@@ -21,6 +22,9 @@ export default function LoginPage() {
   const { setAuth } = useAuthStore();
   const router = useRouter();
   const [showPwd, setShowPwd] = useState(false);
+  const [captchaRequired, setCaptchaRequired] = useState(false);
+  const [turnstileToken, setTurnstileToken] = useState('');
+  const onTurnstileVerify = useCallback((t: string) => setTurnstileToken(t), []);
 
   const { register, handleSubmit, formState: { errors, isSubmitting } } = useForm<FormData>({
     resolver: zodResolver(schema),
@@ -28,12 +32,15 @@ export default function LoginPage() {
 
   const onSubmit = async (data: FormData) => {
     try {
-      const res = await api.post('/auth/login', data);
+      const res = await api.post('/auth/login', { ...data, turnstileToken: turnstileToken || undefined });
       setAuth(res.data.user, res.data.accessToken, res.data.refreshToken, res.data.deviceId);
       toast.success('Hoş geldin!');
       router.push('/');
     } catch (e: any) {
-      toast.error(e.response?.data?.message || 'Giriş yapılamadı');
+      const body = e.response?.data;
+      if (body?.captchaRequired) setCaptchaRequired(true);
+      toast.error(body?.message || 'Giriş yapılamadı');
+      setTurnstileToken('');
     }
   };
 
@@ -112,9 +119,11 @@ export default function LoginPage() {
               </div>
             </div>
 
+            {captchaRequired && <Turnstile onVerify={onTurnstileVerify} />}
+
             <button
               type="submit"
-              disabled={isSubmitting}
+              disabled={isSubmitting || (captchaRequired && !turnstileToken)}
               className="m-btn m-btn-primary"
               style={{ width: '100%', height: 50, fontSize: 15, fontWeight: 700, marginTop: 4, borderRadius: 10, display: 'flex', justifyContent: 'center', alignItems: 'center', gap: 8 }}
             >
