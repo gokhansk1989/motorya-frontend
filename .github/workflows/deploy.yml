@@ -21,8 +21,15 @@ jobs:
           command_timeout: 30m
           script: |
             cd /home/${{ secrets.EC2_USER }}/motorya-frontend
+            OLD_LOCK_HASH=$(sha256sum package-lock.json 2>/dev/null | awk '{print $1}')
             git pull origin main
-            npm ci --legacy-peer-deps
+            NEW_LOCK_HASH=$(sha256sum package-lock.json 2>/dev/null | awk '{print $1}')
+            if [ "$OLD_LOCK_HASH" != "$NEW_LOCK_HASH" ] || [ ! -d node_modules ]; then
+              echo ">> lockfile changed or node_modules missing — running npm ci"
+              npm ci --legacy-peer-deps --no-audit --no-fund
+            else
+              echo ">> lockfile unchanged — skipping npm ci"
+            fi
             npm run build
             pm2 describe motorya-frontend > /dev/null 2>&1 \
               && pm2 restart motorya-frontend \
