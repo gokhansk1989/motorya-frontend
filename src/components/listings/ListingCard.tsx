@@ -3,7 +3,7 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { Heart, MapPin, Eye, Star } from 'lucide-react';
 import { formatPrice, timeAgo } from '@/lib/utils';
-import { useToggleFavorite } from '@/hooks/useListings';
+import { useToggleFavorite, useFavoriteIds } from '@/hooks/useListings';
 import { useAuthStore } from '@/store/auth';
 import type { Listing } from '@/hooks/useListings';
 
@@ -27,6 +27,8 @@ function ConditionPill({ condition }: { condition: string }) {
 export function ListingCard({ listing }: { listing: Listing }) {
   const { user } = useAuthStore();
   const toggle = useToggleFavorite();
+  const favIds = useFavoriteIds();
+  const isFav = favIds.has(listing.id) || !!listing.isFavorited;
   const thumb = listing.images?.[0]?.url;
   const views = (listing as any).viewCount ?? 0;
   const discountPct = listing.originalPrice
@@ -71,11 +73,11 @@ export function ListingCard({ listing }: { listing: Listing }) {
                 position: 'absolute', top: 8, right: 8, width: 44, height: 44,
                 display: 'grid', placeItems: 'center', borderRadius: '50%',
                 background: 'oklch(0 0 0 / 0.45)', border: '1px solid oklch(1 0 0 / 0.12)',
-                color: listing.isFavorited ? 'var(--accent)' : 'var(--ink)',
+                color: isFav ? 'var(--accent)' : 'var(--ink)',
                 backdropFilter: 'blur(6px)', zIndex: 2, transition: 'all .14s ease',
               }}
             >
-              <Heart size={17} fill={listing.isFavorited ? 'currentColor' : 'none'} strokeWidth={2} />
+              <Heart size={17} fill={isFav ? 'currentColor' : 'none'} strokeWidth={2} />
             </button>
           )}
         </div>

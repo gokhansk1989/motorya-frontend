@@ -85,7 +85,14 @@ export function useToggleFavorite() {
         qc.cancelQueries({ queryKey: ['listings'] }),
         qc.cancelQueries({ queryKey: ['listing'] }),
         qc.cancelQueries({ queryKey: ['listing-slug'] }),
+        qc.cancelQueries({ queryKey: ['favorite-ids'] }),
       ]);
+      // Favori ID setini de anında güncelle — kartlar/detay bu setle boyanıyor.
+      qc.setQueryData<Set<string>>(['favorite-ids'], (old) => {
+        const s = new Set(old ?? []);
+        if (s.has(id)) s.delete(id); else s.add(id);
+        return s;
+      });
       const queries = qc.getQueriesData<any>({ queryKey: ['listings'] });
       for (const [key, data] of queries) {
         if (!data) continue;
@@ -110,11 +117,13 @@ export function useToggleFavorite() {
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['favorites'] });
+      qc.invalidateQueries({ queryKey: ['favorite-ids'] });
     },
     onError: () => {
       qc.invalidateQueries({ queryKey: ['listings'] });
       qc.invalidateQueries({ queryKey: ['listing'] });
       qc.invalidateQueries({ queryKey: ['listing-slug'] });
+      qc.invalidateQueries({ queryKey: ['favorite-ids'] });
     },
   });
 }
@@ -132,6 +141,27 @@ export function useMyFavorites() {
     queryKey: ['favorites'],
     queryFn: () => api.get('/listings/favorites/mine').then((r) => r.data),
   });
+}
+
+/**
+ * Login olan kullanıcının favori ilan ID setini client-side'da tutar.
+ * SSR sayfaları (kategori, ilan detay, ara) auth token'sız fetch ediyor;
+ * o yüzden listing.isFavorited server'dan hep false gelir.
+ * Kartlarda ve detayda "kırmızı kalp" için bu setle override edilir.
+ * Token yoksa sorgu devre dışı — istek atılmaz.
+ */
+export function useFavoriteIds() {
+  const hasToken = typeof window !== 'undefined' && !!localStorage.getItem('access_token');
+  const q = useQuery({
+    queryKey: ['favorite-ids'],
+    queryFn: () => api.get('/listings/favorites/mine').then((r) => {
+      const items = Array.isArray(r.data) ? r.data : (r.data?.items ?? []);
+      return new Set<string>(items.map((l: any) => l.id));
+    }),
+    enabled: hasToken,
+    staleTime: 60_000,
+  });
+  return q.data ?? new Set<string>();
 }
 
 export function useSimilarListings(id: string) {

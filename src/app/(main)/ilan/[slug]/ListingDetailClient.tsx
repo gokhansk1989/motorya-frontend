@@ -2,7 +2,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { useQuery } from '@tanstack/react-query';
-import { useListingBySlug, useToggleFavorite, useSimilarListings, useListingsByIds, useMarkSold, useBuyerCandidates, useReserveListing, useUnreserveListing, usePriceGuide } from '@/hooks/useListings';
+import { useListingBySlug, useToggleFavorite, useFavoriteIds, useSimilarListings, useListingsByIds, useMarkSold, useBuyerCandidates, useReserveListing, useUnreserveListing, usePriceGuide } from '@/hooks/useListings';
 import { useCreateOffer, useListingOffers, useRespondOffer, useCounterOffer, useOfferUpdates } from '@/hooks/useOffers';
 import { useAuthStore } from '@/store/auth';
 import { api } from '@/lib/api';
@@ -106,7 +106,8 @@ export default function ListingDetailClient({ initialListing }: { initialListing
   const [reportLoading, setReportLoading] = useState(false);
   const [offerAmount, setOfferAmount] = useState('');
   const toggleFavorite = useToggleFavorite();
-  const favd = listing?.isFavorited ?? false;
+  const favIds = useFavoriteIds();
+  const favd = (listing ? favIds.has(listing.id) : false) || (listing?.isFavorited ?? false);
 
   if (isLoading) return (
     <div className="m-wrap" style={{ paddingTop: 32, paddingBottom: 40 }}>
