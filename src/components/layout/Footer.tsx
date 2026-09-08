@@ -1,6 +1,5 @@
 import Link from 'next/link';
 import { Logo } from './Header';
-import { Shield } from 'lucide-react';
 
 export function Footer() {
   const cols: [string, { label: string; href: string }[]][] = [
@@ -40,11 +39,6 @@ export function Footer() {
           <p style={{ maxWidth: 280, marginTop: 16, fontSize: 13.5, lineHeight: 1.6, color: 'var(--ink-3)' }}>
             Motosiklet tayfası için ikinci el ekipman ve parça pazarı. Güvenli öde, kargoyla al ya da yüz yüze buluş.
           </p>
-          <div style={{ display: 'flex', gap: 8, marginTop: 18 }}>
-            <span className="m-badge verify" style={{ display: 'inline-flex', gap: 5 }}>
-              <Shield size={12} />SSL GÜVENLİ
-            </span>
-          </div>
         </div>
         {cols.map(([h, items]) => (
           <div key={h}>
