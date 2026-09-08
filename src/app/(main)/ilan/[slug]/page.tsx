@@ -83,7 +83,11 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
       description,
       url: canonical,
       type: 'website',
-      images: listing.images?.length ? [{ url: listing.images[0].url }] : [],
+      siteName: 'Motorya',
+      locale: 'tr_TR',
+      images: listing.images?.length
+        ? [{ url: listing.images[0].url, width: 1200, height: 630, alt: listing.title }]
+        : [],
     },
     twitter: {
       card: 'summary_large_image',
