@@ -26,11 +26,13 @@ export const metadata: Metadata = {
     siteName: 'Motorya',
     title: 'Motorya — Türkiye\'nin Motosiklet Ekipman Pazarı',
     description: 'İkinci el motosiklet kıyafet ve aksesuar al-sat. Doğrulanmış satıcılar, ücretsiz ilan. Türkiye\'nin motosiklet ekipman pazarı.',
+    images: [{ url: '/og-image.jpeg', width: 1200, height: 630, alt: 'Motorya — İkinci El Motosiklet Ekipman İlanları' }],
   },
   twitter: {
     card: 'summary_large_image',
     title: 'Motorya — Motosiklet Ekipman Pazarı',
     description: 'İkinci el motosiklet kıyafet ve aksesuar al-sat. Türkiye\'nin motosiklet pazarı.',
+    images: ['/og-image.jpeg'],
   },
   robots: {
     index: true,
