@@ -8,30 +8,118 @@ concurrency:
   group: deploy-${{ github.ref }}
   cancel-in-progress: false
 
+# Build CI runner'da (7GB RAM) yapılır, sunucuya sadece hazır .next gönderilir.
+# Sunucu 908MB RAM'e sahip; orada `next build` çalıştırmak OOM'a ve sunucunun
+# tamamen kilitlenmesine yol açıyordu (Eyl 2026'da iki kez yaşandı).
 jobs:
   deploy:
     runs-on: ubuntu-latest
     steps:
-      - name: Deploy to EC2
-        uses: appleboy/ssh-action@v1.0.3
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
         with:
-          host: ${{ secrets.EC2_HOST }}
-          username: ${{ secrets.EC2_USER }}
-          key: ${{ secrets.EC2_SSH_KEY }}
-          command_timeout: 30m
-          script: |
-            cd /home/${{ secrets.EC2_USER }}/motorya-frontend
-            OLD_LOCK_HASH=$(sha256sum package-lock.json 2>/dev/null | awk '{print $1}')
-            git pull origin main
-            NEW_LOCK_HASH=$(sha256sum package-lock.json 2>/dev/null | awk '{print $1}')
-            if [ "$OLD_LOCK_HASH" != "$NEW_LOCK_HASH" ] || [ ! -d node_modules ]; then
-              echo ">> lockfile changed or node_modules missing — running npm ci"
-              npm ci --legacy-peer-deps --no-audit --no-fund
-            else
-              echo ">> lockfile unchanged — skipping npm ci"
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci --legacy-peer-deps --no-audit --no-fund
+
+      # next.config.ts'de ignoreBuildErrors açık (sunucu RAM'i için).
+      # Tip güvenliğini kaybetmemek adına burada ayrı adımda kontrol ediyoruz.
+      - name: Type check
+        run: npx tsc --noEmit
+
+      - name: Setup SSH
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.EC2_SSH_KEY }}" > ~/.ssh/deploy_key
+          chmod 600 ~/.ssh/deploy_key
+          ssh-keyscan -H "${{ secrets.EC2_HOST }}" >> ~/.ssh/known_hosts 2>/dev/null
+
+      # NEXT_PUBLIC_* değişkenleri build sırasında bundle'a gömülüyor.
+      # Tek kaynak sunucudaki env dosyaları olsun diye buraya çekiyoruz —
+      # böylece aynı değerleri bir de GitHub Secrets'ta tutmak gerekmiyor.
+      - name: Fetch env files from server
+        run: |
+          SSH_OPTS="-i ~/.ssh/deploy_key -o StrictHostKeyChecking=accept-new"
+          REMOTE="${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }}:/home/${{ secrets.EC2_USER }}/motorya-frontend"
+          scp $SSH_OPTS "$REMOTE/.env.production" ./.env.production
+          scp $SSH_OPTS "$REMOTE/.env.local" ./.env.local
+          echo "Yüklenen anahtarlar:"
+          cut -d= -f1 .env.production .env.local | grep -v '^$'
+          # API_URL fallback'e düşerse site tamamen bozulur — erken yakala.
+          grep -q '^NEXT_PUBLIC_API_URL=' .env.local
+
+      - name: Build
+        run: npm run build
+
+      - name: Upload build to server
+        run: |
+          SSH_OPTS="-i ~/.ssh/deploy_key -o StrictHostKeyChecking=accept-new"
+          DEST="/home/${{ secrets.EC2_USER }}/motorya-frontend"
+          # Önce yan klasöre gönder; canlı .next'e dokunma.
+          rsync -az --delete -e "ssh $SSH_OPTS" \
+            .next/ "${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }}:$DEST/.next-new/"
+          rsync -az --delete -e "ssh $SSH_OPTS" \
+            public/ "${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }}:$DEST/public/"
+
+      - name: Activate and restart
+        run: |
+          ssh -i ~/.ssh/deploy_key -o StrictHostKeyChecking=accept-new \
+            "${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }}" bash -s <<'REMOTE'
+          set -e
+          cd "$HOME/motorya-frontend"
+
+          # Kaynak kodu güncelle. Sunucuda yapılan elle değişiklikler
+          # deploy'u kilitlemesin diye önce temizliyoruz (build artık burada
+          # üretilmediği için çalışma alanının kirli olmasına gerek yok).
+          git fetch origin main
+          git checkout -- . 2>/dev/null || true
+          git merge --ff-only origin/main
+
+          # node_modules runtime'da (`next start`) gerekli; sadece lockfile
+          # değiştiyse kur. npm ci OOM yapmıyor, sorun olan `next build`'di.
+          if [ ! -d node_modules ] || ! cmp -s package-lock.json .deployed-lock; then
+            echo ">> npm ci"
+            npm ci --legacy-peer-deps --no-audit --no-fund
+            cp package-lock.json .deployed-lock
+          else
+            echo ">> lockfile aynı, npm ci atlandı"
+          fi
+
+          # Atomik geçiş: bozuk bir build canlıya hiç düşmez, geri alma tek komut.
+          rm -rf .next-prev
+          [ -d .next ] && mv .next .next-prev
+          mv .next-new .next
+
+          pm2 describe motorya-frontend >/dev/null 2>&1 \
+            && pm2 restart motorya-frontend \
+            || pm2 start node_modules/.bin/next --name motorya-frontend -- start -p 3001
+          pm2 save
+          REMOTE
+
+      - name: Health check (fail = otomatik rollback)
+        run: |
+          ssh -i ~/.ssh/deploy_key -o StrictHostKeyChecking=accept-new \
+            "${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }}" bash -s <<'REMOTE'
+          cd "$HOME/motorya-frontend"
+          for i in $(seq 1 20); do
+            sleep 3
+            CODE=$(curl -s -o /dev/null --max-time 5 -w "%{http_code}" http://localhost:3001/ || echo 000)
+            if [ "$CODE" = "200" ]; then
+              echo "✅ Sağlıklı (deneme $i)"
+              rm -rf .next-prev
+              exit 0
             fi
-            npm run build
-            pm2 describe motorya-frontend > /dev/null 2>&1 \
-              && pm2 restart motorya-frontend \
-              || pm2 start node_modules/.bin/next --name motorya-frontend -- start -p 3001
-            pm2 save
+          done
+
+          echo "❌ 60sn içinde 200 alınamadı (son kod: $CODE) — geri alınıyor"
+          if [ -d .next-prev ]; then
+            rm -rf .next
+            mv .next-prev .next
+            pm2 restart motorya-frontend
+            echo "↩️  Önceki sürüme dönüldü"
+          fi
+          exit 1
+          REMOTE

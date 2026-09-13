@@ -10,6 +10,10 @@ const securityHeaders = [
 ];
 
 const nextConfig: NextConfig = {
+  // Tip kontrolü CI'da ayrı adımda koşuyor (bkz. .github/workflows/deploy.yml).
+  // Build sırasında tekrar çalıştırmak 908MB'lık sunucuda OOM'a yol açıyordu.
+  // (Next 16 build sırasında ESLint çalıştırmıyor, ayrıca kapatmaya gerek yok.)
+  typescript: { ignoreBuildErrors: true },
   async headers() {
     return [
       { source: '/:path*', headers: securityHeaders },
