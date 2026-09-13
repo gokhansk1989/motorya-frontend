@@ -1,5 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { api } from '@/lib/api';
+import { useAuthStore } from '@/store/auth';
 
 export interface Listing {
   id: string;
@@ -151,7 +152,9 @@ export function useMyFavorites() {
  * Token yoksa sorgu devre dışı — istek atılmaz.
  */
 export function useFavoriteIds() {
-  const hasToken = typeof window !== 'undefined' && !!localStorage.getItem('access_token');
+  // Oturum bilgisini localStorage'dan doğrudan okumak yerine store'dan al:
+  // tek kaynak korunur ve render sırasında `typeof window` dallanması olmaz.
+  const hasToken = useAuthStore((s) => !!s.token);
   const q = useQuery({
     queryKey: ['favorite-ids'],
     queryFn: () => api.get('/listings/favorites/mine').then((r) => {

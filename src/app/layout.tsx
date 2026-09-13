@@ -67,18 +67,24 @@ const ORGANIZATION_SCHEMA = {
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="tr" className="h-full">
-      <head>
+      <body className="min-h-full antialiased">
+        {/* JSON-LD <head> yerine burada: AdSense yüklenince kendi betiklerini
+            head'in başına enjekte ediyor, React'in beklediği çocuk sırası
+            kayıp hydration mismatch (React #418) oluşuyordu. Schema.org ve
+            Google structured data body içinde de geçerli sayıyor. */}
         <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(WEBSITE_SCHEMA) }} />
         <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(ORGANIZATION_SCHEMA) }} />
-        {/* Google AdSense — head içinde olmalı, Google botu bu şekilde doğrular */}
-        <script
-          async
+        <Providers>{children}</Providers>
+        {/* AdSense'i next/script ile hydration SONRASINA alıyoruz. Doğrudan
+            <head> içinde durduğunda, betik kendi alt betiklerini head'e
+            enjekte edip React'in beklediği çocuk sırasını kaydırıyor ve
+            hydration mismatch (React #418) oluşuyordu. */}
+        <Script
+          id="adsbygoogle"
+          strategy="afterInteractive"
           src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-4400330012095219"
           crossOrigin="anonymous"
         />
-      </head>
-      <body className="min-h-full antialiased">
-        <Providers>{children}</Providers>
         {/* Consent Mode varsayılanları GA'dan ÖNCE yüklenmeli: aksi halde
             onay sorulmadan çerez yazılır (KVKK). 'denied' modda GA çerezsiz
             çalışır, kullanıcı kabul edince CookieConsent tam moda geçirir. */}
