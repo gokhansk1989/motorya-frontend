@@ -35,7 +35,10 @@ jobs:
           mkdir -p ~/.ssh
           echo "${{ secrets.EC2_SSH_KEY }}" > ~/.ssh/deploy_key
           chmod 600 ~/.ssh/deploy_key
-          ssh-keyscan -H "${{ secrets.EC2_HOST }}" >> ~/.ssh/known_hosts 2>/dev/null
+          # known_hosts'u önden doldurmak yalnızca bir kolaylık; aşağıdaki ssh/scp
+          # çağrıları zaten StrictHostKeyChecking=accept-new kullanıyor. keyscan
+          # zaman aşımına uğradığında (bash -e yüzünden) tüm deploy'u düşürmesin.
+          ssh-keyscan -T 10 -H "${{ secrets.EC2_HOST }}" >> ~/.ssh/known_hosts 2>/dev/null || true
 
       # NEXT_PUBLIC_* değişkenleri build sırasında bundle'a gömülüyor.
       # Tek kaynak sunucudaki env dosyaları olsun diye buraya çekiyoruz —
