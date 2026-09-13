@@ -67,24 +67,24 @@ const ORGANIZATION_SCHEMA = {
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="tr" className="h-full">
-      <body className="min-h-full antialiased">
-        {/* JSON-LD <head> yerine burada: AdSense yüklenince kendi betiklerini
-            head'in başına enjekte ediyor, React'in beklediği çocuk sırası
-            kayıp hydration mismatch (React #418) oluşuyordu. Schema.org ve
-            Google structured data body içinde de geçerli sayıyor. */}
-        <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(WEBSITE_SCHEMA) }} />
-        <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(ORGANIZATION_SCHEMA) }} />
-        <Providers>{children}</Providers>
-        {/* AdSense'i next/script ile hydration SONRASINA alıyoruz. Doğrudan
-            <head> içinde durduğunda, betik kendi alt betiklerini head'e
-            enjekte edip React'in beklediği çocuk sırasını kaydırıyor ve
-            hydration mismatch (React #418) oluşuyordu. */}
-        <Script
-          id="adsbygoogle"
-          strategy="afterInteractive"
+      <head>
+        {/* Google AdSense — head içinde olmalı, Google botu bu şekilde doğrular.
+            next/script ile body'den yüklemek denendi: "data-nscript" uyarısı
+            üretti ve hydration uyuşmazlığını çözmedi, o yüzden geri alındı. */}
+        <script
+          async
           src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-4400330012095219"
           crossOrigin="anonymous"
         />
+      </head>
+      <body className="min-h-full antialiased">
+        {/* JSON-LD head yerine body'de: Next.js'in önerdiği yerleşim bu ve
+            head'de React'in izlediği script bırakmamak, AdSense'in head'e
+            enjeksiyonuyla sıra kaymasını engelliyor. Google structured
+            data'yı body içinde de geçerli sayıyor. */}
+        <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(WEBSITE_SCHEMA) }} />
+        <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(ORGANIZATION_SCHEMA) }} />
+        <Providers>{children}</Providers>
         {/* Consent Mode varsayılanları GA'dan ÖNCE yüklenmeli: aksi halde
             onay sorulmadan çerez yazılır (KVKK). 'denied' modda GA çerezsiz
             çalışır, kullanıcı kabul edince CookieConsent tam moda geçirir. */}
