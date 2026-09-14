@@ -1,6 +1,8 @@
 import axios, { AxiosError, AxiosRequestConfig } from 'axios';
 
-export const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://98.93.139.51/api-backend';
+import { API_URL } from './apiBase';
+
+export { API_URL };
 
 export const api = axios.create({
   baseURL: API_URL,
