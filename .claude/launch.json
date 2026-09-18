@@ -2,11 +2,16 @@
   "version": "0.0.1",
   "configurations": [
     {
-      "name": "frontend-dev",
+      "name": "motorya-frontend-dev",
       "runtimeExecutable": "npm",
-      "runtimeArgs": ["run", "dev"],
-      "port": 3000,
-      "autoPort": true
+      "runtimeArgs": [
+        "run",
+        "dev",
+        "--",
+        "-p",
+        "3010"
+      ],
+      "port": 3010
     }
   ]
 }

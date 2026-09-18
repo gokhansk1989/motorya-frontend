@@ -419,6 +419,15 @@ function FeaturedSection() {
 function HomeContent() {
   const router = useRouter();
   const queryClient = useQueryClient();
+
+  // Hidrasyon uyusmazligini onlemek icin: ilk istemci render'i sunucununkiyle
+  // birebir ayni olmali. Kategori grid'i React Query'nin "yukleniyor" durumuna
+  // gore dallaniyordu; bu durum iki tarafta farkli oldugu icin (sunucuda istek
+  // hic baslamiyor) React "Hydration failed" veriyordu - uretimde gunde
+  // yuzlerce kez. Bu bayrak sayesinde ilk render her zaman iskelet oluyor,
+  // gercek grid ancak mount sonrasi devreye giriyor.
+  const [hydrated, setHydrated] = useState(false);
+  useEffect(() => { setHydrated(true); }, []);
   const handleRefresh = useCallback(() => queryClient.refetchQueries({ type: 'active' }), [queryClient]);
 
   const { data: allCategories = [], isLoading: categoriesLoading } = useQuery<Category[]>({
@@ -454,7 +463,7 @@ function HomeContent() {
         <div style={{ height: 28 }} />
 
         {/* Kategori grid */}
-        {categoriesLoading ? (
+        {!hydrated || categoriesLoading ? (
           <CategoryGridSkeleton />
         ) : (
           <CategoryGrid categories={l1Categories} allCategories={allCategories} activeSlug="" onSelect={handleSelect} />
