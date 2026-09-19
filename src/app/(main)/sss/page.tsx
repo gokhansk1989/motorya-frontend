@@ -2,6 +2,7 @@
 import { useState } from 'react';
 import { ChevronDown, Shield, Tag, MessageCircle, Package, HelpCircle, Star, AlertTriangle } from 'lucide-react';
 import Link from 'next/link';
+import { jsonLdHtml } from '@/lib/jsonLd';
 
 type FAQ = { q: string; a: string | React.ReactNode };
 type Section = { icon: any; title: string; color: string; items: FAQ[] };
@@ -216,7 +217,7 @@ export default function SSSPage() {
 
   return (
     <div className="m-wrap" style={{ maxWidth: 720, paddingTop: 48, paddingBottom: 80 }}>
-      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(faqSchema) }} />
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: jsonLdHtml(faqSchema) }} />
       {/* Header */}
       <div style={{ marginBottom: 48, textAlign: 'center' }}>
         <div style={{ display: 'inline-flex', alignItems: 'center', gap: 8, marginBottom: 16, padding: '6px 14px', borderRadius: 20, background: 'color-mix(in oklch, var(--accent) 10%, transparent)', border: '1px solid color-mix(in oklch, var(--accent) 25%, transparent)' }}>

@@ -4,6 +4,7 @@ import Image from 'next/image';
 import { ChevronRight, PackageSearch } from 'lucide-react';
 import { CategoryIcon as CatIcon } from '@/components/icons/CategoryIcons';
 import { EmptyState } from '@/components/ui/EmptyState';
+import { jsonLdHtml } from '@/lib/jsonLd';
 
 const API = process.env.NEXT_PUBLIC_API_URL || 'https://motorya.com.tr/api-backend';
 
@@ -107,7 +108,7 @@ export default async function CategoryBrandPage({ params }: Props) {
 
   return (
     <>
-      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: jsonLdHtml(jsonLd) }} />
       <div className="m-wrap" style={{ paddingTop: 28, paddingBottom: 64 }}>
         {/* Breadcrumb */}
         <div style={{ display: 'flex', alignItems: 'center', gap: 6, color: 'var(--ink-3)', fontSize: 12.5, marginBottom: 20, flexWrap: 'wrap' }}>

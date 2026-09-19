@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from 'next';
 import Script from 'next/script';
 import './globals.css';
 import { Providers } from './providers';
+import { jsonLdHtml } from '@/lib/jsonLd';
 
 export const viewport: Viewport = {
   width: 'device-width',
@@ -82,8 +83,8 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
             head'de React'in izlediği script bırakmamak, AdSense'in head'e
             enjeksiyonuyla sıra kaymasını engelliyor. Google structured
             data'yı body içinde de geçerli sayıyor. */}
-        <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(WEBSITE_SCHEMA) }} />
-        <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(ORGANIZATION_SCHEMA) }} />
+        <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: jsonLdHtml(WEBSITE_SCHEMA) }} />
+        <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: jsonLdHtml(ORGANIZATION_SCHEMA) }} />
         <Providers>{children}</Providers>
         {/* Consent Mode varsayılanları GA'dan ÖNCE yüklenmeli: aksi halde
             onay sorulmadan çerez yazılır (KVKK). 'denied' modda GA çerezsiz

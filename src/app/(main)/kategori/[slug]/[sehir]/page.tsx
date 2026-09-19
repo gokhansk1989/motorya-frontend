@@ -5,6 +5,7 @@ import Image from 'next/image';
 import { notFound } from 'next/navigation';
 import { CITY_MAP, CITIES } from '@/lib/cities';
 import { CategoryIcon as CatIcon } from '@/components/icons/CategoryIcons';
+import { jsonLdHtml } from '@/lib/jsonLd';
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000';
 const BASE_URL = 'https://motorya.com.tr';
@@ -130,7 +131,7 @@ export default async function CityListingPage({ params }: { params: Promise<{ sl
 
   return (
     <>
-      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: jsonLdHtml(jsonLd) }} />
       <div className="m-wrap" style={{ paddingTop: 32, paddingBottom: 64 }}>
 
         {/* Breadcrumb */}

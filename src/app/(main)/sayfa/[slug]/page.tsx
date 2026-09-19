@@ -110,10 +110,37 @@ function renderMarkdown(content: string) {
   return elements;
 }
 
-function renderInline(text: string): string {
+// Icerik veritabanindan geliyor ve asagida ham HTML olarak basiliyor.
+// Once HTML kacisi yapilmazsa, icerige yazilmis <script> ya da <img onerror=...>
+// tarayicida calisir (kalici XSS). Kacisi markdown donusumunden ONCE yapiyoruz:
+// boylece bizim urettigimiz etiketler korunur, iceriden gelen HTML etkisiz kalir.
+function htmlKacir(text: string): string {
   return text
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;');
+}
+
+// Baglanti adresi dogrulanmadan basilirsa "[tikla](javascript:...)" yazan biri
+// tiklanabilir bir saldiri baglantisi uretebilir. Yalnizca http, https ve site
+// ici yollara izin veriyoruz; digerleri duz metne dusuyor.
+function guvenliAdres(href: string): string | null {
+  const h = href.trim();
+  if (/^https?:\/\//i.test(h)) return h;
+  if (h.startsWith('/')) return h;
+  return null;
+}
+
+function renderInline(text: string): string {
+  return htmlKacir(text)
     .replace(/\*\*(.+?)\*\*/g, '<strong style="color:var(--ink);font-weight:700">$1</strong>')
-    .replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2" style="color:var(--accent);text-decoration:underline">$1</a>')
+    .replace(/\[([^\]]+)\]\(([^)]+)\)/g, (tam, metin, adres) => {
+      const guvenli = guvenliAdres(adres);
+      return guvenli
+        ? `<a href="${guvenli}" style="color:var(--accent);text-decoration:underline">${metin}</a>`
+        : metin;
+    })
     .replace(/`(.+?)`/g, '<code style="background:var(--bg-2);padding:2px 6px;border-radius:4px;font-size:13px">$1</code>');
 }
 

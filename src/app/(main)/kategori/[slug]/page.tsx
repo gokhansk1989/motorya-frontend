@@ -7,6 +7,7 @@ import { notFound } from 'next/navigation';
 import { AdSlot } from '@/components/ui/AdSlot';
 import { CategoryIcon as CatIcon } from '@/components/icons/CategoryIcons';
 import { CITIES } from '@/lib/cities';
+import { jsonLdHtml } from '@/lib/jsonLd';
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000';
 const BASE_URL = 'https://motorya.com.tr';
@@ -147,7 +148,7 @@ export default async function CategoryPage({ params }: { params: Promise<{ slug:
 
   return (
     <>
-      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: jsonLdHtml(jsonLd) }} />
       <div className="m-wrap" style={{ paddingBottom: 48 }}>
 
         {/* Breadcrumb */}

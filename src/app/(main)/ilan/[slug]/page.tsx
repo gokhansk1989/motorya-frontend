@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import { redirect, notFound } from 'next/navigation';
 import ListingDetailClient from './ListingDetailClient';
+import { jsonLdHtml } from '@/lib/jsonLd';
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000';
 const BASE_URL = 'https://motorya.com.tr';
@@ -160,7 +161,7 @@ export default async function ListingDetailPage({ params }: { params: Promise<{ 
   return (
     <>
       {jsonLd.map((schema, i) => (
-        <script key={i} type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(schema) }} />
+        <script key={i} type="application/ld+json" dangerouslySetInnerHTML={{ __html: jsonLdHtml(schema) }} />
       ))}
       {/* Sunucuda çekilen ilan client'a devrediliyor: ilk HTML dolu render
           edilir (SEO + LCP), hydration sonrası React Query tazeler. */}

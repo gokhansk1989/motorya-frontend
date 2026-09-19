@@ -2,6 +2,7 @@ import { notFound } from 'next/navigation';
 import Link from 'next/link';
 import { Clock, ChevronLeft, Tag, ArrowRight } from 'lucide-react';
 import { AdSlot } from '@/components/ui/AdSlot';
+import { jsonLdHtml } from '@/lib/jsonLd';
 
 const API = process.env.NEXT_PUBLIC_API_URL || 'https://motorya.com.tr/api-backend';
 
@@ -93,8 +94,20 @@ function renderMarkdown(content: string) {
   return elements;
 }
 
-function renderInline(text: string): string {
+// Icerik veritabanindan geliyor ve asagida ham HTML olarak basiliyor.
+// Once HTML kacisi yapilmazsa, icerige yazilmis <script> ya da <img onerror=...>
+// tarayicida calisir (kalici XSS). Kacisi markdown donusumunden ONCE yapiyoruz:
+// boylece bizim urettigimiz etiketler korunur, iceriden gelen HTML etkisiz kalir.
+function htmlKacir(text: string): string {
   return text
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;');
+}
+
+function renderInline(text: string): string {
+  return htmlKacir(text)
     .replace(/\*\*(.+?)\*\*/g, '<strong style="color:var(--ink);font-weight:700">$1</strong>')
     .replace(/`(.+?)`/g, '<code style="background:var(--bg-2);padding:2px 6px;border-radius:4px;font-family:var(--font-mono);font-size:13px">$1</code>');
 }
@@ -117,7 +130,7 @@ export default async function BlogPostPage({ params }: Props) {
 
   return (
     <>
-      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: jsonLdHtml(jsonLd) }} />
       <div className="m-wrap" style={{ paddingTop: 28, paddingBottom: 64 }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 8, color: 'var(--ink-3)', fontSize: 13, marginBottom: 28 }}>
           <Link href="/" style={{ color: 'var(--ink-3)' }}>Ana Sayfa</Link>
