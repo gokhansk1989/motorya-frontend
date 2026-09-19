@@ -63,7 +63,7 @@ const TABS: { id: Tab; label: string; icon: React.ReactNode }[] = [
   { id: 'profil', label: 'Profil', icon: <User size={15} /> },
   { id: 'ilanlarim', label: 'İlanlarım', icon: <Package size={15} /> },
   { id: 'favoriler', label: 'Favoriler', icon: <Heart size={15} /> },
-  { id: 'alarmlar', label: 'Fiyat Alarmları', icon: <Bell size={15} /> },
+  { id: 'alarmlar', label: 'Alarmlarım', icon: <Bell size={15} /> },
   { id: 'sosyal', label: 'Sosyal', icon: <Users size={15} /> },
   { id: 'ayarlar', label: 'Ayarlar', icon: <Settings size={15} /> },
 ];
@@ -676,7 +676,7 @@ export default function ProfilePage() {
                       title="Fiyat değişince haber ver"
                       style={{ position: 'absolute', bottom: 10, right: 10, height: 28, padding: '0 10px', borderRadius: 8, border: '1px solid var(--line)', background: 'var(--bg-0)', color: 'var(--ink-3)', fontSize: 11, fontWeight: 600, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 4, backdropFilter: 'blur(4px)' }}
                     >
-                      <Bell size={11} /> Fiyat Alarmı Kur
+                      <Bell size={11} /> Alarm Kur
                     </button>
                   </div>
                 ))}
@@ -686,12 +686,12 @@ export default function ProfilePage() {
         </div>
       )}
 
-      {/* ── TAB: Fiyat Alarmları ─────────────────────── */}
+      {/* ── TAB: Alarmlarım ─────────────────────── */}
       {tab === 'alarmlar' && (
         <div style={card}>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16, flexWrap: 'wrap', gap: 10 }}>
             <p style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 15, fontWeight: 700, color: 'var(--ink)', fontFamily: 'var(--font-display)', margin: 0 }}>
-              <Bell size={16} style={{ color: 'var(--accent)' }} />Fiyat Alarmlarım
+              <Bell size={16} style={{ color: 'var(--accent)' }} />Alarmlarım
               {savedSearches && savedSearches.length > 0 && (
                 <span style={{ fontSize: 12, fontFamily: 'var(--font-mono)', background: 'color-mix(in oklch, var(--accent) 12%, transparent)', color: 'var(--accent)', padding: '2px 8px', borderRadius: 20, fontWeight: 700 }}>{savedSearches.length}</span>
               )}

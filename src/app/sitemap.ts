@@ -120,7 +120,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     { url: `${BASE_URL}/ara`,          lastModified: new Date(), changeFrequency: 'hourly',  priority: 0.95 },
     { url: `${BASE_URL}/blog`,         lastModified: new Date(), changeFrequency: 'daily',   priority: 0.85 },
     { url: `${BASE_URL}/ilan-ver`,     lastModified: new Date(), changeFrequency: 'monthly', priority: 0.7 },
-    // /giris, /kayit ve /fiyat-alarm noindex etiketi taşıyor; sitemap'te
+    // /giris, /kayit ve /alarmlarim noindex etiketi taşıyor; sitemap'te
     // bildirmek Google'a çelişkili sinyal veriyor ("indeksle" + "indeksleme")
     // ve Search Console'da hata olarak raporlanıyor. Bu yüzden listelenmiyorlar.
   ];

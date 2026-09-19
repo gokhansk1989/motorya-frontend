@@ -73,6 +73,11 @@ const nextConfig: NextConfig = {
         permanent: true,
       },
       { source: '/pages/:slug', destination: '/sayfa/:slug', permanent: true },
+      // Ozellik "fiyat alarmi" degil: kayitli aramaya UYAN YENI ILAN
+      // cikinca haber veriyor, fiyat alti kriterden yalnizca biri. Ad
+      // "Alarmlarim" olunca rota da onu izledi; eski adres yer imlerinde
+      // ve uygulama disi baglantilarda olabilir.
+      { source: '/fiyat-alarm', destination: '/alarmlarim', permanent: true },
       // Eski URL yapisi /ilanlar?kategori=X -> /kategori/X (GSC 404 raporundan)
       {
         source: '/ilanlar',

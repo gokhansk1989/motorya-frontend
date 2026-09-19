@@ -60,7 +60,7 @@ export default function FiyatAlarmPage() {
     return (
       <div className="m-wrap" style={{ paddingTop: 48, paddingBottom: 48, textAlign: 'center' }}>
         <Bell size={48} style={{ margin: '0 auto 16px', opacity: 0.3 }} />
-        <h1 className="m-display" style={{ fontSize: 24, marginBottom: 8 }}>Fiyat Alarmları</h1>
+        <h1 className="m-display" style={{ fontSize: 24, marginBottom: 8 }}>Alarmlarım</h1>
         <p style={{ color: 'var(--ink-3)', marginBottom: 24 }}>Alarmlarını görmek için giriş yapmalısın.</p>
         <Link href="/giris" className="m-btn m-btn-primary" style={{ textDecoration: 'none', display: 'inline-flex' }}>
           Giriş Yap
@@ -93,7 +93,7 @@ export default function FiyatAlarmPage() {
       {/* Header */}
       <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 28, flexWrap: 'wrap', gap: 12 }}>
         <div>
-          <h1 className="m-display" style={{ fontSize: 26, margin: '0 0 6px' }}>Fiyat Alarmları</h1>
+          <h1 className="m-display" style={{ fontSize: 26, margin: '0 0 6px' }}>Alarmlarım</h1>
           <p style={{ color: 'var(--ink-3)', fontSize: 14, margin: 0 }}>
             Kriterlere uyan ilan yayınlandığında sana bildirim gönderelim.
           </p>

@@ -111,7 +111,7 @@ export function Header() {
       { href: '/favoriler', label: 'Favorilerim', icon: <Heart size={19} /> },
       { href: '/tekliflerim', label: 'Tekliflerim', icon: <ListPlus size={19} /> },
       { href: '/mesajlarim', label: 'Mesajlarım', icon: <MessageSquare size={19} /> },
-      { href: '/fiyat-alarm', label: 'Fiyat Alarmları', icon: <BellPlus size={19} /> },
+      { href: '/alarmlarim', label: 'Alarmlarım', icon: <BellPlus size={19} /> },
       { href: '/profilim', label: 'Profilim', icon: <User size={19} /> },
     ] : []),
   ];
@@ -204,7 +204,7 @@ export function Header() {
                         { href: '/ilanlarim', label: 'İlanlarım', icon: <Tag size={15} /> },
                         { href: '/tekliflerim', label: 'Tekliflerim', icon: <ListPlus size={15} /> },
                         { href: '/favoriler', label: 'Favorilerim', icon: <Heart size={15} /> },
-                        { href: '/fiyat-alarm', label: 'Fiyat Alarmları', icon: <BellPlus size={15} /> },
+                        { href: '/alarmlarim', label: 'Alarmlarım', icon: <BellPlus size={15} /> },
                       ].map(({ href, label, icon }) => (
                         <Link key={href} href={href} style={{
                           display: 'flex', alignItems: 'center', gap: 10,

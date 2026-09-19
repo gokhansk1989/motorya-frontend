@@ -192,10 +192,18 @@ export default function ListingDetailClient({ initialListing }: { initialListing
     NEW: 'Sıfır', LIKE_NEW: 'Sıfır Gibi', GOOD: 'İyi', FAIR: 'Makul', POOR: 'Kullanılmış',
   };
 
+  // Veritabanı değerleri büyük harf (KADIN); kullanıcıya öyle gösterilmemeli.
+  const genderLabelMap: Record<string, string> = {
+    ERKEK: 'Erkek', KADIN: 'Kadın', UNISEX: 'Unisex', COCUK: 'Çocuk',
+  };
+
   const specs = [
     listing.brand && ['Marka', listing.brand.name],
     categoryLabel && ['Kategori', categoryLabel],
     listing.sizeLabel && ['Beden', listing.sizeLabel],
+    // Giyim kategorilerinde alıcı için anlamlı; veritabanında vardı ama
+    // hiçbir yüzeyde gösterilmiyordu.
+    (listing as any).gender && ['Cinsiyet', genderLabelMap[(listing as any).gender] ?? (listing as any).gender],
     listing.condition && ['Durum', conditionLabelMap[listing.condition] ?? listing.condition],
     listing.city && ['Konum', listing.city],
     ['İlan no', '#MTR-' + listing.id.slice(-6).toUpperCase()],
@@ -581,7 +589,7 @@ export default function ListingDetailClient({ initialListing }: { initialListing
             </div>
           )}
 
-          {/* Fiyat Alarmı */}
+          {/* Alarm kurma */}
           {!isMine && listing.category && (
             <div className="m-surface" style={{ marginTop: 16, padding: '16px 18px' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 6 }}>
