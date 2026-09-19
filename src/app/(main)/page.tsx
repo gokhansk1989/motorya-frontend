@@ -15,10 +15,20 @@ import { matchCategories, matchBrands, CategorySuggestionsDropdown, type BrandLi
 
 interface Category { id: string; name: string; slug: string; parentId: string | null; }
 
+// "Fiyati Dustu" seridinin gorunmesi icin gereken en az ilan sayisi.
+//
+// Neden bir taban var: bu serit hem masaustunde hem mobilde listeyi
+// dondurerek gosteriyor, yani iki ilan varsa ayni iki urunu sonsuza kadar
+// tekrar ediyor. Uretimde tam olarak bu oldu ve sonuc "bu site bos"
+// izlenimi verdi. Ince bir liste gostermektense hic gostermemek daha iyi -
+// vitrin seridinde de ayni ilkeyi uyguluyoruz. Sunucu tarafi satici basina
+// tek ilan dondurdugu icin buradaki sayi artik gercek cesitliligi olcer.
+const FIYAT_DUSUSU_ESIGI = 3;
+
 function PriceDropPanel() {
   const { data } = usePriceDrops(10);
   const items = data ?? [];
-  if (items.length === 0) return null;
+  if (items.length < FIYAT_DUSUSU_ESIGI) return null;
 
   return (
     <div
@@ -129,7 +139,7 @@ function HeroSection({ onSearch, categories, brands }: { onSearch: (q: string) =
 function PriceDropMobileStrip() {
   const { data } = usePriceDrops(10);
   const items = data ?? [];
-  if (items.length === 0) return null;
+  if (items.length < FIYAT_DUSUSU_ESIGI) return null;
 
   return (
     <div className="m-pricedrop-mobile">
