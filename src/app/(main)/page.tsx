@@ -347,8 +347,22 @@ function FeaturedSection() {
   // olarak render edip crash'i engelliyoruz.
   const [mounted, setMounted] = useState(false);
   useEffect(() => { setMounted(true); }, []);
-  const { data, isLoading } = useListings({ limit: 12, sort: 'newest' }, mounted);
-  const items = data?.items ?? [];
+
+  // Bu serit adi "One Cikan Ilanlar" olmasina ragmen uzun sure yalnizca
+  // "en yeni 12 ilan"i gosteriyordu: isFeatured'a hic bakmiyordu. Yani
+  // yonetim panelindeki "Reklam & Vitrin" ekranindan bir ilani one
+  // cikarmanin vitrin uzerinde hicbir etkisi yoktu.
+  const oneCikan = useListings({ isFeatured: true, limit: 12 }, mounted);
+
+  // Aktif one cikan ilan yoksa en yenilere dusuyoruz: ana sayfanin ustunde
+  // bos bir serit, dolu bir seritten cok daha kotu durur. Yedek sorgu ancak
+  // asil sorgu bittikten VE bos donduktan sonra calisir, yoksa her ziyarette
+  // iki istek gider.
+  const oneCikanBos = oneCikan.isSuccess && (oneCikan.data?.items?.length ?? 0) === 0;
+  const yedek = useListings({ limit: 12, sort: 'newest' }, mounted && oneCikanBos);
+
+  const items = (oneCikan.data?.items?.length ? oneCikan.data.items : yedek.data?.items) ?? [];
+  const isLoading = oneCikan.isLoading || (oneCikanBos && yedek.isLoading);
   const [touchPaused, setTouchPaused] = useState(false);
   const resumeTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 

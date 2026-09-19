@@ -6,6 +6,7 @@ import { formatPrice, timeAgo } from '@/lib/utils';
 import { useToggleFavorite, useFavoriteIds } from '@/hooks/useListings';
 import { useAuthStore } from '@/store/auth';
 import type { Listing } from '@/hooks/useListings';
+import { oneCikanGecerliMi } from '@/lib/oneCikan';
 
 function ConditionPill({ condition }: { condition: string }) {
   const map: Record<string, { label: string; tone: string }> = {
@@ -53,7 +54,7 @@ export function ListingCard({ listing }: { listing: Listing }) {
             </div>
           )}
           <div style={{ position: 'absolute', top: 10, left: 10, right: 56, display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: 6, zIndex: 2 }}>
-            {(listing as any).isFeatured && (
+            {oneCikanGecerliMi(listing) && (
               <span className="m-badge solid" style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}>
                 <Star size={10} fill="currentColor" strokeWidth={0} /> ÖNE ÇIKAN
               </span>

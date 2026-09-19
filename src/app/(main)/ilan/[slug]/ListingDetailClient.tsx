@@ -16,6 +16,7 @@ import { useCreateSavedSearch } from '@/hooks/useSavedSearches';
 import { analytics } from '@/lib/analytics';
 import toast from 'react-hot-toast';
 import Link from 'next/link';
+import { oneCikanGecerliMi } from '@/lib/oneCikan';
 
 function ListingRow({ title, listings }: { title: string; listings: any[] }) {
   if (!listings || listings.length === 0) return null;
@@ -324,7 +325,7 @@ export default function ListingDetailClient({ initialListing }: { initialListing
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                 <ConditionPill condition={listing.condition} />
-                {(listing as any).isFeatured && (
+                {oneCikanGecerliMi(listing) && (
                   <span className="m-badge solid" style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}>
                     <Star size={10} fill="currentColor" strokeWidth={0} /> ÖNE ÇIKAN
                   </span>
