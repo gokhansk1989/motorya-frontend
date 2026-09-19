@@ -24,6 +24,12 @@ function validateTcKimlik(tc: string): boolean {
 }
 
 const schema = z.object({
+  // Herkese acik gorunen ad. Gercek ad-soyad yalnizca kayitlarda tutulur ve
+  // ilan/mesaj/profil ekranlarinda gosterilmez.
+  username: z.string()
+    .min(3, 'En az 3 karakter')
+    .max(20, 'En fazla 20 karakter')
+    .regex(/^[a-z0-9._]+$/, 'Yalnızca küçük harf, rakam, nokta ve alt çizgi'),
   firstName: z.string().min(2, 'En az 2 karakter giriniz'),
   lastName: z.string().min(2, 'En az 2 karakter giriniz'),
   email: z.string().email('Geçerli bir e-posta adresi giriniz'),
@@ -87,7 +93,8 @@ export default function RegisterPage() {
     try {
       await api.post('/auth/register', {
         turnstileToken: turnstileToken || undefined,
-        displayName: `${data.firstName.trim()} ${data.lastName.trim()}`,
+        displayName: data.username.trim().toLowerCase(),
+        realName: `${data.firstName.trim()} ${data.lastName.trim()}`,
         email: data.email,
         tcKimlik: data.tcKimlik || undefined,
         phone: data.phone,
@@ -185,6 +192,13 @@ export default function RegisterPage() {
           <form onSubmit={handleSubmit(onSubmit)} style={{ display: 'flex', flexDirection: 'column', gap: 18 }}>
 
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14 }}>
+              <FieldWrapper label="Kullanıcı adı" icon={<User size={16} />} error={errors.username?.message}>
+                <input {...register('username')} placeholder="ornek_kullanici" autoCapitalize="none" autoCorrect="off" style={inputStyle(!!errors.username)} onFocus={focusGlow} onBlur={blurGlow} />
+              </FieldWrapper>
+              <p style={{ gridColumn: '1 / -1', fontSize: 11.5, color: 'var(--ink-3)', marginTop: -6 }}>
+                İlanlarında ve mesajlarında bu ad görünür. Ad soyadın yayınlanmaz.
+              </p>
+
               <FieldWrapper label="Ad" icon={<User size={16} />} error={errors.firstName?.message}>
                 <input {...register('firstName')} placeholder="Adınız" autoComplete="given-name" style={inputStyle(!!errors.firstName)} onFocus={focusGlow} onBlur={blurGlow} />
               </FieldWrapper>

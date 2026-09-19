@@ -16,6 +16,7 @@ interface AuthState {
   refreshToken: string | null;
   deviceId: string | null;
   setAuth: (user: User, token: string, refreshToken?: string, deviceId?: string) => void;
+  setUser: (user: User) => void;
   setTokens: (token: string, refreshToken?: string) => void;
   logout: () => void;
   isAuthenticated: () => boolean;
@@ -28,6 +29,9 @@ export const useAuthStore = create<AuthState>()(
       token: null,
       refreshToken: null,
       deviceId: null,
+      // Kullanici adi degisimi gibi kismi guncellemelerde oturumu bozmadan
+      // yalnizca kullanici bilgisini tazelemek icin.
+      setUser: (user) => set({ user }),
       setAuth: (user, token, refreshToken, deviceId) => {
         localStorage.setItem('access_token', token);
         if (refreshToken) localStorage.setItem('refresh_token', refreshToken);

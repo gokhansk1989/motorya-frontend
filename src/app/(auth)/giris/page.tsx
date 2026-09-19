@@ -40,7 +40,11 @@ export default function LoginPage() {
       // (callback sayfasinda) isleniyordu; parola ile giren eski kullanicilara
       // onay hic sorulmuyordu. Olcum: 20 kullanicinin 13'unde hicbir onay
       // kaydi yok - yani onlara yasal olarak ticari e-posta gonderilemez.
-      router.push(res.data.needsConsent ? '/onaylar' : '/');
+      // Sirayla: once sozlesme/KVKK onayi, sonra kullanici adi.
+      // Kullanici adi olmayanlarin gercek adi ilan ve mesajlarda gorunuyor.
+      if (res.data.needsConsent) router.push('/onaylar');
+      else if (res.data.needsUsername) router.push('/kullanici-adi');
+      else router.push('/');
     } catch (e: any) {
       const body = e.response?.data;
       if (body?.captchaRequired) setCaptchaRequired(true);
