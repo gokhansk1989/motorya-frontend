@@ -17,6 +17,9 @@ export default function robots(): MetadataRoute.Robots {
           '/kayit',
           '/api/',
           '/api-backend/',
+          // Yalnizca mobil uygulamanin WebView'i icin var; dizine girmesi
+          // kullaniciyi yaniltir.
+          '/turnstile-mobil',
         ],
       },
     ],
