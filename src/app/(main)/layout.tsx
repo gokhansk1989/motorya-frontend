@@ -10,7 +10,9 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
     <>
       <Header />
       <EmailVerificationBanner />
-      <main style={{ flex: 1, position: 'relative', zIndex: 1 }}>{children}</main>
+      {/* Yigin sirasi CSS'te (.m-main): satir ici stil, acik alt kategori
+          paneli icin gereken yukseltmeyi ezerdi. */}
+      <main className="m-main">{children}</main>
       <Footer />
       <PushPrompt />
       <MobileNav />

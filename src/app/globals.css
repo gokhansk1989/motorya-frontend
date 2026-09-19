@@ -104,8 +104,9 @@ input, textarea, select { font-family: inherit; color: var(--ink); }
  * :has() ile yalnizca panelin gercekten acik oldugu sarmalayici
  * yukseltiliyor; panel kapaninca kural kendiliginden dusuyor, yani
  * kalici bir yigin sirasi degisikligi birakmiyor. */
+.m-main { flex: 1; position: relative; z-index: 1; }
 .m-wrap:has(.m-subcat-panel),
-main:has(.m-subcat-panel) { z-index: 40; }
+.m-main:has(.m-subcat-panel) { z-index: 40; }
 
 /* ---------- desktop-only ---------- */
 .m-hide-desktop { display: none !important; }
