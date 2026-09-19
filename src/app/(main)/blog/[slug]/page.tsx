@@ -4,6 +4,7 @@ import { Clock, ChevronLeft, Tag, ArrowRight } from 'lucide-react';
 import { AdSlot } from '@/components/ui/AdSlot';
 import { jsonLdHtml } from '@/lib/jsonLd';
 import { SSR_API_URL } from '@/lib/apiBase';
+import { OkunmaSayaci } from '@/components/blog/OkunmaSayaci';
 
 const API = SSR_API_URL;
 
@@ -132,6 +133,7 @@ export default async function BlogPostPage({ params }: Props) {
   return (
     <>
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: jsonLdHtml(jsonLd) }} />
+      <OkunmaSayaci slug={post.slug} />
       <div className="m-wrap" style={{ paddingTop: 28, paddingBottom: 64 }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 8, color: 'var(--ink-3)', fontSize: 13, marginBottom: 28 }}>
           <Link href="/" style={{ color: 'var(--ink-3)' }}>Ana Sayfa</Link>
