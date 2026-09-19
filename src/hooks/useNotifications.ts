@@ -11,6 +11,23 @@ export function useNotifications() {
   });
 }
 
+/**
+ * Profil sayaclari ve okunmamis mesaj sayisi.
+ *
+ * Mesajlar artik zile dusmuyor; okunmamis mesajin gorunur tek isareti
+ * mesaj ikonunun kendi rozeti. Sayi konusmalardaki lastReadAt'ten
+ * hesaplaniyor, yani okununca gercekten sifirlaniyor.
+ */
+export function useOzet() {
+  const { user } = useAuthStore();
+  return useQuery({
+    queryKey: ['me-summary'],
+    queryFn: () => api.get('/users/me/summary').then((r: any) => r.data),
+    enabled: !!user,
+    refetchInterval: 60_000,
+  });
+}
+
 export function useMarkNotificationRead() {
   const qc = useQueryClient();
   return useMutation({

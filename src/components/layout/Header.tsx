@@ -10,7 +10,7 @@ import {
   Menu, X, Home, Tag, Newspaper, Heart, ListPlus,
   BellPlus, ChevronDown,
 } from 'lucide-react';
-import { useNotifications } from '@/hooks/useNotifications';
+import { useNotifications, useOzet } from '@/hooks/useNotifications';
 import { matchCategories, matchBrands, CategorySuggestionsDropdown, type CategoryLite, type BrandLite } from '@/components/ui/CategorySuggestions';
 
 export function Logo() {
@@ -74,6 +74,8 @@ export function Header() {
   }, []);
   const { data: notifs } = useNotifications();
   const unreadCount = notifs?.meta?.unreadCount ?? 0;
+  const { data: ozet } = useOzet();
+  const okunmamisMesaj = ozet?.unreadMessages ?? 0;
   useEffect(() => { setMenuOpen(false); setSearchOpen(false); setUserDropOpen(false); }, [pathname]);
   useEffect(() => {
     document.body.style.overflow = menuOpen ? 'hidden' : '';
@@ -174,7 +176,14 @@ export function Header() {
                   <Bell size={19} />
                   {unreadCount > 0 && <span style={{ ...badgeDot, background: 'var(--accent-2)', color: 'var(--accent-2-ink)' }}>{unreadCount}</span>}
                 </Link>
-                <Link href="/mesajlarim" style={iconBtn}><MessageSquare size={19} /></Link>
+                {/* Mesaj rozeti: eskiden okunmamis mesajin tek isareti zildi
+                    ve o da hic sifirlanmiyordu. Artik dogru yerde. */}
+                <Link href="/mesajlarim" style={iconBtn}>
+                  <MessageSquare size={19} />
+                  {okunmamisMesaj > 0 && (
+                    <span style={{ ...badgeDot, background: 'var(--accent)', color: '#fff' }}>{okunmamisMesaj}</span>
+                  )}
+                </Link>
 
                 {/* User avatar dropdown */}
                 <div ref={userDropRef} style={{ position: 'relative' }}>
