@@ -162,7 +162,14 @@ export default function ProfilePage() {
       }
       return api.patch('/users/me', payload).then(r => r.data);
     },
-    onSuccess: (updated) => { setAuth(updated, token!); toast.success('Profil güncellendi'); },
+    // Gelen nesneyi oturumdakinin uzerine BIRLESTIR, yerine koyma: uc
+    // eksik bir alan dondurdugunde (gecmiste emailVerifiedAt oldu) o bilgi
+    // sessizce kaybolur ve kullanici dogrulanmamis gibi gorunur.
+    onSuccess: (updated) => {
+      setAuth({ ...(user ?? {}), ...updated }, token!);
+      qc.invalidateQueries({ queryKey: ['my-profile'] });
+      toast.success('Profil güncellendi');
+    },
     onError: () => toast.error('Güncellenemedi'),
   });
 
