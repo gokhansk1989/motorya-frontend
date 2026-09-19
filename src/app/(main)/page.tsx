@@ -352,17 +352,15 @@ function FeaturedSection() {
   // "en yeni 12 ilan"i gosteriyordu: isFeatured'a hic bakmiyordu. Yani
   // yonetim panelindeki "Reklam & Vitrin" ekranindan bir ilani one
   // cikarmanin vitrin uzerinde hicbir etkisi yoktu.
-  const oneCikan = useListings({ isFeatured: true, limit: 12 }, mounted);
+  //
+  // One cikan yoksa serit hic gorunmuyor (asagida items.length === 0 ->
+  // null). Bos kalmasin diye en yenilere dusurmek cazip geliyor ama ayni
+  // hatanin daha hafif hali olurdu: baslik yine yalan soylerdi. Ana
+  // sayfada zaten fiyat dusenler, kategoriler ve ilan izgarasi var; serit
+  // tamamen kalktigi icin gorsel bir bosluk da olusmuyor.
+  const { data, isLoading } = useListings({ isFeatured: true, limit: 12 }, mounted);
+  const items = data?.items ?? [];
 
-  // Aktif one cikan ilan yoksa en yenilere dusuyoruz: ana sayfanin ustunde
-  // bos bir serit, dolu bir seritten cok daha kotu durur. Yedek sorgu ancak
-  // asil sorgu bittikten VE bos donduktan sonra calisir, yoksa her ziyarette
-  // iki istek gider.
-  const oneCikanBos = oneCikan.isSuccess && (oneCikan.data?.items?.length ?? 0) === 0;
-  const yedek = useListings({ limit: 12, sort: 'newest' }, mounted && oneCikanBos);
-
-  const items = (oneCikan.data?.items?.length ? oneCikan.data.items : yedek.data?.items) ?? [];
-  const isLoading = oneCikan.isLoading || (oneCikanBos && yedek.isLoading);
   const [touchPaused, setTouchPaused] = useState(false);
   const resumeTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
