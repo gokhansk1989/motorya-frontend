@@ -1,8 +1,9 @@
 import { notFound } from 'next/navigation';
 import Link from 'next/link';
 import { ChevronLeft } from 'lucide-react';
+import { SSR_API_URL } from '@/lib/apiBase';
 
-const API = process.env.NEXT_PUBLIC_API_URL || 'https://motorya.com.tr/api-backend';
+const API = SSR_API_URL;
 
 async function getPage(slug: string) {
   try {

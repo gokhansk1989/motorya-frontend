@@ -1,9 +1,9 @@
 import { ImageResponse } from 'next/og';
+import { SSR_API_URL } from '@/lib/apiBase';
 
 export const size = { width: 1200, height: 630 };
 export const contentType = 'image/png';
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000';
 
 const CONDITION_LABELS: Record<string, string> = {
   NEW: 'Sıfır',
@@ -15,7 +15,7 @@ const CONDITION_LABELS: Record<string, string> = {
 
 async function fetchListing(id: string) {
   try {
-    const res = await fetch(`${API_URL}/listings/${id}`, { next: { revalidate: 300 } });
+    const res = await fetch(`${SSR_API_URL}/listings/${id}`, { next: { revalidate: 300 } });
     if (!res.ok) return null;
     return await res.json();
   } catch {

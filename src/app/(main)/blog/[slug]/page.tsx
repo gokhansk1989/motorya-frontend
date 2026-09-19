@@ -3,8 +3,9 @@ import Link from 'next/link';
 import { Clock, ChevronLeft, Tag, ArrowRight } from 'lucide-react';
 import { AdSlot } from '@/components/ui/AdSlot';
 import { jsonLdHtml } from '@/lib/jsonLd';
+import { SSR_API_URL } from '@/lib/apiBase';
 
-const API = process.env.NEXT_PUBLIC_API_URL || 'https://motorya.com.tr/api-backend';
+const API = SSR_API_URL;
 
 // Unsplash cover fallback kaldırıldı; motosikletsiz görseller
 // (masa tenisi vb.) çıkabiliyordu. Post'un kendi coverImage'i yoksa

@@ -32,3 +32,20 @@ export const SOCKET_ORIGIN = API_URL.replace(/\/api-backend.*/, '').replace(/\/a
 
 /** nginx altında API /api-backend altındaysa socket yolu da oradan geçer */
 export const SOCKET_PATH = API_URL.includes('/api-backend') ? '/api-backend/socket.io' : '/socket.io';
+
+/**
+ * Sunucu tarafi (SSR) icin API adresi.
+ *
+ * Sayfalar sunucuda uretilirken API'ye kendi GENEL adresimiz uzerinden
+ * gidiliyordu: istek Hetzner'dan cikip Cloudflare'e donuyordu. Cloudflare'de
+ * Turkiye disina dogrulama kurali devreye girince sunucunun kendi istekleri de
+ * 403 almaya basladi - yani ilan sayfalari sunucu tarafinda veri cekemez oldu,
+ * Google bos bir kabuk gormeye basladi.
+ *
+ * Dogrusu zaten sunucunun kendi icinden konusmasi: hem CDN'e gidip donmuyor,
+ * hem kenar kurallarina bagimli olmuyor, hem de daha hizli.
+ * INTERNAL_API_URL sunucuda tanimlidir (orn. http://127.0.0.1:3000);
+ * tanimli degilse genel adrese duser, yani gelistirmede bir sey degismez.
+ */
+export const SSR_API_URL =
+  typeof window === 'undefined' ? (process.env.INTERNAL_API_URL || API_URL) : API_URL;

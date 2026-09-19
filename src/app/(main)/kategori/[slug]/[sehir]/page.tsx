@@ -6,8 +6,8 @@ import { notFound } from 'next/navigation';
 import { CITY_MAP, CITIES } from '@/lib/cities';
 import { CategoryIcon as CatIcon } from '@/components/icons/CategoryIcons';
 import { jsonLdHtml } from '@/lib/jsonLd';
+import { SSR_API_URL } from '@/lib/apiBase';
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000';
 const BASE_URL = 'https://motorya.com.tr';
 
 interface Category {
@@ -26,7 +26,7 @@ interface Listing {
 
 async function fetchCategoryData(slug: string): Promise<CategoryData | null> {
   try {
-    const res = await fetch(`${API_URL}/listings/meta/category/${slug}`, { next: { revalidate: 60 } });
+    const res = await fetch(`${SSR_API_URL}/listings/meta/category/${slug}`, { next: { revalidate: 60 } });
     if (!res.ok) {
       console.error(`[kategori/${slug}/sehir] category fetch failed: ${res.status}`);
       return null;
@@ -40,7 +40,7 @@ async function fetchCategoryData(slug: string): Promise<CategoryData | null> {
 
 async function fetchAllL1Categories(): Promise<Category[]> {
   try {
-    const res = await fetch(`${API_URL}/listings/meta/categories`, { next: { revalidate: 300 } });
+    const res = await fetch(`${SSR_API_URL}/listings/meta/categories`, { next: { revalidate: 300 } });
     if (!res.ok) return [];
     const all: Category[] = await res.json();
     return all.filter(c => !c.parentId);
@@ -53,7 +53,7 @@ async function fetchAllL1Categories(): Promise<Category[]> {
 async function fetchListings(categoryId: string, city: string): Promise<Listing[]> {
   try {
     const params = new URLSearchParams({ categoryId, city, limit: '24' });
-    const res = await fetch(`${API_URL}/listings?${params}`, { next: { revalidate: 60 } });
+    const res = await fetch(`${SSR_API_URL}/listings?${params}`, { next: { revalidate: 60 } });
     if (!res.ok) {
       console.error(`[kategori/sehir] listings fetch failed: ${res.status}`);
       return [];

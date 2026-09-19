@@ -2,8 +2,8 @@ import type { Metadata } from 'next';
 import { redirect, notFound } from 'next/navigation';
 import ListingDetailClient from './ListingDetailClient';
 import { jsonLdHtml } from '@/lib/jsonLd';
+import { SSR_API_URL } from '@/lib/apiBase';
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000';
 const BASE_URL = 'https://motorya.com.tr';
 
 interface ListingData {
@@ -24,7 +24,7 @@ interface ListingData {
 
 async function fetchListingBySlug(slug: string): Promise<ListingData | null> {
   try {
-    const res = await fetch(`${API_URL}/listings/by-slug?s=${encodeURIComponent(slug)}`, {
+    const res = await fetch(`${SSR_API_URL}/listings/by-slug?s=${encodeURIComponent(slug)}`, {
       next: { revalidate: 300 },
     });
     if (!res.ok) return null;

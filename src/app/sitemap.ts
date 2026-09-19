@@ -1,8 +1,9 @@
 import { MetadataRoute } from 'next';
 import { CITY_MAP } from '@/lib/cities';
+import { SSR_API_URL } from '@/lib/apiBase';
 
 const BASE_URL = 'https://motorya.com.tr';
-const API = process.env.NEXT_PUBLIC_API_URL || 'https://motorya.com.tr/api-backend';
+const API = SSR_API_URL;
 
 // Şehir adı ("İstanbul") -> slug ("istanbul"). İlan kayıtları şehri görünen
 // adıyla tuttuğu için sitemap'te slug'a çevirmek gerekiyor.

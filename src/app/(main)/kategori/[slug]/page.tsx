@@ -8,8 +8,8 @@ import { AdSlot } from '@/components/ui/AdSlot';
 import { CategoryIcon as CatIcon } from '@/components/icons/CategoryIcons';
 import { CITIES } from '@/lib/cities';
 import { jsonLdHtml } from '@/lib/jsonLd';
+import { SSR_API_URL } from '@/lib/apiBase';
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000';
 const BASE_URL = 'https://motorya.com.tr';
 
 interface Category {
@@ -29,7 +29,7 @@ interface Listing {
 
 async function fetchCategoryData(slug: string): Promise<CategoryData | null> {
   try {
-    const res = await fetch(`${API_URL}/listings/meta/category/${slug}`, { next: { revalidate: 60 } });
+    const res = await fetch(`${SSR_API_URL}/listings/meta/category/${slug}`, { next: { revalidate: 60 } });
     if (!res.ok) {
       console.error(`[kategori/${slug}] category fetch failed: ${res.status}`);
       return null;
@@ -45,7 +45,7 @@ async function fetchListings(categoryId: string, city?: string): Promise<{ items
   try {
     const params = new URLSearchParams({ categoryId, limit: '48', page: '1' });
     if (city) params.set('city', city);
-    const res = await fetch(`${API_URL}/listings?${params}`, { next: { revalidate: 60 } });
+    const res = await fetch(`${SSR_API_URL}/listings?${params}`, { next: { revalidate: 60 } });
     if (!res.ok) {
       console.error(`[kategori] listings fetch failed for categoryId=${categoryId}: ${res.status}`);
       return { items: [], total: 0 };
@@ -60,7 +60,7 @@ async function fetchListings(categoryId: string, city?: string): Promise<{ items
 
 async function fetchAllL1Categories(): Promise<Category[]> {
   try {
-    const res = await fetch(`${API_URL}/listings/meta/categories`, { next: { revalidate: 300 } });
+    const res = await fetch(`${SSR_API_URL}/listings/meta/categories`, { next: { revalidate: 300 } });
     if (!res.ok) {
       console.error(`[kategori] categories fetch failed: ${res.status}`);
       return [];
