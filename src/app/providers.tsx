@@ -5,6 +5,7 @@ import { Toaster } from 'react-hot-toast';
 import { ThemeProvider } from '@/components/ThemeProvider';
 import { installErrorReporter } from '@/lib/errorReporter';
 import { FeedbackWidget } from '@/components/ui/FeedbackWidget';
+import { OturumTazeleyici } from '@/components/OturumTazeleyici';
 
 export function Providers({ children }: { children: React.ReactNode }) {
   const [qc] = useState(() => new QueryClient({ defaultOptions: { queries: { staleTime: 30_000, retry: 1 } } }));
@@ -14,6 +15,7 @@ export function Providers({ children }: { children: React.ReactNode }) {
   return (
     <QueryClientProvider client={qc}>
       <ThemeProvider>
+        <OturumTazeleyici />
         {children}
         <FeedbackWidget />
         <Toaster position="top-right" toastOptions={{ className: 'text-sm' }} />
