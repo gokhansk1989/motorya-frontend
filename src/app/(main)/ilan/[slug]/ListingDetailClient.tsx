@@ -17,6 +17,7 @@ import { analytics } from '@/lib/analytics';
 import toast from 'react-hot-toast';
 import Link from 'next/link';
 import { oneCikanGecerliMi } from '@/lib/oneCikan';
+import { TamEkranGaleri } from '@/components/ui/TamEkranGaleri';
 
 function ListingRow({ title, listings }: { title: string; listings: any[] }) {
   if (!listings || listings.length === 0) return null;
@@ -101,6 +102,7 @@ export default function ListingDetailClient({ initialListing }: { initialListing
   const [showSoldModal, setShowSoldModal] = useState(false);
   const [selectedBuyer, setSelectedBuyer] = useState<string | null>(null);
   const { data: buyerCandidates, isLoading: buyersLoading } = useBuyerCandidates(listing?.id ?? '', showSoldModal);
+  const [galeriAcik, setGaleriAcik] = useState(false);
   const [reportReason, setReportReason] = useState('');
   const [reportDesc, setReportDesc] = useState('');
   const [reportSent, setReportSent] = useState(false);
@@ -211,6 +213,15 @@ export default function ListingDetailClient({ initialListing }: { initialListing
 
   return (
     <div className="m-wrap" style={{ paddingBottom: 40 }}>
+      {galeriAcik && (
+        <TamEkranGaleri
+          gorseller={images}
+          indeks={imgIdx}
+          onIndeks={setImgIdx}
+          onKapat={() => setGaleriAcik(false)}
+        />
+      )}
+
       {/* Breadcrumb */}
       <div style={{ display: 'flex', alignItems: 'center', gap: 8, color: 'var(--ink-3)', fontSize: 12.5, padding: '20px 0 4px', flexWrap: 'wrap' }}>
         <Link href="/" style={{ color: 'var(--ink-3)' }}>Keşfet</Link>
@@ -239,7 +250,12 @@ export default function ListingDetailClient({ initialListing }: { initialListing
             }}
           >
             {images.length > 0 ? (
-              <img src={images[imgIdx].url} alt={listing.title} style={{ width: '100%', height: '100%', objectFit: 'contain' }} />
+              <img
+                src={images[imgIdx].url}
+                alt={listing.title}
+                onClick={() => setGaleriAcik(true)}
+                style={{ width: '100%', height: '100%', objectFit: 'contain', cursor: 'zoom-in' }}
+              />
             ) : (
               <div style={{
                 position: 'absolute', inset: 0,
