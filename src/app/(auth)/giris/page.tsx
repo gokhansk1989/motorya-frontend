@@ -35,7 +35,12 @@ export default function LoginPage() {
       const res = await api.post('/auth/login', { ...data, turnstileToken: turnstileToken || undefined });
       setAuth(res.data.user, res.data.accessToken, res.data.refreshToken, res.data.deviceId);
       toast.success('Hoş geldin!');
-      router.push('/');
+      // Sozlesme/KVKK onayi olmayan kullanicilar onay ekranina gider.
+      // Backend bu bilgiyi zaten donuyordu ama yalnizca Google girisinde
+      // (callback sayfasinda) isleniyordu; parola ile giren eski kullanicilara
+      // onay hic sorulmuyordu. Olcum: 20 kullanicinin 13'unde hicbir onay
+      // kaydi yok - yani onlara yasal olarak ticari e-posta gonderilemez.
+      router.push(res.data.needsConsent ? '/onaylar' : '/');
     } catch (e: any) {
       const body = e.response?.data;
       if (body?.captchaRequired) setCaptchaRequired(true);
