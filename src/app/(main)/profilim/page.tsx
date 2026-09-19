@@ -35,7 +35,10 @@ import Link from 'next/link';
 import toast from 'react-hot-toast';
 
 const profileSchema = z.object({
-  displayName: z.string().min(2, 'En az 2 karakter'),
+  // Gercek ad-soyad: yayinlanmaz, yalnizca fatura ve kimlik dogrulama icin.
+  // Herkese gorunen ad ayri bir alan (kullanici adi) ve ayri bir uctan
+  // kaydediliyor - kurallari farkli.
+  realName: z.string().min(2, 'En az 2 karakter'),
   bio: z.string().max(200).optional(),
   city: z.string().optional(),
   district: z.string().optional(),
@@ -136,7 +139,7 @@ export default function ProfilePage() {
   useEffect(() => {
     if (profile) {
       profileForm.reset({
-        displayName: profile.displayName ?? '',
+        realName: profile.realName ?? profile.displayName ?? '',
         bio: profile.bio ?? '',
         city: profile.city ?? '',
         district: profile.district ?? '',
@@ -399,10 +402,12 @@ export default function ProfilePage() {
               <User size={16} style={{ color: 'var(--accent)' }} />Profil Bilgileri
             </p>
             <form onSubmit={profileForm.handleSubmit(d => updateProfile.mutate(d))} style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+              <KullaniciAdiAlani profile={profile} />
               <div>
-                <label style={lbl}>Ad Soyad</label>
-                <input {...profileForm.register('displayName')} style={inp(!!profileForm.formState.errors.displayName)} />
-                {profileForm.formState.errors.displayName && <p style={{ marginTop: 5, fontSize: 12, color: 'var(--bad)', fontFamily: 'var(--font-mono)' }}>{profileForm.formState.errors.displayName.message}</p>}
+                <label style={lbl}>Ad Soyad <span style={{ fontWeight: 400, opacity: 0.5 }}>yayınlanmaz</span></label>
+                <input {...profileForm.register('realName')} style={inp(!!profileForm.formState.errors.realName)} />
+                {profileForm.formState.errors.realName && <p style={{ marginTop: 5, fontSize: 12, color: 'var(--bad)', fontFamily: 'var(--font-mono)' }}>{profileForm.formState.errors.realName.message}</p>}
+                <p style={{ marginTop: 5, fontSize: 11, color: 'var(--ink-3)' }}>Fatura ve kimlik doğrulama için saklanır; ilanlarınızda ve mesajlarınızda görünmez.</p>
               </div>
               <div>
                 <label style={lbl}>Hakkımda <span style={{ fontWeight: 400, opacity: 0.5 }}>opsiyonel</span></label>
@@ -1032,6 +1037,86 @@ export default function ProfilePage() {
       )}
 
       <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
+    </div>
+  );
+}
+
+// Kullanici adi: herkese acik gorunen ad.
+//
+// Neden ayri bir uc: kullanici adinin kurallari profilin geri kalanindan
+// farkli (kucuk harf, benzersiz, "admin" gibi rezerve kelimeler yasak) ve
+// bu kurallar sunucuda /users/me/username icinde. Profil formundan
+// gonderilseydi biri buraya gercek adini yazip yayinlatabilirdi.
+//
+// Kullanici adini henuz secmemis uyelerde gorunen ad, gercek adlarinin
+// kendisi. Bu durumda uyari gosteriliyor: adlarinin yayinda oldugunu
+// bilmeden birakmasinlar.
+function KullaniciAdiAlani({ profile }: { profile: any }) {
+  const { user, setAuth, token } = useAuthStore();
+  const qc = useQueryClient();
+  const [ad, setAd] = useState('');
+  const [kaydediliyor, setKaydediliyor] = useState(false);
+
+  const secilmemis = !!profile?.realName && profile.displayName === profile.realName;
+  const mevcut = profile?.displayName ?? '';
+
+  const kaydet = async () => {
+    const temiz = ad.trim().toLowerCase();
+    if (!/^[a-z0-9._]{3,20}$/.test(temiz)) {
+      toast.error('3-20 karakter; yalnızca küçük harf, rakam, nokta ve alt çizgi');
+      return;
+    }
+    setKaydediliyor(true);
+    try {
+      const res = await api.patch('/users/me/username', { username: temiz });
+      const yeni = res.data?.displayName ?? temiz;
+      if (user && token) setAuth({ ...user, displayName: yeni }, token);
+      qc.invalidateQueries({ queryKey: ['my-profile'] });
+      setAd('');
+      toast.success('Kullanıcı adın güncellendi');
+    } catch (e: any) {
+      toast.error(e.response?.data?.message || 'Kullanıcı adı kaydedilemedi');
+    } finally {
+      setKaydediliyor(false);
+    }
+  };
+
+  return (
+    <div>
+      <label style={lbl}>Kullanıcı Adı <span style={{ fontWeight: 400, opacity: 0.5 }}>herkese görünen ad</span></label>
+      <div style={{ display: 'flex', gap: 8 }}>
+        <input
+          value={ad}
+          onChange={e => setAd(e.target.value)}
+          placeholder={secilmemis ? 'ornek_kullanici' : mevcut}
+          autoCapitalize="none"
+          autoCorrect="off"
+          spellCheck={false}
+          style={{ ...inp(), flex: 1 }}
+        />
+        <button
+          type="button"
+          onClick={kaydet}
+          disabled={kaydediliyor || !ad.trim()}
+          style={{
+            padding: '0 16px', borderRadius: 12, border: '1px solid var(--line)',
+            background: 'var(--bg-2)', color: 'var(--ink)', fontSize: 13, fontWeight: 600,
+            cursor: kaydediliyor || !ad.trim() ? 'default' : 'pointer',
+            opacity: kaydediliyor || !ad.trim() ? 0.5 : 1, whiteSpace: 'nowrap',
+          }}
+        >
+          {kaydediliyor ? '…' : 'Kaydet'}
+        </button>
+      </div>
+      {secilmemis ? (
+        <p style={{ marginTop: 5, fontSize: 11, color: 'var(--bad)' }}>
+          Henüz kullanıcı adı seçmediğiniz için ilanlarınızda ve mesajlarınızda ad soyadınız görünüyor.
+        </p>
+      ) : (
+        <p style={{ marginTop: 5, fontSize: 11, color: 'var(--ink-3)' }}>
+          Şu anki kullanıcı adınız: <strong>{mevcut}</strong>
+        </p>
+      )}
     </div>
   );
 }
