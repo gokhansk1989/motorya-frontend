@@ -3,6 +3,16 @@ import { useAuthStore } from '@/store/auth';
 
 let installed = false;
 
+// Bazi 400'ler hata degil, normal kullanici davranisi: yanlis parola girmek
+// gibi. Bunlari kaydetmek hata kaydini doldurup gercek sorunlari gizliyordu
+// (son 24 saatteki 13 kaydin 4'u bu sinifdandi).
+function kullaniciHatasi(url: string | undefined, mesaj: unknown): boolean {
+  const u = url ?? '';
+  const m = Array.isArray(mesaj) ? mesaj.join(' ') : String(mesaj ?? '');
+  if (u.includes('/auth/login') && /şifre|parola|hatalı/i.test(m)) return true;
+  return false;
+}
+
 function report(message: string, stack?: string | null, context?: Record<string, unknown>) {
   const userId = useAuthStore.getState().user?.id;
   api
@@ -45,7 +55,7 @@ export function installErrorReporter() {
           err.stack,
           { status, url, body: err.response?.data },
         );
-      } else if (status === 400 || status === 422) {
+      } else if ((status === 400 || status === 422) && !kullaniciHatasi(url, err.response?.data?.message)) {
         // Validation hataları — sunucu hatası değil ama hangi form alanlarının sorun çıkardığını görmek için logla
         const msg = err.response?.data?.message;
         const msgStr = Array.isArray(msg) ? msg.join('; ') : String(msg ?? '');
