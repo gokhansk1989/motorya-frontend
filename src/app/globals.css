@@ -88,6 +88,20 @@ input, textarea, select { font-family: inherit; color: var(--ink); }
 /* ---------- layout ---------- */
 .m-wrap { width: 100%; max-width: var(--maxw); margin: 0 auto; padding: 0 28px; position: relative; z-index: 1; }
 
+/* Acik bir alt kategori paneli iceren sarmalayici one cikar.
+ *
+ * Sorun: .m-wrap "position: relative + z-index: 1" oldugu icin kendi
+ * yigin baglamini olusturuyor. Panelin z-index: 30 degeri bu baglamin
+ * ICINDE gecerli - disariya karsi sarmalayicinin 1'i kadar. Footer da
+ * ayni .m-wrap'i kullaniyor, z-index'i yine 1 ve belgede DAHA SONRA
+ * geldigi icin esitlik onun lehine bozuluyor: alt sira kategorilerin
+ * paneli acildiginda footer yazilari panelin uzerine biniyordu.
+ *
+ * :has() ile yalnizca panelin gercekten acik oldugu sarmalayici
+ * yukseltiliyor; panel kapaninca kural kendiliginden dusuyor, yani
+ * kalici bir yigin sirasi degisikligi birakmiyor. */
+.m-wrap:has(.m-subcat-panel) { z-index: 40; }
+
 /* ---------- desktop-only ---------- */
 .m-hide-desktop { display: none !important; }
 
