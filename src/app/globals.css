@@ -549,3 +549,39 @@ textarea.m-field { height: auto; padding: 12px 14px; resize: vertical; line-heig
   color: var(--accent);
 }
 *::-webkit-scrollbar-thumb:hover { background: var(--line); }
+
+/* Kategori sayfasındaki kategori/alt kategori şeritleri.
+ *
+ * Masaüstünde satır sarıyorlar; mobilde sarmak yerine tek satır yatay
+ * kayıyorlar. Ölçüm: 11 kategori telefonda 5 satıra sarıyor, alt
+ * kategorilerle birlikte navigasyon ~390px tutuyor ve ilk ilan 637.
+ * piksele düşüyor — 812px'lik bir ekranda kaydırmadan tek ürün
+ * görünmüyor. Şeride alınınca ~110px'e iniyor.
+ *
+ * Bedeli: kategorilerin hepsi aynı anda görünmüyor. Bu yüzden sağ kenara
+ * kaydırılabileceğini belli eden bir solma bırakıyoruz — ana sayfadaki
+ * kategori ızgarasında da aynı ipucu var. */
+@media (max-width: 767px) {
+  .m-kat-serit-sar {
+    position: relative;
+  }
+  .m-kat-serit {
+    flex-wrap: nowrap !important;
+    overflow-x: auto;
+    scrollbar-width: none;
+    -webkit-overflow-scrolling: touch;
+    /* Çipler kırpılmasın: flex öğeleri varsayılanda küçülür. */
+    padding-bottom: 2px;
+  }
+  .m-kat-serit::-webkit-scrollbar { display: none; }
+  .m-kat-serit > * {
+    flex: 0 0 auto;
+  }
+  .m-kat-serit-sar::after {
+    content: '';
+    position: absolute;
+    top: 0; right: 0; bottom: 0; width: 28px;
+    background: linear-gradient(to right, transparent, var(--bg-0) 75%);
+    pointer-events: none;
+  }
+}

@@ -172,8 +172,17 @@ export default async function CategoryPage({ params }: { params: Promise<{ slug:
           </p>
         </div>
 
-        {/* L1 kategori navigasyonu */}
-        <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginBottom: subcategories.length > 0 ? 16 : 28 }}>
+        {/* L1 kategori navigasyonu.
+
+            Mobilde sarmak yerine tek satır yatay kayıyor (m-kat-serit).
+            Ölçümde 11 kategori telefonda 5 satıra sarıyor, alt kategoriler
+            de altında ayrı bir blok olunca navigasyon ~390px tutuyor ve ilk
+            ilan 637. piksele düşüyordu — 812px'lik bir ekranda kaydırmadan
+            tek ürün görünmüyor. Bağlantılar aynen kalıyor, yalnızca
+            dizilişleri değişiyor; adresler ve dizine giren sayfalar
+            etkilenmiyor. Masaüstünde sarma davranışı korunuyor. */}
+        <div className="m-kat-serit-sar" style={{ marginBottom: subcategories.length > 0 ? 16 : 28 }}>
+        <div className="m-kat-serit" style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
           {l1Categories.map(cat => (
             <Link key={cat.slug} href={`/kategori/${cat.slug}`} className="m-chip"
               style={{ height: 34, fontSize: 13, textDecoration: 'none',
@@ -183,6 +192,7 @@ export default async function CategoryPage({ params }: { params: Promise<{ slug:
             </Link>
           ))}
         </div>
+        </div>
 
         {/* Alt kategoriler — L1'de children, L2'de kardeşler */}
         {subcategories.length > 0 && (
@@ -190,7 +200,8 @@ export default async function CategoryPage({ params }: { params: Promise<{ slug:
             <p style={{ fontSize: 12, color: 'var(--ink-3)', margin: '0 0 8px', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
               Alt Kategoriler
             </p>
-            <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+            <div className="m-kat-serit-sar">
+            <div className="m-kat-serit" style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
               {subcategories.map(child => (
                 <Link key={child.slug} href={`/kategori/${child.slug}`} className="m-chip"
                   style={{ height: 32, fontSize: 12.5, textDecoration: 'none',
@@ -200,6 +211,7 @@ export default async function CategoryPage({ params }: { params: Promise<{ slug:
                   {child.name}
                 </Link>
               ))}
+            </div>
             </div>
           </div>
         )}
