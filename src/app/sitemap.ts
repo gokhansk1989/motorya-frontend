@@ -125,6 +125,15 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     // ve Search Console'da hata olarak raporlanıyor. Bu yüzden listelenmiyorlar.
   ];
 
+  // Kategori dizini — 97 kategoriye giden bağlantıları tek yerde toplayan
+  // sayfa. Derin kategorilerin taranmasını kolaylaştırdığı için sitemap'te.
+  const kategoriDizini: MetadataRoute.Sitemap = [{
+    url: `${BASE_URL}/kategoriler`,
+    lastModified: new Date(),
+    changeFrequency: 'weekly' as const,
+    priority: 0.7,
+  }];
+
   // L1 kategori sayfaları (API'den, hardcoded değil)
   const l1Pages: MetadataRoute.Sitemap = l1Cats.map(c => ({
     url: `${BASE_URL}/kategori/${c.slug}`,
@@ -169,6 +178,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
 
   return [
     ...staticPages,
+    ...kategoriDizini,
     ...l1Pages,
     ...l2Pages,
     ...cityPages,

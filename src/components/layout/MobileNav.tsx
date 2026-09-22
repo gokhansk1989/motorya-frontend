@@ -1,7 +1,7 @@
 'use client';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
-import { Home, Search, Plus, MessageCircle, User, Newspaper } from 'lucide-react';
+import { Home, Search, Plus, MessageCircle, User, LayoutGrid } from 'lucide-react';
 import { useAuthStore } from '@/store/auth';
 import { useNotifications, useOzet } from '@/hooks/useNotifications';
 
@@ -48,7 +48,7 @@ export function MobileNav() {
     : [
         { href: '/', icon: <Home size={22} />, label: 'Ana Sayfa' },
         { href: '/ara', icon: <Search size={22} />, label: 'Ara' },
-        { href: '/blog', icon: <Newspaper size={22} />, label: 'Blog' },
+        { href: '/kategoriler', icon: <LayoutGrid size={22} />, label: 'Kategoriler' },
         { href: '/giris', icon: <User size={22} />, label: 'Giriş' },
       ];
 
