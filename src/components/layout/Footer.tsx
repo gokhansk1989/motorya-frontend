@@ -9,14 +9,23 @@ export function Footer() {
       { label: 'Blog', href: '/blog' },
       { label: 'Kariyer', href: '/sayfa/kariyer' },
     ]],
+    // 11 üst kategorinin tamamı. Dördü (Pantolon, Motosiklet Çantaları,
+    // Sürücü Aksesuarları, Bakım Ürünleri) eksikti; hem kullanıcı için
+    // eksik bir liste, hem de her sayfadan o kategorilere giden bir iç
+    // bağlantı kaybı. Etiketler kısa tutuldu, slug'lar API'dekilerle
+    // birebir doğrulandı.
     ['Kategoriler', [
       { label: 'Kask', href: '/kategori/kask' },
       { label: 'Mont', href: '/kategori/mont' },
+      { label: 'Pantolon', href: '/kategori/pantolon' },
       { label: 'Eldiven', href: '/kategori/eldiven' },
-      { label: 'Koruma', href: '/kategori/koruma' },
       { label: 'Bot & Çizme', href: '/kategori/bot-cizme' },
-      { label: 'Yedek Parça', href: '/kategori/yedek-parca' },
+      { label: 'Koruma', href: '/kategori/koruma' },
+      { label: 'Çanta', href: '/kategori/canta' },
       { label: 'Aksesuar', href: '/kategori/aksesuar' },
+      { label: 'Sürücü Aksesuarları', href: '/kategori/surucu-aksesuarlari' },
+      { label: 'Yedek Parça', href: '/kategori/yedek-parca' },
+      { label: 'Bakım Ürünleri', href: '/kategori/bakim' },
     ]],
     ['Destek', [
       { label: 'Sıkça sorulan sorular', href: '/sss' },

@@ -75,6 +75,15 @@ export function Header() {
   const { data: notifs } = useNotifications();
   const unreadCount = notifs?.meta?.unreadCount ?? 0;
   const { data: ozet } = useOzet();
+
+  // Menudeki kategori listesi — arama onerileri icin zaten cekilen
+  // headerCategories'ten turetiliyor, ikinci bir istek yok.
+  //
+  // Neden gerekli: mobil menude hicbir kategori yoktu (Kesfet, Blog,
+  // Detayli Ara, Ilan Ver, Kayit, Giris — hepsi buydu) ve kategorilere
+  // ulasmanin pratikte tek yolu ana sayfada asagi kaydirmakti. Bir
+  // pazaryerinde menuyu acan kisinin aradigi ilk sey kategori.
+  const ustKategoriler = (headerCategories as any[]).filter(c => !c.parentId);
   const okunmamisMesaj = ozet?.unreadMessages ?? 0;
   useEffect(() => { setMenuOpen(false); setSearchOpen(false); setUserDropOpen(false); }, [pathname]);
   useEffect(() => {
@@ -324,6 +333,22 @@ export function Header() {
                 {label}
               </Link>
             ))}
+
+            {ustKategoriler.length > 0 && (
+              <div style={{ marginTop: 10, paddingTop: 14, borderTop: '1px solid var(--line-soft)' }}>
+                <p style={{ margin: '0 0 8px', padding: '0 20px', fontSize: 12, color: 'var(--ink-3)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                  Kategoriler
+                </p>
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, padding: '0 20px' }}>
+                  {ustKategoriler.map((c: any) => (
+                    <Link key={c.slug} href={`/kategori/${c.slug}`} className="m-chip"
+                      style={{ height: 34, fontSize: 13, textDecoration: 'none' }}>
+                      {c.name}
+                    </Link>
+                  ))}
+                </div>
+              </div>
+            )}
           </nav>
 
           <div style={{ padding: '16px 20px', display: 'flex', flexDirection: 'column', gap: 10, borderTop: '1px solid var(--line-soft)' }}>

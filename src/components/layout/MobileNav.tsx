@@ -1,9 +1,9 @@
 'use client';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
-import { Home, Search, Plus, MessageCircle, User, ListPlus } from 'lucide-react';
+import { Home, Search, Plus, MessageCircle, User, Newspaper } from 'lucide-react';
 import { useAuthStore } from '@/store/auth';
-import { useNotifications } from '@/hooks/useNotifications';
+import { useNotifications, useOzet } from '@/hooks/useNotifications';
 
 const HIDDEN_PATHS: string[] = [];
 
@@ -18,20 +18,39 @@ export function MobileNav() {
   const pathname = usePathname();
   const router = useRouter();
   const { user } = useAuthStore();
-  const { data: notifs } = useNotifications();
-  const unreadCount = notifs?.meta?.unreadCount ?? 0;
+  // Mesaj rozeti okunmamis MESAJ sayisini gostermeli; burada bildirim
+  // sayaci kullaniliyordu. Mesajlar zilden cikarildi (bkz. backend
+  // messages.service.ts), yani bu sayi artik mesajla hic ilgili degildi.
+  const { data: ozet } = useOzet();
+  const okunmamisMesaj = ozet?.unreadMessages ?? 0;
 
   if (HIDDEN_PATHS.some(p => pathname.startsWith(p))) return null;
 
   const isActive = (href: string) =>
     href === '/' ? pathname === '/' : pathname.startsWith(href);
 
-  const tabs: Tab[] = [
-    { href: '/', icon: <Home size={22} />, label: 'Ana Sayfa' },
-    { href: '/tekliflerim', icon: <ListPlus size={22} />, label: 'Teklifler' },
-    { href: '/mesajlarim', icon: <MessageCircle size={22} />, label: 'Mesajlar', badge: unreadCount },
-    { href: user ? '/profilim' : '/giris', icon: <User size={22} />, label: 'Profil' },
-  ];
+  // Alt cubuk, kullanicinin durumuna gore degisiyor.
+  //
+  // "Ara" ikinci siraya alindi: bir pazaryerinde en cok kullanilan eylem
+  // arama ve webde yalnizca ust bardaki kucuk buytecte sakliydi. Teklifler
+  // buradan cikti - zaten Profil altindan erisilebiliyor.
+  //
+  // Cikis yapmis ziyaretciye Teklifler ve Mesajlar gosteriliyordu; ikisi de
+  // giris isteyen sayfalar, yani bes yuvanin ikisi siteye ilk gelen birine
+  // hicbir ise yaramiyordu. Onlarin yerine kimlik istemeyen iki hedef.
+  const tabs: Tab[] = user
+    ? [
+        { href: '/', icon: <Home size={22} />, label: 'Ana Sayfa' },
+        { href: '/ara', icon: <Search size={22} />, label: 'Ara' },
+        { href: '/mesajlarim', icon: <MessageCircle size={22} />, label: 'Mesajlar', badge: okunmamisMesaj },
+        { href: '/profilim', icon: <User size={22} />, label: 'Profil' },
+      ]
+    : [
+        { href: '/', icon: <Home size={22} />, label: 'Ana Sayfa' },
+        { href: '/ara', icon: <Search size={22} />, label: 'Ara' },
+        { href: '/blog', icon: <Newspaper size={22} />, label: 'Blog' },
+        { href: '/giris', icon: <User size={22} />, label: 'Giriş' },
+      ];
 
   const handleIlanVer = () => {
     router.push(user ? '/ilan-ver' : '/giris?next=/ilan-ver');
