@@ -9,10 +9,20 @@ interface Category {
   id: string; name: string; slug: string; parentId: string | null; iconKey?: string | null;
 }
 
-export const revalidate = 1800;
+/**
+ * Istek aninda sunucuda render ediliyor.
+ *
+ * `revalidate` ile statik uretilince sayfa DERLEME aninda olusuyordu:
+ * CI'da backend yok, fetch bos donuyor ve "0 kategori" yazan hali statik
+ * dosyaya gomuluyordu. Istek aninda render edilince cagri sunucunun
+ * kendi icinden (INTERNAL_API_URL) gidiyor ve gercek veriyi aliyor.
+ */
+export const dynamic = 'force-dynamic';
 
 export const metadata: Metadata = {
-  title: 'Tüm Kategoriler | Motorya',
+  // Layout basliga "| Motorya" ekliyor; burada tekrar yazmak
+  // "Tüm Kategoriler | Motorya | Motorya" uretiyordu.
+  title: 'Tüm Kategoriler',
   description:
     'Motosiklet ekipmanı kategorileri: kask, mont, pantolon, eldiven, bot, koruma ekipmanları, çanta, aksesuar, yedek parça ve bakım ürünleri.',
   alternates: { canonical: `${BASE_URL}/kategoriler` },
