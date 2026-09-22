@@ -329,9 +329,14 @@ export function Header() {
           backdropFilter: 'blur(8px)',
           paddingTop: 'var(--header-h)',
           display: 'flex', flexDirection: 'column',
-          overflowY: 'auto',
+          // Panelin kendisi kaymıyor; kayan kısım yalnızca bağlantı listesi.
+          // Önceden tüm panel kayıyordu ve girişli kullanıcıda içerik
+          // 759px'e çıktığı için kısa ekranlarda (iPhone 16 Safari ~650px)
+          // "Çıkış Yap" ekranın dışında kalıyordu. Artık alt blok her
+          // zaman görünür, uzun liste kendi içinde kayar.
+          overflow: 'hidden',
         }}>
-          <nav style={{ padding: '8px 0', flex: 1 }}>
+          <nav style={{ padding: '8px 0', flex: 1, minHeight: 0, overflowY: 'auto' }}>
             {mobileNavLinks.map(({ href, label, icon }) => (
               <Link key={href} href={href} style={{
                 display: 'flex', alignItems: 'center', gap: 14,
