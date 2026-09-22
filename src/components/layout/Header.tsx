@@ -80,7 +80,22 @@ export function Header() {
   useEffect(() => { setMenuOpen(false); setSearchOpen(false); setUserDropOpen(false); }, [pathname]);
   useEffect(() => {
     document.body.style.overflow = menuOpen ? 'hidden' : '';
-    return () => { document.body.style.overflow = ''; };
+    // Menü açıkken alt çubuk gizlenir.
+    //
+    // Menü paneli z-index 49, alt çubuk 100 — yani alt çubuk menünün
+    // üstüne biniyordu ve 84px'lik yüksekliğiyle "Çıkış Yap"ı tamamen
+    // örtüyordu (812px'lik bir ekranda düğme 748-796 arasında, çubuk
+    // 728'de başlıyor). Daha kısa ekranlarda "İlan Ver" de kayboluyordu.
+    //
+    // z-index'leri yeniden sıralamak yerine çubuğu gizliyoruz: tam ekran
+    // bir menü açıkken alt navigasyonun görünmesi zaten doğru değil ve
+    // bu çözüm başka katmanlara (çerez çubuğu, galeri, öneri kutusu)
+    // dokunmuyor.
+    document.body.classList.toggle('m-menu-acik', menuOpen);
+    return () => {
+      document.body.style.overflow = '';
+      document.body.classList.remove('m-menu-acik');
+    };
   }, [menuOpen]);
 
   const navigateSearch = (q: string) => {

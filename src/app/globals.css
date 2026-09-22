@@ -599,3 +599,7 @@ textarea.m-field { height: auto; padding: 12px 14px; resize: vertical; line-heig
 @media (min-width: 1024px) {
   .m-kategori-izgara { grid-template-columns: repeat(3, 1fr); }
 }
+
+/* Tam ekran menü açıkken alt navigasyon görünmez — bkz. Header.tsx.
+ * Çubuk menüden yüksek bir katmanda olduğu için "Çıkış Yap"ı örtüyordu. */
+body.m-menu-acik .m-fixed-bottom-stack { display: none; }
