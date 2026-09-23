@@ -39,7 +39,10 @@ const schema = z.object({
       .regex(/^[1-9][0-9]{10}$/, 'TC Kimlik numarası 0 ile başlayamaz')
       .refine(validateTcKimlik, 'Geçersiz TC Kimlik numarası (algoritma hatası)'),
   ]).optional(),
-  phone: z.string().regex(/^(05)[0-9]{9}$/, 'Geçerli bir cep telefonu giriniz (05XX 000 00 00)'),
+  // Opsiyonel — App Store 5.1.1(v): çekirdek işlev için gerekli olmayan
+  // kişisel bilgi zorunlu tutulamaz. Telefon ilan vermek için de
+  // gerekmiyor (TC kimlik isteniyor), iletişim mesajlaşmadan yürüyor.
+  phone: z.string().regex(/^$|^(05)[0-9]{9}$/, 'Geçerli bir cep telefonu giriniz (05XX 000 00 00)').optional(),
   birthDate: z.string().optional(),
   gender: z.enum(['MALE', 'FEMALE', 'OTHER']).optional().or(z.literal('')),
   city: z.string().optional(),
@@ -97,7 +100,7 @@ export default function RegisterPage() {
         realName: `${data.firstName.trim()} ${data.lastName.trim()}`,
         email: data.email,
         tcKimlik: data.tcKimlik || undefined,
-        phone: data.phone,
+        phone: data.phone || undefined,
         birthDate: data.birthDate || undefined,
         gender: data.gender || undefined,
         city: data.city || undefined,
@@ -234,7 +237,7 @@ export default function RegisterPage() {
               )}
             </FieldWrapper>
 
-            <FieldWrapper label="Cep Telefonu" icon={<Phone size={16} />} error={errors.phone?.message}>
+            <FieldWrapper label="Cep Telefonu (isteğe bağlı)" icon={<Phone size={16} />} error={errors.phone?.message}>
               <input {...register('phone')} type="tel" placeholder="05XX 000 00 00" maxLength={11} style={inputStyle(!!errors.phone)} onFocus={focusGlow} onBlur={blurGlow} />
             </FieldWrapper>
 
