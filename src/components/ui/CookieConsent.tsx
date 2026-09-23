@@ -47,6 +47,11 @@ export function CookieConsent() {
     <div
       role="dialog"
       aria-label="Çerez tercihleri"
+      // Menü açıkken gizlenir (globals.css). Çubuk menüden yüksek bir
+      // katmanda olduğu için menünün alt kısmını — "Çıkış Yap" dahil —
+      // örtüyordu. Menü kapanınca geri geliyor, yani onay istemi
+      // kaybolmuyor.
+      className="m-cerez-cubugu"
       style={{
         position: 'fixed', left: 12, right: 12, bottom: 12, zIndex: 200,
         maxWidth: 560, margin: '0 auto',

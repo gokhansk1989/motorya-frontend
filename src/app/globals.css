@@ -600,6 +600,9 @@ textarea.m-field { height: auto; padding: 12px 14px; resize: vertical; line-heig
   .m-kategori-izgara { grid-template-columns: repeat(3, 1fr); }
 }
 
-/* Tam ekran menü açıkken alt navigasyon görünmez — bkz. Header.tsx.
- * Çubuk menüden yüksek bir katmanda olduğu için "Çıkış Yap"ı örtüyordu. */
-body.m-menu-acik .m-fixed-bottom-stack { display: none; }
+/* Tam ekran menü açıkken, menüden yüksek katmandaki sabit çubuklar
+ * gizlenir. Alt navigasyon (z 100) ve çerez çubuğu (z 200) menünün alt
+ * kısmını — "Çıkış Yap" dahil — örtüyordu. Menü kapanınca ikisi de geri
+ * gelir; çerez onayı istemi kaybolmuyor, yalnızca erteleniyor. */
+body.m-menu-acik .m-fixed-bottom-stack,
+body.m-menu-acik .m-cerez-cubugu { display: none; }
