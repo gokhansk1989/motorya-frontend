@@ -604,5 +604,7 @@ textarea.m-field { height: auto; padding: 12px 14px; resize: vertical; line-heig
  * gizlenir. Alt navigasyon (z 100) ve çerez çubuğu (z 200) menünün alt
  * kısmını — "Çıkış Yap" dahil — örtüyordu. Menü kapanınca ikisi de geri
  * gelir; çerez onayı istemi kaybolmuyor, yalnızca erteleniyor. */
-body.m-menu-acik .m-fixed-bottom-stack,
-body.m-menu-acik .m-cerez-cubugu { display: none; }
+body.m-menu-acik .m-fixed-bottom-stack { display: none; }
+/* Çerez çubuğunun display'i satır içi stilde tanımlı; satır içi stil
+ * stylesheet'i ezdiği için burada !important şart. */
+body.m-menu-acik .m-cerez-cubugu { display: none !important; }
