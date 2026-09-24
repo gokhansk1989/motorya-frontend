@@ -87,6 +87,10 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html lang="tr" className={`h-full ${saira.variable} ${sairaCond.variable} ${hanken.variable} ${spaceMono.variable}`}>
       <head>
+        {/* AdSense betiği async yüklenirken DNS + TLS el sıkışması ilk
+            boyamayla yarışıyor; ölçümde tek başına ~314 ms. preconnect bu
+            turu HTML ayrıştırılırken peşin yapıyor. */}
+        <link rel="preconnect" href="https://pagead2.googlesyndication.com" crossOrigin="anonymous" />
         {/* Google AdSense — head içinde olmalı, Google botu bu şekilde doğrular.
             next/script ile body'den yüklemek denendi: "data-nscript" uyarısı
             üretti ve hydration uyuşmazlığını çözmedi, o yüzden geri alındı. */}
@@ -118,8 +122,15 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
             wait_for_update: 500
           });
         `}</Script>
-        <Script src="https://www.googletagmanager.com/gtag/js?id=G-S0BXZLVQ26" strategy="afterInteractive" />
-        <Script id="gtag-init" strategy="afterInteractive">{`
+        {/* GA 'afterInteractive' iken hidrasyonun hemen ardından yükleniyor ve
+            174 KiB'lik betiği ana iş parçacığında değerlendirmek ölçümde
+            engelleme süresine doğrudan giriyordu. 'lazyOnload' onload'dan
+            sonraya bırakıyor: sayfa etkileşime hazır olduktan sonra çalıştığı
+            için hiçbir oturum kaybedilmiyor, yalnızca kritik yoldan çıkıyor.
+            Onay varsayılanları yukarıda beforeInteractive kalıyor — GA'dan
+            önce çalışmaları KVKK gereği. */}
+        <Script src="https://www.googletagmanager.com/gtag/js?id=G-S0BXZLVQ26" strategy="lazyOnload" />
+        <Script id="gtag-init" strategy="lazyOnload">{`
           window.dataLayer = window.dataLayer || [];
           function gtag(){dataLayer.push(arguments);}
           gtag('js', new Date());
