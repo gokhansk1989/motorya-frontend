@@ -1,3 +1,4 @@
+import { Saira, Saira_Condensed, Hanken_Grotesk, Space_Mono } from 'next/font/google';
 import type { Metadata, Viewport } from 'next';
 import Script from 'next/script';
 import './globals.css';
@@ -10,6 +11,23 @@ export const viewport: Viewport = {
   maximumScale: 5,
   themeColor: '#ffffff',
 };
+
+/**
+ * Yazı tipleri Google'dan @import ile çekiliyordu — globals.css'in ilk
+ * satırında. Bu, font yüklemenin en yavaş yolu: tarayıcı önce CSS
+ * dosyasını indirip ayrıştırmalı, ancak o zaman font CSS'ini keşfedip
+ * ayrı bir istek atabiliyor. İki tur seri hâlde; PageSpeed ölçümünde
+ * yalnızca Google Fonts CSS'i 750 ms oluşturmayı engelliyordu.
+ *
+ * next/font fontları derleme anında indirip KENDİ alan adımızdan servis
+ * eder ve CSS'i sayfaya gömer: üçüncü taraf turu ve engelleme kalkar.
+ * Değişkenler globals.css'teki --font-* tanımlarıyla aynı isimde, yani
+ * stil tarafında hiçbir şey değişmiyor.
+ */
+const saira = Saira({ subsets: ['latin-ext'], weight: ['400','500','600','700','800'], variable: '--font-saira', display: 'swap' });
+const sairaCond = Saira_Condensed({ subsets: ['latin-ext'], weight: ['500','600','700'], variable: '--font-saira-cond', display: 'swap' });
+const hanken = Hanken_Grotesk({ subsets: ['latin-ext'], weight: ['400','500','600','700'], variable: '--font-hanken', display: 'swap' });
+const spaceMono = Space_Mono({ subsets: ['latin'], weight: ['400','700'], variable: '--font-space-mono', display: 'swap' });
 
 export const metadata: Metadata = {
   title: {
@@ -67,7 +85,7 @@ const ORGANIZATION_SCHEMA = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="tr" className="h-full">
+    <html lang="tr" className={`h-full ${saira.variable} ${sairaCond.variable} ${hanken.variable} ${spaceMono.variable}`}>
       <head>
         {/* Google AdSense — head içinde olmalı, Google botu bu şekilde doğrular.
             next/script ile body'den yüklemek denendi: "data-nscript" uyarısı

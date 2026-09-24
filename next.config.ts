@@ -61,6 +61,18 @@ const nextConfig: NextConfig = {
   async headers() {
     return [
       { source: '/:path*', headers: securityHeaders },
+      // Kategori ikonlari ve logo: icerik degisirse dosya adi da degisiyor
+      // (webp'ye gecerken oldugu gibi), dolayisiyla uzun onbellek guvenli.
+      // PageSpeed bunlari "kisa onbellek omru" olarak isaretliyordu; her
+      // gezinmede yeniden dogrulanmalari bosa istek demek.
+      {
+        source: '/icons/:path*',
+        headers: [{ key: 'Cache-Control', value: 'public, max-age=31536000, immutable' }],
+      },
+      {
+        source: '/logo-sm.webp',
+        headers: [{ key: 'Cache-Control', value: 'public, max-age=31536000, immutable' }],
+      },
     ];
   },
   async redirects() {

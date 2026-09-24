@@ -18,7 +18,7 @@ export function Logo() {
     <Link href="/" style={{ display: 'flex', alignItems: 'center', gap: 10, textDecoration: 'none' }}>
       {/* eslint-disable-next-line @next/next/no-img-element */}
       <img
-        src="/logo.png"
+        src="/logo-sm.webp"
         alt="Motorya"
         width={34}
         height={34}
