@@ -23,7 +23,14 @@ import type { Metadata } from 'next';
  */
 export const BOS_SAYFA_ROBOTS: Metadata['robots'] = { index: false, follow: true };
 
-/** İlan sayısı sıfırsa noindex döndürür, doluysa varsayılanı (undefined) bırakır. */
-export function robotsIcinIlanSayisi(ilanSayisi: number): Metadata['robots'] | undefined {
-  return ilanSayisi > 0 ? undefined : BOS_SAYFA_ROBOTS;
+/**
+ * İlan sayısı sıfırsa noindex, doluysa açıkça index döndürür.
+ *
+ * Dolu durumda undefined dönmek de aynı sonucu verirdi (etiket basılmaz,
+ * varsayılan indekslenebilir), ama bu sayfalar eskiden açıkça
+ * "index, follow" yazıyordu. Etiketi sessizce kaldırmak davranışı
+ * değiştirmese de karşılaştırmayı zorlaştırır; açık bırakıyoruz.
+ */
+export function robotsIcinIlanSayisi(ilanSayisi: number): Metadata['robots'] {
+  return ilanSayisi > 0 ? { index: true, follow: true } : BOS_SAYFA_ROBOTS;
 }
