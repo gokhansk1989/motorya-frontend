@@ -79,6 +79,14 @@ jobs:
           # üretilmediği için çalışma alanının kirli olmasına gerek yok).
           git fetch origin main
           git checkout -- . 2>/dev/null || true
+          # public/ hem git'te izleniyor hem de bir önceki adımda rsync ile
+          # gönderiliyor. Depoya YENİ bir public dosyası eklendiğinde rsync onu
+          # sunucuya takipsiz olarak bırakıyor ve git merge "untracked working
+          # tree files would be overwritten" diyip tüm deploy'u düşürüyor —
+          # webp ikonlarında tam olarak bu oldu. İçerik zaten commit'ten
+          # geliyor, o yüzden sadece public/ altındaki takipsizleri temizliyoruz;
+          # kaynak koda dokunmuyor.
+          git ls-files --others --exclude-standard -- public | xargs -r rm -f
           git merge --ff-only origin/main
 
           # node_modules runtime'da (`next start`) gerekli; sadece lockfile
