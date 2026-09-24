@@ -5,6 +5,23 @@ import { SSR_API_URL } from '@/lib/apiBase';
 const BASE_URL = 'https://motorya.com.tr';
 const API = SSR_API_URL;
 
+/**
+ * Sitemap derleme anında üretilmesin.
+ *
+ * Aşağıdaki veriler API'den geliyor, ama route varsayılan olarak statik
+ * sayılıyordu: dosya CI runner'ında, `next build` sırasında üretiliyordu.
+ * Orada backend'e erişim yok — üç fetch de boş dönüyor ve geriye yalnızca
+ * elle yazılmış 5 statik adres kalıyor. O boş dosya sunucuya deploy ediliyor
+ * ve canlıda sitemap.xml 879 bayt, 5 adres olarak yayınlanıyordu: tek bir
+ * ilan, kategori veya blog yazısı bildirilmiyordu.
+ *
+ * `/kategoriler` sayfası da aynı tuzağa düşmüştü ("0 kategori" göstermişti);
+ * çözüm orada da buydu. force-dynamic ile sitemap istek anında, sunucuda
+ * üretiliyor — backend erişilebilir olduğu yerde. Fetch'lerdeki
+ * `next: { revalidate }` önbelleği duruyor, yani her istek API'yi dövmüyor.
+ */
+export const dynamic = 'force-dynamic';
+
 // Şehir adı ("İstanbul") -> slug ("istanbul"). İlan kayıtları şehri görünen
 // adıyla tuttuğu için sitemap'te slug'a çevirmek gerekiyor.
 const CITY_SLUG_BY_NAME = new Map(

@@ -7,6 +7,7 @@ import { CITY_MAP, CITIES } from '@/lib/cities';
 import { CategoryIcon as CatIcon } from '@/components/icons/CategoryIcons';
 import { jsonLdHtml } from '@/lib/jsonLd';
 import { SSR_API_URL } from '@/lib/apiBase';
+import { robotsIcinIlanSayisi } from '@/lib/seoRobots';
 
 const BASE_URL = 'https://motorya.com.tr';
 
@@ -72,6 +73,11 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
   if (!data || !city) return { title: 'Sayfa Bulunamadı' };
 
   const { category } = data;
+
+  // Şehir × kategori sayfalarının büyük çoğunluğunda hiç ilan yok
+  // (11 kategori × 20 şehir = 220 sayfa, 10 ilan). Boş olanlar
+  // indekslenmesin. Sayfa bileşeni aynı isteği yapıyor, Next dedupe ediyor.
+  const sehirIlanlari = await fetchListings(category.id, city);
   const title = `${city} İkinci El ${category.name}`;
   const socialTitle = `${title} | Motorya`;
   const description = `${city} ilanlarında ikinci el motosiklet ${category.name.toLowerCase()} al ya da sat. Doğrulanmış satıcılar, ücretsiz ilan — Motorya'da.`;
@@ -80,6 +86,7 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
   return {
     title,
     description,
+    robots: robotsIcinIlanSayisi(sehirIlanlari.length),
     alternates: { canonical },
     keywords: [`${city} ${category.name}`, `${city} ikinci el ${category.name}`],
     openGraph: { title: socialTitle, description, url: canonical, type: 'website' },

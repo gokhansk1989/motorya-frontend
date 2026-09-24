@@ -1,12 +1,19 @@
-import { notFound } from 'next/navigation';
+import { notFound, permanentRedirect } from 'next/navigation';
 import Link from 'next/link';
 import Image from 'next/image';
 import { ChevronRight, PackageSearch } from 'lucide-react';
 import { CategoryIcon as CatIcon } from '@/components/icons/CategoryIcons';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { jsonLdHtml } from '@/lib/jsonLd';
+import { SSR_API_URL } from '@/lib/apiBase';
+import { robotsIcinIlanSayisi } from '@/lib/seoRobots';
 
-const API = process.env.NEXT_PUBLIC_API_URL || 'https://motorya.com.tr/api-backend';
+// Bu sayfa API'ye kendi GENEL adresimiz üzerinden gidiyordu: istek sunucudan
+// çıkıp Cloudflare'e dönüyor, kenar kurallarına takılıyor ve sunucunun kendi
+// isteği 403 alabiliyordu. Diğer sunucu sayfaları bu yüzden SSR_API_URL'e
+// geçirilmişti; burası atlanmış. SSR_API_URL sunucuda iç adrese (127.0.0.1),
+// tarayıcıda genel adrese çözülüyor.
+const API = SSR_API_URL;
 
 async function getCategory(slug: string) {
   try {
@@ -53,7 +60,11 @@ async function getListings(categorySlug: string, brandSlug: string) {
       console.error(`[kategori/${categorySlug}/marka/${brandSlug}] listings fetch failed: ${res.status}`);
       return { items: [], total: 0 };
     }
-    return await res.json();
+    // API toplamı meta.total içinde veriyor; hata dallarıyla aynı şekli
+    // döndürmek için burada düzleştiriyoruz (önceden yanıt olduğu gibi
+    // dönüyordu, yani total yalnızca hata durumunda tanımlıydı).
+    const json = await res.json();
+    return { items: json.items ?? [], total: json.meta?.total ?? 0 };
   } catch (err) {
     console.error(`[kategori/${categorySlug}/marka/${brandSlug}] listings fetch error:`, err);
     return { items: [], total: 0 };
@@ -70,6 +81,10 @@ export async function generateMetadata({ params }: Props) {
   if (!brand?.name) return {};
   const catName = category.name as string;
   const brandName = brand.name as string;
+
+  // Markada hiç ilan kalmamışsa sayfa indekslenmesin — kategori × marka
+  // kombinasyonları en çok boş sayfa üreten kırılım.
+  const { total = 0 } = (await getListings(slug, brandSlug)) as { total?: number };
   // Marka soneki kök layout'taki title template'inden gelir; OG başlığı
   // template'ten geçmediği için markayı ona ayrıca ekliyoruz.
   const title = `İkinci El ${brandName} ${catName}`;
@@ -79,6 +94,7 @@ export async function generateMetadata({ params }: Props) {
     title,
     description,
     keywords: `${brandName} ${catName} ikinci el, ${brandName} ${catName.toLowerCase()} fiyatları, ikinci el ${brandName}`,
+    robots: robotsIcinIlanSayisi(total),
     openGraph: { title: socialTitle, description, url: `https://motorya.com.tr/kategori/${slug}/marka/${brandSlug}` },
   };
 }
@@ -93,8 +109,18 @@ export default async function CategoryBrandPage({ params }: Props) {
   const { slug, brand: brandSlug } = await params;
   const [category, brands] = await Promise.all([getCategory(slug), getBrandsForCategory(slug)]);
   if (!category) notFound();
+
+  // Marka bu kategoride yoksa kategori sayfasına kalıcı olarak yönlendir.
+  //
+  // Önceden 404 dönüyordu ve Search Console'da 16 sayfa "Bulunamadı" olarak
+  // raporlanıyordu. Bu sayfalar bir zamanlar vardı: o markadaki son ilan
+  // silinince adres birdenbire 404'e düşüyor. Oysa kullanıcının aradığı şey
+  // hâlâ var, bir üst kırılımda — kategori sayfası. 404 Google'a "bu adres
+  // artık yok" der ve biriken sinyali çöpe atar; kalıcı yönlendirme ise o
+  // sinyali kategori sayfasına aktarır ve ziyaretçiyi boş ekranla
+  // karşılamaz. Kategorinin kendisi gerçekten yoksa 404 doğru kalıyor.
   const brand = (brands as any[]).find((b: any) => b.slug === brandSlug);
-  if (!brand) notFound();
+  if (!brand) permanentRedirect(`/kategori/${slug}`);
 
   const data = await getListings(slug, brandSlug);
   const listings: any[] = data.items ?? [];

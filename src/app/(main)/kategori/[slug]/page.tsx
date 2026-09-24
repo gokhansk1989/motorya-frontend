@@ -9,6 +9,7 @@ import { CategoryIcon as CatIcon } from '@/components/icons/CategoryIcons';
 import { CITIES } from '@/lib/cities';
 import { jsonLdHtml } from '@/lib/jsonLd';
 import { SSR_API_URL } from '@/lib/apiBase';
+import { robotsIcinIlanSayisi } from '@/lib/seoRobots';
 
 const BASE_URL = 'https://motorya.com.tr';
 
@@ -81,6 +82,12 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
   if (!data) return { title: 'Kategori Bulunamadı' };
 
   const { category } = data;
+
+  // Sayfada hiç ilan yoksa indekslenmesin. Sayfa bileşeni birazdan aynı
+  // isteği aynı seçeneklerle yapıyor, Next bunu tek fetch'e indiriyor —
+  // ekstra bir tur maliyeti yok.
+  const { total } = await fetchListings(category.id);
+
   // Marka soneki kök layout'taki title template'inden gelir; OG başlığı
   // template'ten geçmediği için markayı ona ayrıca ekliyoruz.
   const title = `İkinci El ${category.name}`;
@@ -92,6 +99,7 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
     title,
     description,
     keywords: [`ikinci el ${category.name}`, `motosiklet ${category.name}`, `${category.name} satış`, `${category.name} fiyatları`],
+    robots: robotsIcinIlanSayisi(total),
     alternates: { canonical },
     openGraph: { title: socialTitle, description, url: canonical, type: 'website' },
   };
