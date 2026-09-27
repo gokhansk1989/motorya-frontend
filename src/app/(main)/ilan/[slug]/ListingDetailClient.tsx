@@ -52,6 +52,10 @@ function ConditionPill({ condition }: { condition: string }) {
   );
 }
 
+// Favori sayısının alıcıya gösterilmesi için gereken en az sayı.
+// Altındaki değerler sosyal kanıt üretmiyor, aksine ilanı zayıflatıyor.
+const FAVORI_GOSTERME_ESIGI = 3;
+
 export default function ListingDetailClient({ initialListing }: { initialListing?: unknown } = {}) {
   const { slug } = useParams<{ slug: string }>();
   const router = useRouter();
@@ -375,6 +379,26 @@ export default function ListingDetailClient({ initialListing }: { initialListing
 
             <div style={{ display: 'flex', gap: 16, color: 'var(--ink-3)', fontSize: 12.5, marginTop: 6 }}>
               <span style={{ display: 'flex', gap: 5, alignItems: 'center' }}><Eye size={14} />{listing.viewCount} görüntülenme</span>
+
+              {/* Favori sayısı: veri baştan beri vardı (favoriteCount) ama yalnızca
+                  "İlanlarım" listesinde gösteriliyordu - ilanı inceleyen alıcı hiç
+                  görmüyordu. Oysa başkalarının da beğendiğini görmek ikinci el
+                  alışverişte karar verdiren sinyallerden biri.
+
+                  Eşik neden var: "1 kişi favoriledi" sosyal kanıt değil, tersine
+                  ilginin az olduğunu söyler ve ilanı zayıflatır. Aynı ilkeyi ana
+                  sayfadaki "Fiyatı Düştü" şeridinde de uyguluyoruz. Satıcı kendi
+                  ilanına baktığında ise sayı ne olursa olsun görünüyor: ilgiyi
+                  ölçmek onun işi, sosyal kanıt meselesi değil. */}
+              {(isMine ? listing.favoriteCount > 0 : listing.favoriteCount >= FAVORI_GOSTERME_ESIGI) && (
+                <>
+                  <span style={{ width: 3, height: 3, borderRadius: '50%', background: 'currentColor', alignSelf: 'center', opacity: 0.6 }} />
+                  <span style={{ display: 'flex', gap: 5, alignItems: 'center' }}>
+                    <Heart size={14} />{listing.favoriteCount} favori
+                  </span>
+                </>
+              )}
+
               <span style={{ width: 3, height: 3, borderRadius: '50%', background: 'currentColor', alignSelf: 'center', opacity: 0.6 }} />
               <span>{timeAgo(listing.createdAt)}</span>
             </div>
