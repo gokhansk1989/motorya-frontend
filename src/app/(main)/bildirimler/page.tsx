@@ -103,7 +103,13 @@ function getNavTarget(n: Notif): string | null {
 
     // Değerlendirme daveti: backend 'review.invite' üretiyor. Burada
     // 'review.new' yazıyordu, yani hiçbir zaman eşleşmiyordu.
-    case 'review.invite':           return p.listingSlug ? `/ilan/${p.listingSlug}` : '/profilim';
+    //
+    // Hedef ilan sayfası DEĞİL: değerlendirme formu orada yok, tekliflerim
+    // sayfasında. İlan sayfasına göndermek kullanıcıyı "değerlendir" deyip
+    // değerlendirecek bir şey bulamadığı bir yere bırakıyordu.
+    // payload.role satıcı mı alıcı mı olduğumuzu söylüyor: alıcı gönderdiği
+    // tekliflerden, satıcı aldığı tekliflerden değerlendiriyor.
+    case 'review.invite':           return p.role === 'seller' ? '/tekliflerim?tab=received' : '/tekliflerim?tab=sent';
 
     default:                        return null;
   }
