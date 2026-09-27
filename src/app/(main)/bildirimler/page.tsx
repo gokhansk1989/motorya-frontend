@@ -7,6 +7,7 @@ import { timeAgo } from '@/lib/utils';
 import {
   Bell, CheckCheck, Package, Tag, MessageCircle,
   Heart, UserPlus, Star, ArrowLeftRight, CheckCircle, XCircle, Search, Sparkles, Loader2,
+  Flag, ShieldCheck, Clock, Megaphone,
 } from 'lucide-react';
 import Link from 'next/link';
 import toast from 'react-hot-toast';
@@ -40,6 +41,23 @@ const TYPE_META: Record<string, { icon: any; color: string }> = {
   'favorite.listing_sold':    { icon: Heart,           color: 'var(--ink-3)' },
   'follow.new':               { icon: UserPlus,        color: 'var(--accent-2)' },
   'review.new':               { icon: Star,            color: 'var(--warn)' },
+
+  // Backend'in ürettiği ama burada karşılığı olmayan tipler varsayılan zil
+  // ikonuyla düşüyordu; listede hepsi birbirinin aynı görünüyordu.
+  'review.invite':            { icon: Star,            color: 'var(--warn)' },
+  'saved_search.match':       { icon: Search,          color: 'var(--accent)' },
+  'listing.favorited':        { icon: Heart,           color: 'var(--accent)' },
+  'listing.stale_30d':        { icon: Clock,           color: 'var(--ink-3)' },
+  'listing.sold_reminder':    { icon: Clock,           color: 'var(--ink-3)' },
+  'listing.reservation_expired': { icon: Clock,        color: 'var(--warn)' },
+  'follow.new_listing':       { icon: UserPlus,        color: 'var(--accent-2)' },
+  'message.unread_reminder':  { icon: MessageCircle,   color: 'var(--accent-2)' },
+  'lifecycle.welcome_guide':  { icon: Megaphone,       color: 'var(--accent)' },
+  'lifecycle.first_listing':  { icon: Megaphone,       color: 'var(--accent)' },
+  'lifecycle.reengagement':   { icon: Megaphone,       color: 'var(--accent)' },
+  'report.received':          { icon: Flag,            color: 'var(--bad)' },
+  'report.resolved':          { icon: ShieldCheck,     color: 'var(--good)' },
+  'moderation.pending':       { icon: Package,         color: 'var(--warn)' },
 };
 
 function getNavTarget(n: Notif): string | null {
@@ -60,7 +78,33 @@ function getNavTarget(n: Notif): string | null {
     case 'favorite.price_drop':     return p.listingSlug ? `/ilan/${p.listingSlug}` : p.listingId ? `/ilan/${p.listingId}` : null;
     case 'favorite.listing_sold':   return '/';
     case 'follow.new':              return p.followerId ? `/kullanici/${p.followerId}` : null;
-    case 'review.new':              return '/profilim';
+
+    // Aşağıdakiler backend'de üretiliyordu ama burada karşılığı yoktu ve
+    // `default: null` yüzünden tıklanamıyorlardı. Ölçtüğümüzde tek bir
+    // hesapta 20 bildirimin 10'u bu durumdaydı - kullanıcı bildirimi
+    // görüyor, basıyor, hiçbir şey olmuyordu.
+    case 'saved_search.match':      return p.listingSlug ? `/ilan/${p.listingSlug}` : p.listingId ? `/ilan/${p.listingId}` : '/alarmlarim';
+    case 'listing.favorited':       return p.listingSlug ? `/ilan/${p.listingSlug}` : p.listingId ? `/ilan/${p.listingId}` : '/ilanlarim';
+    case 'listing.stale_30d':       return p.listingId ? `/ilanlarim/duzenle/${p.listingId}` : '/ilanlarim';
+    case 'listing.sold_reminder':   return p.listingId ? `/ilanlarim/duzenle/${p.listingId}` : '/ilanlarim';
+    case 'listing.reservation_expired': return p.listingSlug ? `/ilan/${p.listingSlug}` : '/ilanlarim';
+    case 'follow.new_listing':      return p.listingSlug ? `/ilan/${p.listingSlug}` : p.listingId ? `/ilan/${p.listingId}` : null;
+    case 'message.unread_reminder': return p.conversationId ? `/mesajlarim?conv=${p.conversationId}` : '/mesajlarim';
+
+    // Yaşam döngüsü hatırlatmaları: hepsi "ilan ver" davetiyle geliyor.
+    case 'lifecycle.welcome_guide':
+    case 'lifecycle.first_listing': return '/ilan-ver';
+    case 'lifecycle.reengagement':  return '/';
+
+    // Şikâyet sonucu şikâyetçiye gidiyor; ilgili ilan hâlâ yayındaysa oraya,
+    // kaldırıldıysa bağlantı vermiyoruz - kullanıcıyı 404'e göndermek
+    // "işlem yapıldı" mesajıyla çelişirdi.
+    case 'report.resolved':         return p.listingSlug ? `/ilan/${p.listingSlug}` : null;
+
+    // Değerlendirme daveti: backend 'review.invite' üretiyor. Burada
+    // 'review.new' yazıyordu, yani hiçbir zaman eşleşmiyordu.
+    case 'review.invite':           return p.listingSlug ? `/ilan/${p.listingSlug}` : '/profilim';
+
     default:                        return null;
   }
 }
