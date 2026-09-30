@@ -12,6 +12,7 @@ import {
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { useStartConversation } from '@/hooks/useMessages';
+import { useRouter } from 'next/navigation';
 
 function fmtMonthYear(d: string) {
   return new Date(d).toLocaleDateString('tr-TR', { month: 'short', year: 'numeric' });
@@ -22,6 +23,7 @@ export default function PublicProfilePage({ params }: { params: Promise<{ id: st
   const { user: me } = useAuthStore();
   const qc = useQueryClient();
   const [listingTab, setListingTab] = useState<'ACTIVE' | 'SOLD'>('ACTIVE');
+  const router = useRouter();
   const startConversation = useStartConversation();
 
   const { data: relation } = useQuery({
@@ -198,9 +200,22 @@ export default function PublicProfilePage({ params }: { params: Promise<{ id: st
         {/* Mesaj gönder butonu — tam genişlik */}
         {me && !isMe && (
           <button
-            onClick={() => startConversation.mutate({ otherUserId: id }, {
-              onError: () => toast.error('Mesaj başlatılamadı'),
-            })}
+            onClick={async () => {
+              // Konuşmayı açtıktan sonra ORAYA GİT.
+              //
+              // Bug buradaydı: mutate yalnızca onError ile çağrılıyordu,
+              // başarı durumunda hiçbir şey yapılmıyordu. Konuşma sunucuda
+              // oluşuyor ama ekranda hiçbir şey değişmediği için kullanıcı
+              // "çalışmıyor" diye tekrar tekrar basıyor ve her basışta bir
+              // boş konuşma daha birikiyordu. İlan detayındaki aynı buton
+              // baştan beri doğru yapıyordu; burası atlanmış.
+              try {
+                const conv = await startConversation.mutateAsync({ otherUserId: id });
+                router.push(`/mesajlarim?conv=${conv.id}`);
+              } catch {
+                toast.error('Mesaj başlatılamadı');
+              }
+            }}
             disabled={startConversation.isPending}
             className="m-btn"
             style={{ width: '100%', height: 40, fontSize: 13, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 7, marginBottom: badges.length > 0 || user.bio ? 14 : 0 }}
