@@ -44,7 +44,19 @@ export function useConversations() {
 }
 
 export function useMessages(conversationId: string | null) {
-  return useQuery<{ messages: Message[]; nextCursor: string | null }>({
+  // Yanıt `conversation` alanını da taşıyor: mesajsız konuşmalar artık
+  // listede görünmediği için, doğrudan açılan boş bir konuşmanın başlığı
+  // (kiminle, hangi ilan) yalnızca buradan gelebiliyor.
+  return useQuery<{
+    messages: Message[];
+    nextCursor: string | null;
+    conversation?: {
+      id: string;
+      listing: { id: string; title: string; images?: { url: string }[] } | null;
+      otherUser: { id: string; displayName: string; avatarUrl?: string } | null;
+      otherReadAt: string | null;
+    };
+  }>({
     queryKey: ['messages', conversationId],
     queryFn: async () => {
       const res = await api.get(`/messages/conversations/${conversationId}`);

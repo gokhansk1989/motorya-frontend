@@ -46,7 +46,16 @@ export default function MessagesPage() {
   const messages = msgData?.messages ?? [];
   const sendMessage = useSendMessage();
 
-  const activeConv = conversations.find(c => c.id === activeId) ?? null;
+  // Konuşma listede bulunamazsa mesaj sorgusundan gelen bilgiye düş.
+  //
+  // Mesajsız konuşmalar artık listelenmiyor (boş "Yeni konuşma" satırları
+  // birikiyordu), ama "Mesaj Gönder" sonrası kullanıcı tam da böyle bir
+  // konuşmaya giriyor. Bu yedek olmadan ekranın tepesi boş kalıyor,
+  // kiminle konuştuğu görünmüyordu.
+  const listedekiConv = conversations.find(c => c.id === activeId) ?? null;
+  const activeConv = listedekiConv ?? (msgData?.conversation
+    ? { ...msgData.conversation, lastMessage: null, lastReadAt: null, updatedAt: new Date().toISOString() } as any
+    : null);
 
   // URL'den conv param'ını oku
   useEffect(() => {
