@@ -4,11 +4,11 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { api } from '@/lib/api';
 import { useAuthStore } from '@/store/auth';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import toast from 'react-hot-toast';
-import { Zap, Eye, EyeOff, Mail, Lock } from 'lucide-react';
-import { useState, useCallback } from 'react';
+import { Zap, Eye, EyeOff, Mail, Lock, Clock } from 'lucide-react';
+import { useState, useCallback, Suspense } from 'react';
 import { Turnstile } from '@/components/Turnstile';
 
 const schema = z.object({
@@ -18,9 +18,23 @@ const schema = z.object({
 
 type FormData = z.infer<typeof schema>;
 
-export default function LoginPage() {
+function LoginPage() {
   const { setAuth } = useAuthStore();
   const router = useRouter();
+  const params = useSearchParams();
+
+  // Oturum süresi dolduğu için buraya atıldıysa kullanıcıya söyle.
+  //
+  // Önceden sessizce giriş sayfasına düşüyordu: kullanıcı ne olduğunu
+  // anlamıyor, "çıkış yapmadım ki" diye düşünüyordu. Daha kötüsü, bazı
+  // durumlarda yönlendirme hiç olmuyor ve arayüz giriş yapılmış gibi
+  // görünürken bütün istekler sessizce boş dönüyordu.
+  const oturumDoldu = params.get('oturum') === 'doldu';
+
+  // Nereden geldiyse oraya döndür. Açık yönlendirme olmaması için yalnızca
+  // kendi sitemizdeki bir yol kabul ediliyor.
+  const devamHam = params.get('devam') ?? '';
+  const devam = devamHam.startsWith('/') && !devamHam.startsWith('//') ? devamHam : null;
   const [showPwd, setShowPwd] = useState(false);
   const [captchaRequired, setCaptchaRequired] = useState(false);
   const [turnstileToken, setTurnstileToken] = useState('');
@@ -44,7 +58,7 @@ export default function LoginPage() {
       // Kullanici adi olmayanlarin gercek adi ilan ve mesajlarda gorunuyor.
       if (res.data.needsConsent) router.push('/onaylar');
       else if (res.data.needsUsername) router.push('/kullanici-adi');
-      else router.push('/');
+      else router.push(devam ?? '/');
     } catch (e: any) {
       const body = e.response?.data;
       if (body?.captchaRequired) setCaptchaRequired(true);
@@ -81,6 +95,23 @@ export default function LoginPage() {
             </span>
           </Link>
           <p style={{ marginTop: 10, color: 'var(--ink-3)', fontSize: 14 }}>Hesabına giriş yap</p>
+
+        {oturumDoldu && (
+          <div style={{
+            display: 'flex', alignItems: 'flex-start', gap: 10, marginTop: 18,
+            padding: '12px 14px', borderRadius: 10, textAlign: 'left',
+            background: 'color-mix(in oklch, var(--warn) 10%, transparent)',
+            border: '1px solid color-mix(in oklch, var(--warn) 30%, transparent)',
+          }}>
+            <Clock size={17} style={{ color: 'var(--warn)', flexShrink: 0, marginTop: 1 }} />
+            <div>
+              <p style={{ margin: 0, fontSize: 13.5, fontWeight: 600, color: 'var(--ink)' }}>Oturumun sona erdi</p>
+              <p style={{ margin: '3px 0 0', fontSize: 13, color: 'var(--ink-2)', lineHeight: 1.5 }}>
+                Güvenliğin için bir süre sonra çıkış yapıldı. Tekrar giriş yaptığında kaldığın yerden devam edeceksin.
+              </p>
+            </div>
+          </div>
+        )}
         </div>
 
         <div className="m-surface-2" style={{ padding: '32px 32px 28px', borderRadius: 'var(--radius-l)' }}>
@@ -186,5 +217,15 @@ export default function LoginPage() {
 
       <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
     </div>
+  );
+}
+
+// useSearchParams bir Suspense sınırı içinde olmak zorunda; yoksa Next.js
+// derleme sırasında sayfanın tamamını istemci tarafına zorluyor.
+export default function LoginPageWrapper() {
+  return (
+    <Suspense fallback={null}>
+      <LoginPage />
+    </Suspense>
   );
 }

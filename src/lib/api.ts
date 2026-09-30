@@ -57,11 +57,30 @@ api.interceptors.response.use(
         return api.request(original);
       }
       // Refresh başarısız — oturumu temizle ve login'e yönlendir.
-      const hadToken = !!localStorage.getItem('access_token');
+      //
+      // 'motorya-auth' da siliniyor: kullanıcı bilgisi zustand persist ile
+      // ORADA duruyor. Yalnızca access_token silindiğinde store'daki user
+      // yerinde kalıyor, isAuthenticated() true dönmeye devam ediyor ve
+      // arayüz giriş yapılmış gibi davranıyordu - "Mesaj Gönder" butonu
+      // görünüyor, mesaj listesi "henüz mesajın yok" diyor, ama her istek
+      // sessizce 401 alıyordu. Kullanıcının bunu anlamasının hiçbir yolu
+      // yoktu; tek belirti her şeyin boş görünmesiydi.
+      const oturumVardi =
+        !!localStorage.getItem('access_token') || !!localStorage.getItem('motorya-auth');
       localStorage.removeItem('access_token');
       localStorage.removeItem('refresh_token');
       localStorage.removeItem('device_id');
-      if (hadToken) window.location.href = '/giris';
+      localStorage.removeItem('motorya-auth');
+
+      if (oturumVardi) {
+        // Nereden atıldığını taşı ki giriş sonrası kullanıcı aynı yere dönsün.
+        // Yalnızca kendi sitemizdeki bir yola izin veriliyor: '//baska.site'
+        // gibi bir değer açık yönlendirme (open redirect) açığı olurdu.
+        const suAn = window.location.pathname + window.location.search;
+        const guvenli = suAn.startsWith('/') && !suAn.startsWith('//') ? suAn : '/';
+        const hedef = guvenli === '/giris' ? '/giris?oturum=doldu' : `/giris?oturum=doldu&devam=${encodeURIComponent(guvenli)}`;
+        window.location.href = hedef;
+      }
     }
     return Promise.reject(err);
   }
