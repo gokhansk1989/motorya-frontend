@@ -201,7 +201,10 @@ input, textarea, select { font-family: inherit; color: var(--ink); }
   .m-bottom-nav__label { font-size: 10px; font-weight: 500; letter-spacing: .01em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%; }
   .m-bottom-nav__fab {
     flex-shrink: 0; width: 52px; height: 52px; border-radius: 16px;
-    background: #f97316; color: #fff; border: none; cursor: pointer;
+    /* Marka rengi değişkenden gelmeli: burada sabit #f97316 yazılıydı ve
+       --accent güncellenince alt navigasyondaki "İlan Ver" düğmesi tek
+       başına eski turuncuda kaldı. */
+    background: var(--accent); color: var(--accent-ink); border: none; cursor: pointer;
     display: grid; place-items: center;
     transition: transform .12s;
     -webkit-tap-highlight-color: transparent;

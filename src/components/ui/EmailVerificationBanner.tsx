@@ -44,7 +44,7 @@ export function EmailVerificationBanner() {
           onClick={resend}
           disabled={loading}
           style={{
-            backgroundColor: '#f97316',
+            backgroundColor: 'var(--accent)',
             color: '#fff',
             border: 'none',
             borderRadius: 6,
