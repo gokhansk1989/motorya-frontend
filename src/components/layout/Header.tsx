@@ -16,17 +16,22 @@ import { matchCategories, matchBrands, CategorySuggestionsDropdown, type Categor
 export function Logo() {
   return (
     <Link href="/" style={{ display: 'flex', alignItems: 'center', gap: 10, textDecoration: 'none' }}>
+      {/* Logo artık bir wordmark: işaret ve yazı tek görselde.
+          Yanına ayrıca "MOTORYA" yazmıyoruz, iki kez okunurdu.
+
+          Dosya 3x çözünürlükte (369×102) ama 123×34 gösteriliyor; retina
+          ekranda bulanıklaşmaması için. Kaynak görselde "OTORYA" beyazdı -
+          koyu zemin için tasarlanmış - ve sitenin açık başlığında hiç
+          görünmüyordu; harfler --ink rengine çevrildi, M'nin turuncu
+          gradyanı olduğu gibi duruyor. */}
       {/* eslint-disable-next-line @next/next/no-img-element */}
       <img
-        src="/logo-sm.webp"
+        src="/logo-wordmark.webp"
         alt="Motorya"
-        width={34}
+        width={123}
         height={34}
-        style={{ borderRadius: 9, boxShadow: '0 6px 18px -8px var(--accent)', flexShrink: 0 }}
+        style={{ flexShrink: 0 }}
       />
-      <span className="m-display" style={{ fontSize: 22, letterSpacing: '-0.03em', color: 'var(--ink)' }}>
-        MOTOR<span className="m-accent">YA</span>
-      </span>
     </Link>
   );
 }
