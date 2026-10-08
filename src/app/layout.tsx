@@ -9,7 +9,9 @@ export const viewport: Viewport = {
   width: 'device-width',
   initialScale: 1,
   maximumScale: 5,
-  themeColor: '#ffffff',
+  // Mobil tarayıcının adres çubuğu ve PWA olarak ana ekrana eklendiğinde
+  // sistem çubuğu bu rengi alıyor. Beyazken site tarayıcıdan ayrışmıyordu.
+  themeColor: '#D83E13',
 };
 
 /**

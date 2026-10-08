@@ -13,14 +13,28 @@
   --ink-2: oklch(0.32 0.014 255);
   --ink-3: oklch(0.52 0.014 255);
 
-  --accent: oklch(0.65 0.200 50);
+  /* Marka turuncusu, yeni logoya göre.
+     Logonun gradyanı #FF4917 → #C6020D arasında gidiyor; eski --accent
+     (#E95E00) sarıya çalıyordu ve başlıkta logonun yanında ikinci bir
+     turuncu gibi duruyordu.
+
+     Bu ton logonun üst renginin %85 parlaklığı: aynı aile, ama üzerinde
+     beyaz yazı 4.55 kontrast veriyor (WCAG AA eşiği 4.5). Logonun kendi
+     tonu 3.38'de kalıyordu - eski renk de 3.46 ile zaten eşiğin altındaydı,
+     yani o sorun devralınmadı, düzeltildi. */
+  --accent: oklch(0.588 0.197 35);
   --accent-ink: oklch(0.99 0.002 255);
+  /* Metin taşımayan yüzeyler için logonun kendi canlı tonu: rozet, gradyan
+     ucu, dekoratif vurgu. Üzerine yazı konmamalı. */
+  --accent-parlak: oklch(0.664 0.225 35);
   --accent-2: oklch(0.55 0.160 215);
   --accent-2-ink: oklch(0.99 0.002 255);
 
   --good: oklch(0.50 0.16 150);
   --warn: oklch(0.58 0.18 85);
-  --bad: oklch(0.52 0.20 25);
+  /* Marka rengi kırmızıya yaklaştığı için hata rengi koyulaştırıldı:
+     "İlan reddedildi" ile "İlan Ver" aynı tonda okunmamalı. */
+  --bad: oklch(0.457 0.177 25);
 
   --radius: 12px;
   --radius-s: 8px;
