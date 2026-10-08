@@ -12,6 +12,7 @@ export const viewport: Viewport = {
   // Mobil tarayıcının adres çubuğu ve PWA olarak ana ekrana eklendiğinde
   // sistem çubuğu bu rengi alıyor. Beyazken site tarayıcıdan ayrışmıyordu.
   themeColor: '#D83E13',
+
 };
 
 /**
@@ -32,6 +33,15 @@ const hanken = Hanken_Grotesk({ subsets: ['latin-ext'], weight: ['400','500','60
 const spaceMono = Space_Mono({ subsets: ['latin'], weight: ['400','700'], variable: '--font-space-mono', display: 'swap' });
 
 export const metadata: Metadata = {
+  // iOS'ta ana ekrana eklenince tam ekran açılsın ve simgenin altında uzun
+  // sayfa başlığı değil kısa ad görünsün. Android bunu manifest'ten
+  // okuyor; Safari manifest'in display/short_name alanlarını yok sayıyor,
+  // o yüzden ayrıca belirtmek gerekiyor.
+  appleWebApp: {
+    capable: true,
+    title: 'Motorya',
+    statusBarStyle: 'default',
+  },
   title: {
     default: 'Motorya — Motosiklet Ekipman Pazarı',
     template: '%s | Motorya',
