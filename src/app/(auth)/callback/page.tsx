@@ -4,6 +4,7 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import { useAuthStore } from '@/store/auth';
 import { analytics } from '@/lib/analytics';
 import { Zap } from 'lucide-react';
+import { MarkaLogo } from '@/components/ui/MarkaLogo';
 
 function CallbackHandler() {
   const router = useRouter();
@@ -35,9 +36,9 @@ function CallbackHandler() {
 
   return (
     <div style={{ minHeight: '100vh', background: 'var(--bg-0)', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 16 }}>
-      <span style={{ width: 48, height: 48, borderRadius: 13, display: 'grid', placeItems: 'center', background: 'var(--accent)', color: 'var(--accent-ink)' }}>
-        <Zap size={26} fill="currentColor" strokeWidth={0} />
-      </span>
+      {/* Google dönüşü beklenirken görünen ekran; marka burada da logo
+          olmalı. Bağlantı yok: kullanıcı zaten yönlendiriliyor. */}
+      <MarkaLogo yukseklik={40} link={false} />
       <div style={{ width: 32, height: 32, border: '3px solid var(--accent)', borderTopColor: 'transparent', borderRadius: '50%', animation: 'spin 0.7s linear infinite' }} />
       <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
     </div>

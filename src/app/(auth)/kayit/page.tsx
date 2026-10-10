@@ -11,6 +11,7 @@ import { useState, useCallback } from 'react';
 import { Turnstile } from '@/components/Turnstile';
 import { IL_ILCE, ALL_CITIES } from '@/lib/il-ilce';
 import { analytics } from '@/lib/analytics';
+import { MarkaLogo } from '@/components/ui/MarkaLogo';
 
 function validateTcKimlik(tc: string): boolean {
   if (!/^[1-9][0-9]{10}$/.test(tc)) return false;
@@ -154,14 +155,9 @@ export default function RegisterPage() {
 
       <div style={{ width: '100%', maxWidth: 480, position: 'relative', zIndex: 1, padding: '24px 0' }}>
         <div style={{ textAlign: 'center', marginBottom: 32 }}>
-          <Link href="/" style={{ display: 'inline-flex', alignItems: 'center', gap: 10, textDecoration: 'none' }}>
-            <span style={{ width: 40, height: 40, borderRadius: 11, display: 'grid', placeItems: 'center', background: 'var(--accent)', color: 'var(--accent-ink)', boxShadow: '0 8px 24px -8px var(--accent)' }}>
-              <Zap size={22} fill="currentColor" strokeWidth={0} />
-            </span>
-            <span className="m-display" style={{ fontSize: 26, letterSpacing: '-0.03em', color: 'var(--ink)' }}>
-              MOTOR<span className="m-accent">YA</span>
-            </span>
-          </Link>
+          {/* Burada logo yerine jenerik bir şimşek ikonu ve elle yazılmış
+              "MOTORYA" metni duruyordu; marka değişince geride kaldı. */}
+          <MarkaLogo yukseklik={40} />
           <p style={{ marginTop: 10, color: 'var(--ink-3)', fontSize: 14 }}>Hesap oluştur, alışverişe başla</p>
         </div>
 

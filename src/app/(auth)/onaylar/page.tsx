@@ -9,6 +9,7 @@ import toast from 'react-hot-toast';
 import { Zap } from 'lucide-react';
 import { useEffect } from 'react';
 import { useAuthStore } from '@/store/auth';
+import { MarkaLogo } from '@/components/ui/MarkaLogo';
 
 const schema = z.object({
   acceptedTerms: z.literal(true, { message: "Üyelik Sözleşmesi'ni kabul etmeniz gerekiyor" }),
@@ -46,14 +47,9 @@ export default function ConsentsPage() {
 
       <div style={{ width: '100%', maxWidth: 460, position: 'relative', zIndex: 1, padding: '24px 0' }}>
         <div style={{ textAlign: 'center', marginBottom: 32 }}>
-          <Link href="/" style={{ display: 'inline-flex', alignItems: 'center', gap: 10, textDecoration: 'none' }}>
-            <span style={{ width: 40, height: 40, borderRadius: 11, display: 'grid', placeItems: 'center', background: 'var(--accent)', color: 'var(--accent-ink)', boxShadow: '0 8px 24px -8px var(--accent)' }}>
-              <Zap size={22} fill="currentColor" strokeWidth={0} />
-            </span>
-            <span className="m-display" style={{ fontSize: 26, letterSpacing: '-0.03em', color: 'var(--ink)' }}>
-              MOTOR<span className="m-accent">YA</span>
-            </span>
-          </Link>
+          {/* Burada logo yerine jenerik bir şimşek ikonu ve elle yazılmış
+              "MOTORYA" metni duruyordu; marka değişince geride kaldı. */}
+          <MarkaLogo yukseklik={40} />
           <p style={{ marginTop: 10, color: 'var(--ink-3)', fontSize: 14 }}>Devam etmeden önce son bir adım kaldı</p>
         </div>
 

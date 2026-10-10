@@ -12,28 +12,12 @@ import {
 } from 'lucide-react';
 import { useNotifications, useOzet } from '@/hooks/useNotifications';
 import { matchCategories, matchBrands, CategorySuggestionsDropdown, type CategoryLite, type BrandLite } from '@/components/ui/CategorySuggestions';
+import { MarkaLogo } from '@/components/ui/MarkaLogo';
 
 export function Logo() {
-  return (
-    <Link href="/" style={{ display: 'flex', alignItems: 'center', gap: 10, textDecoration: 'none' }}>
-      {/* Logo artık bir wordmark: işaret ve yazı tek görselde.
-          Yanına ayrıca "MOTORYA" yazmıyoruz, iki kez okunurdu.
-
-          Dosya 3x çözünürlükte (369×102) ama 123×34 gösteriliyor; retina
-          ekranda bulanıklaşmaması için. Kaynak görselde "OTORYA" beyazdı -
-          koyu zemin için tasarlanmış - ve sitenin açık başlığında hiç
-          görünmüyordu; harfler --ink rengine çevrildi, M'nin turuncu
-          gradyanı olduğu gibi duruyor. */}
-      {/* eslint-disable-next-line @next/next/no-img-element */}
-      <img
-        src="/logo-wordmark.webp"
-        alt="Motorya"
-        width={123}
-        height={34}
-        style={{ flexShrink: 0 }}
-      />
-    </Link>
-  );
+  // Görsel ve ölçüler MarkaLogo'da; başlık ve giriş ekranları aynı
+  // kaynaktan beslensin diye burada sarmalanıyor.
+  return <MarkaLogo yukseklik={34} />;
 }
 
 export function Header() {

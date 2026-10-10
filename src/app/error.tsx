@@ -1,6 +1,7 @@
 'use client';
 import Link from 'next/link';
-import { Zap, ArrowLeft, RefreshCw } from 'lucide-react';
+import { ArrowLeft, RefreshCw } from 'lucide-react';
+import { MarkaLogo } from '@/components/ui/MarkaLogo';
 
 export default function Error({ error, reset }: { error: Error & { digest?: string }; reset: () => void }) {
   return (
@@ -8,14 +9,9 @@ export default function Error({ error, reset }: { error: Error & { digest?: stri
       <div aria-hidden style={{ position: 'fixed', inset: 0, background: 'radial-gradient(50% 50% at 50% 0%, color-mix(in oklch, var(--bad) 8%, transparent), transparent 70%)', pointerEvents: 'none' }} />
 
       <div style={{ textAlign: 'center', position: 'relative', zIndex: 1, maxWidth: 480 }}>
-        <Link href="/" style={{ display: 'inline-flex', alignItems: 'center', gap: 8, textDecoration: 'none', marginBottom: 48 }}>
-          <span style={{ width: 36, height: 36, borderRadius: 10, display: 'grid', placeItems: 'center', background: 'var(--accent)', color: 'var(--accent-ink)', boxShadow: '0 6px 20px -6px var(--accent)' }}>
-            <Zap size={20} fill="currentColor" strokeWidth={0} />
-          </span>
-          <span className="m-display" style={{ fontSize: 22, letterSpacing: '-0.03em', color: 'var(--ink)' }}>
-            MOTOR<span className="m-accent">YA</span>
-          </span>
-        </Link>
+        <div style={{ marginBottom: 48 }}>
+          <MarkaLogo yukseklik={36} />
+        </div>
 
         <div style={{ fontFamily: 'var(--font-mono)', fontSize: 120, fontWeight: 700, lineHeight: 1, color: 'var(--bg-3)', letterSpacing: '-0.04em', marginBottom: 8 }}>
           500
