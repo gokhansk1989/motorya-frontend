@@ -134,6 +134,15 @@ export default function ProfilePage() {
   });
 
   const profileForm = useForm<ProfileData>({ resolver: zodResolver(profileSchema) });
+
+  // Kayitta sorulmayan, profilde tamamlanabilen alanlar.
+  const eksikAlanlar: string[] = [];
+  if (profile) {
+    if (!profile.tcKimlik) eksikAlanlar.push('T.C. kimlik numarası');
+    if (!profile.phone) eksikAlanlar.push('telefon');
+    if (!profile.city) eksikAlanlar.push('il');
+    if (!profile.birthDate) eksikAlanlar.push('doğum tarihi');
+  }
   const passwordForm = useForm<PasswordData>({ resolver: zodResolver(passwordSchema) });
 
   useEffect(() => {
@@ -323,9 +332,13 @@ export default function ProfilePage() {
             <div style={{ background: 'var(--bg-1)', border: '1px solid var(--line-soft)', borderRadius: 12, padding: '12px 0', textAlign: 'center' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: 4, justifyContent: 'center', marginBottom: 4 }}>
                 <Star size={13} style={{ color: '#f59e0b' }} />
-                <span style={{ fontWeight: 700, fontSize: 16, fontFamily: 'var(--font-mono)', color: 'var(--ink)' }}>{profile.ratingAvg?.toFixed(1) ?? '—'}</span>
+                <span style={{ fontWeight: 700, fontSize: 16, fontFamily: 'var(--font-mono)', color: 'var(--ink)' }}>
+                  {(profile.ratingCount ?? 0) > 0 ? profile.ratingAvg?.toFixed(1) : '—'}
+                </span>
               </div>
-              <p style={{ fontSize: 11, color: 'var(--ink-3)' }}>{profile.ratingCount ?? 0} yorum</p>
+              <p style={{ fontSize: 11, color: 'var(--ink-3)' }}>
+                {(profile.ratingCount ?? 0) > 0 ? `${profile.ratingCount} değerlendirme` : 'Henüz değerlendirme yok'}
+              </p>
             </div>
             <div style={{ background: 'var(--bg-1)', border: '1px solid var(--line-soft)', borderRadius: 12, padding: '12px 0', textAlign: 'center' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: 4, justifyContent: 'center', marginBottom: 4 }}>
@@ -412,6 +425,22 @@ export default function ProfilePage() {
       {/* ── TAB: Profil ─────────────────────────────── */}
       {tab === 'profil' && (
         <>
+          {/* Kayit formu yalnizca hesabin acilmasi icin gerekli alanlari
+              soruyor. Geri kalanlar burada tamamlaniyor; kullanicinin
+              hangilerinin eksik oldugunu gormesi icin kisa bir ozet. */}
+          {eksikAlanlar.length > 0 && (
+            <div style={{ ...card, borderLeft: '3px solid var(--accent)', marginBottom: 16 }}>
+              <p style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 15, fontWeight: 700, color: 'var(--ink)', fontFamily: 'var(--font-display)', marginBottom: 8 }}>
+                <User size={16} style={{ color: 'var(--accent)' }} />Profilini tamamla
+              </p>
+              <p style={{ fontSize: 13.5, color: 'var(--ink-2)', lineHeight: 1.6, margin: 0 }}>
+                Hesabın açık ve kullanıma hazır. Aşağıdaki bilgiler isteğe bağlı:{' '}
+                <strong style={{ color: 'var(--ink)' }}>{eksikAlanlar.join(', ')}</strong>.
+                {eksikAlanlar.includes('T.C. kimlik numarası') && ' T.C. kimlik numarası yalnızca ilan verirken gerekiyor.'}
+              </p>
+            </div>
+          )}
+
           <div style={card}>
             <p style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 15, fontWeight: 700, color: 'var(--ink)', fontFamily: 'var(--font-display)', marginBottom: 20 }}>
               <User size={16} style={{ color: 'var(--accent)' }} />Profil Bilgileri

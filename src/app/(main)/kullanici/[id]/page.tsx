@@ -165,10 +165,12 @@ export default function PublicProfilePage({ params }: { params: Promise<{ id: st
             <div style={{ display: 'flex', alignItems: 'center', gap: 3, justifyContent: 'center', marginBottom: 3 }}>
               <Star size={13} fill="#f59e0b" color="#f59e0b" />
               <span style={{ fontWeight: 700, fontSize: 16, fontFamily: 'var(--font-mono)' }}>
-                {user.ratingAvg ? Number(user.ratingAvg).toFixed(1) : '—'}
+                {user.ratingCount > 0 ? Number(user.ratingAvg).toFixed(1) : '—'}
               </span>
             </div>
-            <p style={{ fontSize: 10, color: 'var(--ink-3)' }}>{user.ratingCount ?? 0} yorum</p>
+            <p style={{ fontSize: 10, color: 'var(--ink-3)' }}>
+              {user.ratingCount > 0 ? `${user.ratingCount} değerlendirme` : 'Henüz değerlendirme yok'}
+            </p>
           </div>
 
           <div style={{ background: 'var(--bg-2)', borderRadius: 10, padding: '10px 8px', textAlign: 'center' }}>
@@ -176,7 +178,7 @@ export default function PublicProfilePage({ params }: { params: Promise<{ id: st
               <ShoppingBag size={13} style={{ color: 'var(--accent)' }} />
               <span style={{ fontWeight: 700, fontSize: 16, fontFamily: 'var(--font-mono)' }}>{user.salesCount ?? 0}</span>
             </div>
-            <p style={{ fontSize: 10, color: 'var(--ink-3)' }}>satış</p>
+            <p style={{ fontSize: 10, color: 'var(--ink-3)' }}>satıldı işaretlenen</p>
           </div>
 
           <div style={{ background: 'var(--bg-2)', borderRadius: 10, padding: '10px 8px', textAlign: 'center' }}>
@@ -185,10 +187,10 @@ export default function PublicProfilePage({ params }: { params: Promise<{ id: st
                 fontWeight: 700, fontSize: 16, fontFamily: 'var(--font-mono)',
                 color: trustScore >= 70 ? 'var(--good)' : trustScore >= 40 ? '#f59e0b' : 'var(--ink-3)',
               }}>
-                {trustScore > 0 ? trustScore : '—'}
+                {trustScore > 0 ? `${trustScore}/100` : '—'}
               </span>
             </div>
-            <p style={{ fontSize: 10, color: 'var(--ink-3)' }}>güven</p>
+            <p style={{ fontSize: 10, color: 'var(--ink-3)' }}>güven puanı</p>
             {trustScore > 0 && (
               <div style={{ height: 3, background: 'var(--bg-3)', borderRadius: 99, overflow: 'hidden', marginTop: 5, marginLeft: 8, marginRight: 8 }}>
                 <div style={{ height: '100%', width: `${trustScore}%`, borderRadius: 99, background: trustScore >= 70 ? 'var(--good)' : '#f59e0b' }} />
@@ -196,6 +198,32 @@ export default function PublicProfilePage({ params }: { params: Promise<{ id: st
             )}
           </div>
         </div>
+
+        {/* Puanin neyi anlattigini acikliyor. <details> kullaniyoruz: JavaScript
+            gerektirmiyor, klavyeyle acilabiliyor ve ekran okuyucular durumu
+            dogru bildiriyor. */}
+        <details style={{ marginBottom: 14 }}>
+          <summary style={{ fontSize: 12, color: 'var(--ink-3)', cursor: 'pointer' }}>
+            Güven puanı nasıl hesaplanır?
+          </summary>
+          <div style={{ fontSize: 12.5, color: 'var(--ink-2)', lineHeight: 1.6, marginTop: 8, padding: '10px 12px', background: 'var(--bg-2)', borderRadius: 10 }}>
+            <p style={{ margin: '0 0 8px' }}>
+              0–100 arasında otomatik hesaplanır. Bugün katkı sağlayanlar:
+            </p>
+            <ul style={{ margin: 0, paddingLeft: 18, display: 'flex', flexDirection: 'column', gap: 4 }}>
+              <li>E-posta doğrulaması — 10 puan</li>
+              <li>Satıldı işaretlenen ilan sayısı — en çok 30 puan</li>
+              <li>Alınan değerlendirmeler — en çok 20 puan</li>
+              <li>Platform davranışı — en çok 10 puan</li>
+            </ul>
+            <p style={{ margin: '8px 0 0' }}>
+              &ldquo;Satıldı işaretlenen&rdquo; sayısı satıcının kendi beyanıdır; alıcıdan
+              onay alınmaz ve Motorya satışı doğrulamaz. Değerlendirmeler ise
+              yalnızca satıcının kabul ettiği tekliflerden sonra bırakılabilir.
+              Puan bir güvence değil, geçmiş etkinliğin özetidir.
+            </p>
+          </div>
+        </details>
 
         {/* Mesaj gönder butonu — tam genişlik */}
         {me && !isMe && (
@@ -330,7 +358,9 @@ export default function PublicProfilePage({ params }: { params: Promise<{ id: st
           {/* Özet: büyük puan + yıldız barları */}
           <div style={{ display: 'flex', gap: 20, marginBottom: 20, alignItems: 'center' }}>
             <div style={{ textAlign: 'center', flexShrink: 0 }}>
-              <div className="m-display" style={{ fontSize: 40, lineHeight: 1 }}>{Number(user.ratingAvg).toFixed(1)}</div>
+              <div className="m-display" style={{ fontSize: 40, lineHeight: 1 }}>
+                {user.ratingCount > 0 ? Number(user.ratingAvg).toFixed(1) : '—'}
+              </div>
               <div style={{ display: 'flex', gap: 2, justifyContent: 'center', margin: '6px 0 4px' }}>
                 {Array.from({ length: 5 }).map((_, i) => (
                   <Star key={i} size={13}
@@ -338,7 +368,9 @@ export default function PublicProfilePage({ params }: { params: Promise<{ id: st
                     color={i < Math.round(user.ratingAvg) ? '#f59e0b' : 'var(--line)'} />
                 ))}
               </div>
-              <p style={{ fontSize: 11, color: 'var(--ink-3)' }}>{reviews.length} yorum</p>
+              <p style={{ fontSize: 11, color: 'var(--ink-3)' }}>
+                {reviews.length > 0 ? `${reviews.length} değerlendirme` : 'Henüz değerlendirme yok'}
+              </p>
             </div>
 
             <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 5 }}>

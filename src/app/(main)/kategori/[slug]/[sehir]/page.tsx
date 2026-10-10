@@ -7,6 +7,7 @@ import { CITY_MAP, CITIES } from '@/lib/cities';
 import { CategoryIcon as CatIcon } from '@/components/icons/CategoryIcons';
 import { jsonLdHtml } from '@/lib/jsonLd';
 import { SSR_API_URL } from '@/lib/apiBase';
+import { bulunmaEki } from '@/lib/turkceEk';
 import { robotsIcinIlanSayisi } from '@/lib/seoRobots';
 
 const BASE_URL = 'https://motorya.com.tr';
@@ -102,6 +103,20 @@ function conditionLabel(c: string) {
   return map[c] ?? c;
 }
 
+// Sehirde ilan yoksa aliciya "baska sehirlerde su an neler var" diye kisa
+// bir secki gosteriyoruz; bos sayfadan geri donmek yerine devam edebilsin.
+async function fetchDigerSehirler(categoryId: string, city: string): Promise<Listing[]> {
+  try {
+    const params = new URLSearchParams({ categoryId, limit: '8' });
+    const res = await fetch(`${SSR_API_URL}/listings?${params}`, { next: { revalidate: 60 } });
+    if (!res.ok) return [];
+    const data = await res.json();
+    return (data.items ?? []).filter((l: Listing) => l.city !== city).slice(0, 4);
+  } catch {
+    return [];
+  }
+}
+
 export default async function CityListingPage({ params }: { params: Promise<{ slug: string; sehir: string }> }) {
   const { slug: catSlug, sehir } = await params;
   const city = CITY_MAP[sehir];
@@ -115,6 +130,9 @@ export default async function CityListingPage({ params }: { params: Promise<{ sl
 
   const { category } = catData;
   const listings = await fetchListings(category.id, city);
+  const digerSehirler = listings.length === 0
+    ? await fetchDigerSehirler(category.id, city)
+    : [];
 
   const isL2 = !!category.parentId;
   const parentL1 = isL2 ? l1Categories.find(c => c.id === category.parentId) ?? null : null;
@@ -124,7 +142,7 @@ export default async function CityListingPage({ params }: { params: Promise<{ sl
     '@context': 'https://schema.org',
     '@type': 'CollectionPage',
     name: `${city} İkinci El ${category.name}`,
-    description: `${city}'de satılık ikinci el ${category.name.toLowerCase()} ilanları`,
+    description: `${bulunmaEki(city)} satılık ikinci el ${category.name.toLowerCase()} ilanları`,
     url: `${BASE_URL}/kategori/${catSlug}/${sehir}`,
     breadcrumb: {
       '@type': 'BreadcrumbList',
@@ -158,7 +176,7 @@ export default async function CityListingPage({ params }: { params: Promise<{ sl
           <CatIcon slug={catSlug} size={32} iconUrl={category.iconKey} /> {city} İkinci El {category.name}
         </h1>
         <p style={{ color: 'var(--ink-3)', fontSize: 15, marginBottom: 20 }}>
-          {city}&apos;de {listings.length > 0 ? `${listings.length}+ ` : ''}ikinci el motosiklet {category.name.toLowerCase()} ilanı. Güvenli al-sat, hızlı kargo.
+          {bulunmaEki(city)} {listings.length > 0 ? `${listings.length}+ ` : ''}ikinci el motosiklet {category.name.toLowerCase()} ilanı. Kargoyla ya da yüz yüze teslim.
         </p>
 
         {/* L1 kategori navigasyonu — şehir bağlamını korur */}
@@ -174,18 +192,46 @@ export default async function CityListingPage({ params }: { params: Promise<{ sl
         </div>
 
         {listings.length === 0 ? (
-          <div style={{ textAlign: 'center', padding: '64px 0', color: 'var(--ink-3)' }}>
-            <img src="/icons/empty-listing.webp" alt="" width={100} height={100} style={{ objectFit: 'contain', opacity: 0.85, display: 'block', margin: '0 auto 16px' }} />
-            <p style={{ fontSize: 18, marginBottom: 8 }}>Şu an {city}&apos;de {category.name.toLowerCase()} ilanı yok</p>
-            <p style={{ fontSize: 14, marginBottom: 20 }}>İlk ilanı sen ver!</p>
-            <div style={{ display: 'flex', gap: 10, justifyContent: 'center', flexWrap: 'wrap' }}>
-              <Link href="/ilan-ver" className="m-btn m-btn-primary" style={{ display: 'inline-flex', textDecoration: 'none' }}>
-                İlan Ver
-              </Link>
-              <Link href={`/kategori/${catSlug}`} className="m-btn" style={{ display: 'inline-flex', textDecoration: 'none' }}>
-                Tüm {category.name} İlanlarına Bak
-              </Link>
+          <div style={{ padding: '40px 0' }}>
+            <div style={{ textAlign: 'center', color: 'var(--ink-3)', marginBottom: 28 }}>
+              <img src="/icons/empty-listing.webp" alt="" width={100} height={100} style={{ objectFit: 'contain', opacity: 0.85, display: 'block', margin: '0 auto 16px' }} />
+              <p style={{ fontSize: 18, marginBottom: 8, color: 'var(--ink)' }}>
+                Şu an {bulunmaEki(city)} {category.name.toLowerCase()} ilanı yok
+              </p>
+              <p style={{ fontSize: 14, marginBottom: 20 }}>
+                Haber verelim, başka şehirlere bakalım ya da ilk ilanı sen ver.
+              </p>
+              {/* Alarm, kayitli arama altyapisini kullaniyor; bu altyapi hem
+                  kategori hem sehir kosulunu destekliyor, yani dugme gercek
+                  bir is yapiyor. Giris gerekiyorsa secilen kosullar adres
+                  uzerinden tasiniyor ve giristen sonra korunuyor. */}
+              <div style={{ display: 'flex', gap: 10, justifyContent: 'center', flexWrap: 'wrap' }}>
+                <Link
+                  href={`/alarmlarim?yeni=1&categoryId=${category.id}&city=${encodeURIComponent(city)}&label=${encodeURIComponent(`${category.name} · ${city}`)}`}
+                  className="m-btn m-btn-primary"
+                  style={{ display: 'inline-flex', textDecoration: 'none' }}
+                >
+                  {bulunmaEki(city)} yeni ilan gelince haber ver
+                </Link>
+                <Link href={`/kategori/${catSlug}`} className="m-btn" style={{ display: 'inline-flex', textDecoration: 'none' }}>
+                  Tüm {category.name} ilanları
+                </Link>
+                <Link href="/ilan-ver" className="m-btn m-btn-ghost" style={{ display: 'inline-flex', textDecoration: 'none' }}>
+                  İlk ilanı sen ver
+                </Link>
+              </div>
             </div>
+
+            {digerSehirler.length > 0 && (
+              <div>
+                <h2 className="m-display" style={{ fontSize: 17, margin: '0 0 12px' }}>
+                  Başka şehirlerdeki {category.name.toLowerCase()} ilanları
+                </h2>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: 16 }}>
+                  {digerSehirler.map(l => (<ListingCard key={l.id} listing={l as any} />))}
+                </div>
+              </div>
+            )}
           </div>
         ) : (
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: 16 }}>

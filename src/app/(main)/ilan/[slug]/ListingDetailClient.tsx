@@ -370,13 +370,20 @@ export default function ListingDetailClient({ initialListing }: { initialListing
               <span className="m-price" style={{ fontSize: 34 }}>
                 {formatPrice(listing.price)}<span className="cur" style={{ fontSize: 18 }}>₺</span>
               </span>
-              {listing.originalPrice && (
+              {/* Ustu cizili fiyat, saticinin ilan verirken kendi girdigi
+                  liste fiyatidir; sistemin takip ettigi onceki ilan fiyati
+                  degil ve dogrulanmis bir indirim anlamina gelmiyor. Bu
+                  yuzden "%X INDIRIM" rozeti yerine kaynagi soyluyoruz. */}
+              {listing.originalPrice && Number(listing.originalPrice) > Number(listing.price) && (
                 <span className="m-price-old" style={{ fontSize: 16 }}>{formatPrice(listing.originalPrice)}</span>
               )}
-              {discountPct && discountPct > 0 && (
-                <span className="m-badge new">%{discountPct} İNDİRİM</span>
-              )}
             </div>
+            {listing.originalPrice && Number(listing.originalPrice) > Number(listing.price) && (
+              <p style={{ fontSize: 12, color: 'var(--ink-3)', margin: '2px 0 0' }}>
+                Üstü çizili fiyat satıcının belirttiği liste fiyatıdır
+                {discountPct && discountPct > 0 ? ` — %${discountPct} altında` : ''}. Motorya doğrulamaz.
+              </p>
+            )}
 
             <div style={{ display: 'flex', gap: 16, color: 'var(--ink-3)', fontSize: 12.5, marginTop: 6 }}>
               <span style={{ display: 'flex', gap: 5, alignItems: 'center' }}><Eye size={14} />{listing.viewCount} görüntülenme</span>
@@ -609,10 +616,16 @@ export default function ListingDetailClient({ initialListing }: { initialListing
                 ))}
               </div>
               <div style={{ display: 'flex', alignItems: 'center', gap: 6, color: 'var(--ink-3)', fontSize: 12.5 }}>
-                <Star size={12} fill="var(--accent)" stroke="none" style={{ color: 'var(--accent)' }} />
-                <span style={{ fontWeight: 700, color: 'var(--ink-2)' }}>{listing.seller.ratingAvg?.toFixed(1)}</span>
-                <span style={{ width: 3, height: 3, borderRadius: '50%', background: 'currentColor', opacity: 0.6 }} />
-                <span>{listing.seller.ratingCount ?? 0} değerlendirme</span>
+                {(listing.seller.ratingCount ?? 0) > 0 ? (
+                  <>
+                    <Star size={12} fill="var(--accent)" stroke="none" style={{ color: 'var(--accent)' }} />
+                    <span style={{ fontWeight: 700, color: 'var(--ink-2)' }}>{listing.seller.ratingAvg?.toFixed(1)}</span>
+                    <span style={{ width: 3, height: 3, borderRadius: '50%', background: 'currentColor', opacity: 0.6 }} />
+                    <span>{listing.seller.ratingCount} değerlendirme</span>
+                  </>
+                ) : (
+                  <span>Henüz değerlendirme yok</span>
+                )}
               </div>
             </div>
             <ChevronRight size={18} style={{ color: 'var(--ink-3)' }} />

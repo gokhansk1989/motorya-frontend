@@ -1,5 +1,5 @@
 'use client';
-import { useState } from 'react';
+import { useState, useEffect, Suspense } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useSavedSearches, useCreateSavedSearch } from '@/hooks/useSavedSearches';
 import { useMyFavorites } from '@/hooks/useListings';
@@ -7,6 +7,7 @@ import { useAuthStore } from '@/store/auth';
 import { api } from '@/lib/api';
 import { BellPlus, Bell, Trash2, Loader2, ExternalLink } from 'lucide-react';
 import Link from 'next/link';
+import { useSearchParams } from 'next/navigation';
 import toast from 'react-hot-toast';
 
 function savedSearchToUrl(alarm: import('@/hooks/useSavedSearches').SavedSearch) {
@@ -34,7 +35,17 @@ function timeAgo(dateStr: string) {
   return `${Math.floor(h / 24)} gün önce`;
 }
 
+// useSearchParams kullanan bileşen Suspense içinde olmalı; aksi halde
+// Next.js bu sayfanın tamamını istemci tarafında render etmeye zorluyor.
 export default function FiyatAlarmPage() {
+  return (
+    <Suspense fallback={null}>
+      <FiyatAlarmIcerik />
+    </Suspense>
+  );
+}
+
+function FiyatAlarmIcerik() {
   const { user } = useAuthStore();
   const qc = useQueryClient();
   const { data: alarms = [], isLoading } = useSavedSearches();
@@ -42,6 +53,20 @@ export default function FiyatAlarmPage() {
 
   const [showForm, setShowForm] = useState(false);
   const [form, setForm] = useState({ label: '', search: '', categoryId: '', maxPrice: '', minPrice: '', city: '' });
+
+  // Bos kategori/sehir sayfasindaki "haber ver" baglantisi buraya kosullari
+  // adres uzerinden tasiyor. Giris gerekiyorsa kullanici giristen sonra ayni
+  // adrese donduruluyor, yani sectigi kosullar kaybolmuyor.
+  const params = useSearchParams();
+  useEffect(() => {
+    if (params.get('yeni') !== '1') return;
+    const categoryId = params.get('categoryId') ?? '';
+    const city = params.get('city') ?? '';
+    const label = params.get('label') ?? '';
+    if (!categoryId && !city) return;
+    setForm(f => ({ ...f, categoryId, city, label: label || f.label }));
+    setShowForm(true);
+  }, [params]);
   const { data: favoritesData } = useMyFavorites();
   const favorites: any[] = Array.isArray(favoritesData) ? favoritesData : (favoritesData?.items ?? []);
 
@@ -61,8 +86,18 @@ export default function FiyatAlarmPage() {
       <div className="m-wrap" style={{ paddingTop: 48, paddingBottom: 48, textAlign: 'center' }}>
         <Bell size={48} style={{ margin: '0 auto 16px', opacity: 0.3 }} />
         <h1 className="m-display" style={{ fontSize: 24, marginBottom: 8 }}>Alarmlarım</h1>
-        <p style={{ color: 'var(--ink-3)', marginBottom: 24 }}>Alarmlarını görmek için giriş yapmalısın.</p>
-        <Link href="/giris" className="m-btn m-btn-primary" style={{ textDecoration: 'none', display: 'inline-flex' }}>
+        <p style={{ color: 'var(--ink-3)', marginBottom: 24 }}>
+          {params.get('yeni') === '1'
+            ? 'Alarm kurmak için giriş yapman gerekiyor. Seçtiğin kategori ve şehir korunacak.'
+            : 'Alarmlarını görmek için giriş yapmalısın.'}
+        </p>
+        {/* Secilen kosullari giristen sonra da koruyoruz: giris ekrani "devam"
+            parametresindeki adrese geri donduruyor. */}
+        <Link
+          href={`/giris?devam=${encodeURIComponent(`/alarmlarim?${params.toString()}`)}`}
+          className="m-btn m-btn-primary"
+          style={{ textDecoration: 'none', display: 'inline-flex' }}
+        >
           Giriş Yap
         </Link>
       </div>

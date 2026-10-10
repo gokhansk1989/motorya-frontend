@@ -25,6 +25,9 @@ interface Category { id: string; name: string; slug: string; parentId: string | 
 // tek ilan dondurdugu icin buradaki sayi artik gercek cesitliligi olcer.
 const FIYAT_DUSUSU_ESIGI = 3;
 
+// Bu liste fiyat GECMISINE bakmiyor - oyle bir veri tutulmuyor. Olcut,
+// saticinin ilan verirken girdigi liste fiyatinin istenen fiyattan yuksek
+// olmasi. Basliklar bu yuzden "fiyati dustu" demiyor.
 function PriceDropPanel() {
   const { data } = usePriceDrops(10);
   const items = data ?? [];
@@ -38,7 +41,7 @@ function PriceDropPanel() {
       <div style={{ background: 'var(--bg-1)', border: '1px solid var(--line-soft)', borderRadius: 16, padding: '14px 14px 4px', height: 360, display: 'flex', flexDirection: 'column' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 7, marginBottom: 12, flexShrink: 0 }}>
           <TrendingDown size={15} style={{ color: 'var(--bad)' }} />
-          <span style={{ fontWeight: 700, fontSize: 13, color: 'var(--ink)' }}>Fiyatı Düştü</span>
+          <span style={{ fontWeight: 700, fontSize: 13, color: 'var(--ink)' }}>Liste Fiyatının Altında</span>
         </div>
         <div className="m-marquee-wrap" style={{ flex: 1, maskImage: 'linear-gradient(to bottom, transparent, black 8%, black 92%, transparent)' }}>
           <div className="m-marquee-track-v" style={{ '--marquee-duration': `${items.length * 4}s` } as React.CSSProperties}>
@@ -145,7 +148,7 @@ function PriceDropMobileStrip() {
     <div className="m-pricedrop-mobile">
       <div style={{ display: 'flex', alignItems: 'center', gap: 7, marginBottom: 10 }}>
         <TrendingDown size={15} style={{ color: 'var(--bad)' }} />
-        <span style={{ fontWeight: 700, fontSize: 13, color: 'var(--ink)' }}>Fiyatı Düştü</span>
+        <span style={{ fontWeight: 700, fontSize: 13, color: 'var(--ink)' }}>Liste Fiyatının Altında</span>
       </div>
       <div className="m-pricedrop-mobile-track">
         {items.map((l: any) => {

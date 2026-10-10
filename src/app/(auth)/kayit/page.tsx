@@ -6,23 +6,11 @@ import { api } from '@/lib/api';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import toast from 'react-hot-toast';
-import { Zap, Eye, EyeOff, User, Mail, Lock, CreditCard, Phone } from 'lucide-react';
+import { Zap, Eye, EyeOff, User, Mail, Lock } from 'lucide-react';
 import { useState, useCallback } from 'react';
 import { Turnstile } from '@/components/Turnstile';
-import { IL_ILCE, ALL_CITIES } from '@/lib/il-ilce';
 import { analytics } from '@/lib/analytics';
 import { MarkaLogo } from '@/components/ui/MarkaLogo';
-
-function validateTcKimlik(tc: string): boolean {
-  if (!/^[1-9][0-9]{10}$/.test(tc)) return false;
-  const d = tc.split('').map(Number);
-  const odd = d[0] + d[2] + d[4] + d[6] + d[8];
-  const even = d[1] + d[3] + d[5] + d[7];
-  const digit10 = ((odd * 7) - even) % 10;
-  if (digit10 < 0 || digit10 !== d[9]) return false;
-  const sum10 = d.slice(0, 10).reduce((a, b) => a + b, 0);
-  return sum10 % 10 === d[10];
-}
 
 const schema = z.object({
   // Herkese acik gorunen ad. Gercek ad-soyad yalnizca kayitlarda tutulur ve
@@ -34,20 +22,9 @@ const schema = z.object({
   firstName: z.string().min(2, 'En az 2 karakter giriniz'),
   lastName: z.string().min(2, 'En az 2 karakter giriniz'),
   email: z.string().email('Geçerli bir e-posta adresi giriniz'),
-  tcKimlik: z.union([
-    z.string().length(0),
-    z.string().length(11, 'TC Kimlik numarası 11 haneli olmalıdır')
-      .regex(/^[1-9][0-9]{10}$/, 'TC Kimlik numarası 0 ile başlayamaz')
-      .refine(validateTcKimlik, 'Geçersiz TC Kimlik numarası (algoritma hatası)'),
-  ]).optional(),
   // Opsiyonel — App Store 5.1.1(v): çekirdek işlev için gerekli olmayan
   // kişisel bilgi zorunlu tutulamaz. Telefon ilan vermek için de
   // gerekmiyor (TC kimlik isteniyor), iletişim mesajlaşmadan yürüyor.
-  phone: z.string().regex(/^$|^(05)[0-9]{9}$/, 'Geçerli bir cep telefonu giriniz (05XX 000 00 00)').optional(),
-  birthDate: z.string().optional(),
-  gender: z.enum(['MALE', 'FEMALE', 'OTHER']).optional().or(z.literal('')),
-  city: z.string().optional(),
-  district: z.string().optional(),
   password: z.string().min(8, 'Şifre en az 8 karakter olmalıdır'),
   passwordConfirm: z.string(),
   acceptedTerms: z.literal(true, { message: "Üyelik Sözleşmesi'ni kabul etmeniz gerekiyor" }),
@@ -85,13 +62,10 @@ export default function RegisterPage() {
   const [turnstileToken, setTurnstileToken] = useState('');
   const onTurnstileVerify = useCallback((t: string) => setTurnstileToken(t), []);
 
-  const { register, handleSubmit, formState: { errors, isSubmitting }, watch, setValue } = useForm<FormData>({
+  const { register, handleSubmit, formState: { errors, isSubmitting } } = useForm<FormData>({
     resolver: zodResolver(schema),
   });
 
-  const tcValue = watch('tcKimlik') || '';
-  const cityValue = watch('city') || '';
-  const districts = cityValue ? IL_ILCE[cityValue] ?? [] : [];
 
   const onSubmit = async (data: FormData) => {
     try {
@@ -100,12 +74,6 @@ export default function RegisterPage() {
         displayName: data.username.trim().toLowerCase(),
         realName: `${data.firstName.trim()} ${data.lastName.trim()}`,
         email: data.email,
-        tcKimlik: data.tcKimlik || undefined,
-        phone: data.phone || undefined,
-        birthDate: data.birthDate || undefined,
-        gender: data.gender || undefined,
-        city: data.city || undefined,
-        district: data.district || undefined,
         password: data.password,
         acceptedTerms: data.acceptedTerms,
         acceptedKvkk: data.acceptedKvkk,
@@ -210,71 +178,10 @@ export default function RegisterPage() {
               <input {...register('email')} type="email" placeholder="ornek@mail.com" style={inputStyle(!!errors.email)} onFocus={focusGlow} onBlur={blurGlow} />
             </FieldWrapper>
 
-            <FieldWrapper
-              label="T.C. Kimlik No (opsiyonel)"
-              icon={<CreditCard size={16} />}
-              error={errors.tcKimlik?.message}
-              hint="Şimdilik isteğe bağlı. İlan vermek istediğinde doldurman istenecek."
-            >
-              <input
-                {...register('tcKimlik')}
-                type="text"
-                inputMode="numeric"
-                maxLength={11}
-                placeholder="10000000000"
-                style={inputStyle(!!errors.tcKimlik)}
-                onFocus={focusGlow}
-                onBlur={blurGlow}
-              />
-              {tcValue.length > 0 && (
-                <span style={{ position: 'absolute', right: 14, top: '50%', transform: 'translateY(-50%)', fontSize: 11, fontFamily: 'var(--font-mono)', color: tcValue.length === 11 && validateTcKimlik(tcValue) ? 'var(--good)' : 'var(--ink-3)' }}>
-                  {tcValue.length}/11
-                </span>
-              )}
-            </FieldWrapper>
-
-            <FieldWrapper label="Cep Telefonu (isteğe bağlı)" icon={<Phone size={16} />} error={errors.phone?.message}>
-              <input {...register('phone')} type="tel" placeholder="05XX 000 00 00" maxLength={11} style={inputStyle(!!errors.phone)} onFocus={focusGlow} onBlur={blurGlow} />
-            </FieldWrapper>
-
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14 }}>
-              <FieldWrapper label="Doğum Tarihi (opsiyonel)" error={errors.birthDate?.message}>
-                <input {...register('birthDate')} type="date" style={plainInputStyle(!!errors.birthDate)} onFocus={focusGlow} onBlur={blurGlow} />
-              </FieldWrapper>
-              <FieldWrapper label="Cinsiyet (opsiyonel)" error={errors.gender?.message}>
-                <select {...register('gender')} style={{ ...plainInputStyle(!!errors.gender), appearance: 'none' }} onFocus={focusGlow} onBlur={blurGlow}>
-                  <option value="">Seçiniz</option>
-                  <option value="MALE">Erkek</option>
-                  <option value="FEMALE">Kadın</option>
-                  <option value="OTHER">Diğer</option>
-                </select>
-              </FieldWrapper>
-            </div>
-
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14 }}>
-              <FieldWrapper label="İl (opsiyonel)" error={errors.city?.message}>
-                <select
-                  {...register('city', { onChange: () => setValue('district', '') })}
-                  style={{ ...plainInputStyle(!!errors.city), appearance: 'none' }}
-                  onFocus={focusGlow} onBlur={blurGlow}
-                >
-                  <option value="">İl seçiniz</option>
-                  {ALL_CITIES.map(c => <option key={c} value={c}>{c}</option>)}
-                </select>
-              </FieldWrapper>
-              <FieldWrapper label="İlçe (opsiyonel)" error={errors.district?.message}>
-                <select
-                  {...register('district')}
-                  disabled={!cityValue}
-                  style={{ ...plainInputStyle(!!errors.district), appearance: 'none' }}
-                  onFocus={focusGlow} onBlur={blurGlow}
-                >
-                  <option value="">{cityValue ? 'İlçe seçiniz' : 'İl seçiniz'}</option>
-                  {districts.map(d => <option key={d} value={d}>{d}</option>)}
-                </select>
-              </FieldWrapper>
-            </div>
-
+            {/* Kayitta yalnizca hesabin acilmasi icin gereken alanlar sorulur.
+                T.C. kimlik, telefon, dogum tarihi, cinsiyet ve konum bilgileri
+                profil sayfasindaki "Profilini tamamla" bolumune tasindi; orada
+                istendiginde doldurulabiliyor. */}
             <FieldWrapper label="Şifre" icon={<Lock size={16} />} error={errors.password?.message}>
               <input
                 {...register('password')}

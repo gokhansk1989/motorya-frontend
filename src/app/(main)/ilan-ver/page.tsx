@@ -502,8 +502,12 @@ export default function CreateListingPage() {
                 {errors.price && <p style={errTxt}>{errors.price.message as string}</p>}
               </div>
               <div>
-                <label style={lbl}>Orijinal Fiyat (₺) <span style={{ fontWeight: 400, opacity: 0.5 }}>opsiyonel</span></label>
+                <label style={lbl}>Liste Fiyatı (₺) <span style={{ fontWeight: 400, opacity: 0.5 }}>opsiyonel</span></label>
                 <input {...register('originalPrice')} type="number" style={inputSt()} placeholder="0" />
+                <p style={{ fontSize: 11.5, color: 'var(--ink-3)', marginTop: 5, lineHeight: 1.5 }}>
+                  Ürünün sıfır/etiket fiyatı. İlan sayfasında üstü çizili olarak
+                  &ldquo;satıcının belirttiği liste fiyatı&rdquo; notuyla gösterilir.
+                </p>
               </div>
             </div>
 

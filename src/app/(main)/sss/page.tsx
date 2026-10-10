@@ -85,7 +85,7 @@ const sections: Section[] = [
       },
       {
         q: 'Satıldı olarak nasıl işaretlerim?',
-        a: 'İlan detay sayfasında "Satıldı İşaretle" butonunu kullanın. Bu işlem satış sayacınızı artırır ve güven skorunuzu yükseltir.',
+        a: 'İlan detay sayfasında "Satıldı İşaretle" butonunu kullanın. Bu bir beyandır: alıcıdan onay alınmaz, Motorya satışın gerçekleştiğini doğrulamaz. İlanınız yayından kalkar ve profilinizdeki satış sayacı artar.',
       },
       {
         q: 'Rezerve Et özelliği ne işe yarar?',
@@ -118,16 +118,20 @@ const sections: Section[] = [
     color: '#f59e0b',
     items: [
       {
+        q: 'Motorya hangi doğrulamaları yapıyor?',
+        a: 'Tek doğrulama e-posta adresidir: her üye kayıt sırasında adresini doğrular. Ayrıca her ilan yayına girmeden önce ekibimizce incelenir ve her ilan ile kullanıcı şikâyet edilebilir. Kimlik doğrulaması, adres doğrulaması veya satıcı güvencesi sunmuyoruz. Satıcıyı değerlendirirken profilindeki yorumlara ve üyelik süresine bakın.',
+      },
+      {
         q: 'Güven skoru nasıl hesaplanır?',
-        a: 'Güven skoru; kimlik doğrulaması (40 puan), tamamlanan satış sayısı (30 puan), alınan yorumlar (20 puan) ve platform davranışı (10 puan) gibi faktörlere göre 0-100 arasında otomatik hesaplanır.',
+        a: 'Güven puanı 0-100 arasında otomatik hesaplanır. Bugün puana katkı sağlayan şeyler: e-posta doğrulaması (10 puan), satıcının satıldı olarak işaretlediği ilan sayısı (en çok 30 puan), aldığınız değerlendirmeler (en çok 20 puan) ve platform davranışı (en çok 10 puan). Puan bir güvence değil, geçmiş etkinliğin özetidir.',
       },
       {
         q: 'Rozetler nasıl kazanılır?',
-        a: 'Kimliğinizi doğrulayarak, satış yaparak ve olumlu yorum alarak otomatik rozetler kazanırsınız. "Kurucu" rozeti, platformun ilk kullanıcılarına özel olarak verilir.',
+        a: 'Rozetler satış yaptıkça ve olumlu değerlendirme aldıkça otomatik verilir. "Kurucu" rozeti, platformun ilk kullanıcılarına özeldir.',
       },
       {
         q: 'Yorum nasıl bırakırım?',
-        a: 'Satın aldığınız bir ürün için satıcının profilinden yorum bırakabilirsiniz. Yorumlar alışveriş topluluğunun güvenini artırır.',
+        a: 'Değerlendirme bırakabilmek için o ilanda verdiğiniz teklifin satıcı tarafından kabul edilmiş olması gerekir. Böylece değerlendirmeler yalnızca iki tarafın da üzerinde anlaştığı alışverişlerden gelir.',
       },
     ],
   },
