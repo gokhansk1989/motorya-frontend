@@ -7,7 +7,8 @@ import { useCreateOffer, useListingOffers, useRespondOffer, useCounterOffer, use
 import { useAuthStore } from '@/store/auth';
 import { api } from '@/lib/api';
 import { formatPrice, timeAgo } from '@/lib/utils';
-import { MapPin, Eye, Heart, Star, ChevronLeft, ChevronRight, Shield, Truck, Users, Share2, Flag, MessageCircle, BellPlus } from 'lucide-react';
+import { API_URL } from '@/lib/apiBase';
+import { MapPin, Eye, Heart, Star, ChevronLeft, ChevronRight, Shield, Truck, Users, Share2, ImageDown, Flag, MessageCircle, BellPlus } from 'lucide-react';
 import { useStartConversation } from '@/hooks/useMessages';
 import { trackListingView, useRecentlyViewedIds } from '@/hooks/useRecentlyViewed';
 import { ListingCard } from '@/components/listings/ListingCard';
@@ -655,6 +656,31 @@ export default function ListingDetailClient({ initialListing }: { initialListing
               </button>
             </div>
           )}
+
+          {/* Story karti: 1080x1920 gorsel backend'de uretilir, buradan indirilir.
+              Instagram'a yuklenirken kirpma gerekmesin diye tam Story olcusunde. */}
+          <button
+            onClick={async () => {
+              const adres = `${API_URL}/share/listing/${id}.png`;
+              try {
+                const cevap = await fetch(adres);
+                if (!cevap.ok) throw new Error('kart uretilemedi');
+                const blob = await cevap.blob();
+                const indir = document.createElement('a');
+                indir.href = URL.createObjectURL(blob);
+                indir.download = `motorya-${id}.png`;
+                indir.click();
+                URL.revokeObjectURL(indir.href);
+                toast.success('Story kartın indirildi');
+              } catch {
+                toast.error('Kart oluşturulamadı, tekrar dene');
+              }
+            }}
+            className="m-btn m-btn-ghost"
+            style={{ width: '100%', marginTop: 10, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}>
+            <ImageDown size={16} />
+            Story kartı indir
+          </button>
 
           {!isMine && (
             <div style={{ display: 'flex', alignItems: 'center', gap: 6, justifyContent: 'center', marginTop: 12, fontSize: 12, color: 'var(--ink-3)' }}>
