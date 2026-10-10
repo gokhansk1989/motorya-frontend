@@ -89,7 +89,7 @@ export async function generateMetadata({ params }: Props) {
   // template'ten geçmediği için markayı ona ayrıca ekliyoruz.
   const title = `İkinci El ${brandName} ${catName}`;
   const socialTitle = `${title} | Motorya`;
-  const description = `Motorya'da ${brandName} ${catName} ilanları. İkinci el ${brandName} ${catName.toLowerCase()} al sat, güvenli ödeme ve kargo ile.`;
+  const description = `Motorya'da ${brandName} ${catName} ilanları. İkinci el ${brandName} ${catName.toLowerCase()} al sat. Ücretsiz ilan, platform içi mesajlaşma.`;
   return {
     title,
     description,

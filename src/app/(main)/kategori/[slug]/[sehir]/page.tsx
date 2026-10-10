@@ -80,7 +80,7 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
   const sehirIlanlari = await fetchListings(category.id, city);
   const title = `${city} İkinci El ${category.name}`;
   const socialTitle = `${title} | Motorya`;
-  const description = `${city} ilanlarında ikinci el motosiklet ${category.name.toLowerCase()} al ya da sat. Doğrulanmış satıcılar, ücretsiz ilan — Motorya'da.`;
+  const description = `${city} ilanlarında ikinci el motosiklet ${category.name.toLowerCase()} al ya da sat. E-posta doğrulamalı üyeler, ücretsiz ilan — Motorya'da.`;
   const canonical = `${BASE_URL}/kategori/${slug}/${sehir}`;
 
   return {

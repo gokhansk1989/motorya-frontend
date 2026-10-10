@@ -30,6 +30,7 @@ export interface ListingsQuery {
   categorySlug?: string;
   condition?: string;
   gender?: string;
+  sizeLabel?: string;
   city?: string;
   minPrice?: number;
   maxPrice?: number;

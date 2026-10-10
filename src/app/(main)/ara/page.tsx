@@ -40,6 +40,9 @@ const SORT_OPTIONS = [
 function FilterFields({
   categories,
   brands,
+  facets,
+  sizeLabel,
+  city,
   categoryId,
   brandId,
   condition,
@@ -55,6 +58,9 @@ function FilterFields({
 }: {
   categories: any[];
   brands: any[];
+  facets: { sizes: { value: string; count: number }[]; cities: { value: string; count: number }[] } | undefined;
+  sizeLabel: string;
+  city: string;
   categoryId: string;
   brandId: string;
   condition: string;
@@ -149,6 +155,42 @@ function FilterFields({
         </select>
       </div>
 
+      {/* Beden — secenekler yayindaki ilanlardan gelir */}
+      {(facets?.sizes?.length ?? 0) > 0 && (
+        <div>
+          <label className="m-label">Beden</label>
+          <select
+            value={sizeLabel}
+            onChange={e => push({ sizeLabel: e.target.value, page: 1 })}
+            className="m-field"
+            style={{ height: 38 }}
+          >
+            <option value="">Tümü</option>
+            {facets!.sizes.map(s => (
+              <option key={s.value} value={s.value}>{s.value} ({s.count})</option>
+            ))}
+          </select>
+        </div>
+      )}
+
+      {/* Şehir */}
+      {(facets?.cities?.length ?? 0) > 0 && (
+        <div>
+          <label className="m-label">Şehir</label>
+          <select
+            value={city}
+            onChange={e => push({ city: e.target.value, page: 1 })}
+            className="m-field"
+            style={{ height: 38 }}
+          >
+            <option value="">Tümü</option>
+            {facets!.cities.map(c => (
+              <option key={c.value} value={c.value}>{c.value} ({c.count})</option>
+            ))}
+          </select>
+        </div>
+      )}
+
       {/* Fiyat hızlı seçim chipleri */}
       <div style={{ gridColumn: '1 / -1' }}>
         <label className="m-label">Fiyat Aralığı</label>
@@ -228,6 +270,7 @@ function SearchPageInner() {
   const condition = sp.get('condition') ?? '';
   const gender = sp.get('gender') ?? '';
   const city = sp.get('city') ?? '';
+  const sizeLabel = sp.get('sizeLabel') ?? '';
   const minPrice = sp.get('minPrice') ? Number(sp.get('minPrice')) : undefined;
   const maxPrice = sp.get('maxPrice') ? Number(sp.get('maxPrice')) : undefined;
   const sort = sp.get('sort') ?? 'newest';
@@ -254,12 +297,19 @@ function SearchPageInner() {
     queryFn: () => api.get('/listings/meta/brands').then((r) => r.data),
   });
 
+  // Beden ve sehir secenekleri yayindaki ilanlardan gelir; secilen kategoriye gore daralir.
+  const { data: facets } = useQuery({
+    queryKey: ['facets', categoryId],
+    queryFn: () => api.get('/listings/meta/facets').then((r) => r.data),
+  });
+
   const { data, isLoading } = useSearch({
     q: q || undefined,
     categoryId: categoryId || undefined,
     brandId: brandId || undefined,
     condition: condition || undefined,
     city: city || undefined,
+    sizeLabel: sizeLabel || undefined,
     gender: gender || undefined,
     minPrice,
     maxPrice,
@@ -270,13 +320,13 @@ function SearchPageInner() {
 
   const push = useCallback((overrides: Record<string, string | number | undefined>) => {
     const params = new URLSearchParams();
-    const merged = { q, categoryId, brandId, condition, gender, city, sort, page: 1, ...overrides };
+    const merged = { q, categoryId, brandId, condition, gender, city, sizeLabel, sort, page: 1, ...overrides };
     Object.entries(merged).forEach(([k, v]) => {
       if (v !== undefined && v !== '' && v !== 1) params.set(k, String(v));
       else if (k === 'page' && v === 1) {} // skip page=1
     });
     router.push(`/ara?${params.toString()}`);
-  }, [q, categoryId, brandId, condition, gender, city, sort, page, router]);
+  }, [q, categoryId, brandId, condition, gender, city, sizeLabel, sort, page, router]);
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
@@ -291,7 +341,7 @@ function SearchPageInner() {
     setShowFilters(false);
   };
 
-  const hasActiveFilters = !!(categoryId || brandId || condition || city || minPrice || maxPrice);
+  const hasActiveFilters = !!(categoryId || brandId || condition || city || sizeLabel || minPrice || maxPrice);
 
   const items = data?.items ?? [];
   const meta = data?.meta;
@@ -301,6 +351,9 @@ function SearchPageInner() {
   const filterFieldProps = {
     categories: cats,
     brands: brnds,
+    facets,
+    sizeLabel,
+    city,
     categoryId,
     brandId,
     condition,

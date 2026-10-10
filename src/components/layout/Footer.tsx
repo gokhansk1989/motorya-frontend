@@ -46,7 +46,7 @@ export function Footer() {
         <div>
           <Logo />
           <p style={{ maxWidth: 280, marginTop: 16, fontSize: 13.5, lineHeight: 1.6, color: 'var(--ink-3)' }}>
-            Motosiklet tayfası için ikinci el ekipman ve parça pazarı. Güvenli öde, kargoyla al ya da yüz yüze buluş.
+            Motosiklet tayfası için ikinci el ekipman ve parça pazarı. Ücretsiz ilan ver, platform içinden mesajlaş, kargoyla ya da yüz yüze teslim et.
           </p>
         </div>
         {cols.map(([h, items]) => (

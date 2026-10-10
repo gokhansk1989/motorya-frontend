@@ -86,6 +86,21 @@ function renderMarkdown(content: string) {
         </div>
       );
       continue;
+    } else if (/^\d+\. /.test(line)) {
+      // Numarali adimlar — "Nasil Calisir" gibi sirali anlatimlar icin.
+      const items: string[] = [];
+      while (i < lines.length && /^\d+\. /.test(lines[i])) {
+        items.push(lines[i].replace(/^\d+\. /, ''));
+        i++;
+      }
+      elements.push(
+        <ol key={`ol-${i}`} style={{ margin: '10px 0', paddingLeft: 22, display: 'flex', flexDirection: 'column', gap: 8 }}>
+          {items.map((item, li) => (
+            <li key={li} style={{ color: 'var(--ink-2)', fontSize: 15, lineHeight: 1.6 }} dangerouslySetInnerHTML={{ __html: renderInline(item) }} />
+          ))}
+        </ol>
+      );
+      continue;
     } else if (line.startsWith('- ') || line.startsWith('* ')) {
       const items: string[] = [];
       while (i < lines.length && (lines[i].startsWith('- ') || lines[i].startsWith('* '))) {

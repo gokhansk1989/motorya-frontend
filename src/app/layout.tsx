@@ -46,7 +46,7 @@ export const metadata: Metadata = {
     default: 'Motorya — Motosiklet Ekipman Pazarı',
     template: '%s | Motorya',
   },
-  description: 'İkinci el motosiklet kıyafet, kask, mont, eldiven ve aksesuar al-sat. Doğrulanmış satıcılar, ücretsiz ilan, güvenli mesajlaşma.',
+  description: 'İkinci el motosiklet kıyafet, kask, mont, eldiven ve aksesuar al-sat. E-posta doğrulamalı üyeler, ücretsiz ilan, platform içi mesajlaşma.',
   keywords: ['motosiklet', 'ikinci el kask', 'ikinci el motosiklet kıyafeti', 'motosiklet aksesuar', 'ikinci el kask satış', 'motosiklet mont', 'ikinci el eldiven', 'motorya', 'motosiklet ekipman'],
   metadataBase: new URL('https://motorya.com.tr'),
   alternates: { canonical: 'https://motorya.com.tr' },
@@ -56,7 +56,7 @@ export const metadata: Metadata = {
     url: 'https://motorya.com.tr',
     siteName: 'Motorya',
     title: 'Motorya — Türkiye\'nin Motosiklet Ekipman Pazarı',
-    description: 'İkinci el motosiklet kıyafet ve aksesuar al-sat. Doğrulanmış satıcılar, ücretsiz ilan. Türkiye\'nin motosiklet ekipman pazarı.',
+    description: 'İkinci el motosiklet kıyafet ve aksesuar al-sat. E-posta doğrulamalı üyeler, ücretsiz ilan. Türkiye\'nin motosiklet ekipman pazarı.',
     images: [{ url: '/og-image.jpeg', width: 1200, height: 630, alt: 'Motorya — İkinci El Motosiklet Ekipman İlanları' }],
   },
   twitter: {
