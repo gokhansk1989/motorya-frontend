@@ -551,6 +551,29 @@ export default function ListingDetailClient({ initialListing }: { initialListing
                 <Link href={`/ilanlarim/duzenle/${listing.id}`} className="m-btn m-btn-ghost block" style={{ width: '100%', display: 'flex', justifyContent: 'center', textDecoration: 'none' }}>
                   İlanı Düzenle
                 </Link>
+                {/* Story karti: 1080x1920 gorsel backend'de uretilir. Tam Story
+                    olcusunde ki Instagram'a yuklerken kirpma gerekmesin. */}
+                <button
+                  onClick={async () => {
+                    try {
+                      const cevap = await fetch(`${API_URL}/share/listing/${listing.id}.png`);
+                      if (!cevap.ok) throw new Error('kart uretilemedi');
+                      const blob = await cevap.blob();
+                      const indir = document.createElement('a');
+                      indir.href = URL.createObjectURL(blob);
+                      indir.download = `motorya-${listing.id}.png`;
+                      indir.click();
+                      URL.revokeObjectURL(indir.href);
+                      toast.success('Story kartın indirildi');
+                    } catch {
+                      toast.error('Kart oluşturulamadı, tekrar dene');
+                    }
+                  }}
+                  className="m-btn m-btn-ghost"
+                  style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}>
+                  <ImageDown size={16} />
+                  Story kartı indir
+                </button>
               </div>
             )}
 
@@ -656,31 +679,6 @@ export default function ListingDetailClient({ initialListing }: { initialListing
               </button>
             </div>
           )}
-
-          {/* Story karti: 1080x1920 gorsel backend'de uretilir, buradan indirilir.
-              Instagram'a yuklenirken kirpma gerekmesin diye tam Story olcusunde. */}
-          <button
-            onClick={async () => {
-              const adres = `${API_URL}/share/listing/${id}.png`;
-              try {
-                const cevap = await fetch(adres);
-                if (!cevap.ok) throw new Error('kart uretilemedi');
-                const blob = await cevap.blob();
-                const indir = document.createElement('a');
-                indir.href = URL.createObjectURL(blob);
-                indir.download = `motorya-${id}.png`;
-                indir.click();
-                URL.revokeObjectURL(indir.href);
-                toast.success('Story kartın indirildi');
-              } catch {
-                toast.error('Kart oluşturulamadı, tekrar dene');
-              }
-            }}
-            className="m-btn m-btn-ghost"
-            style={{ width: '100%', marginTop: 10, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}>
-            <ImageDown size={16} />
-            Story kartı indir
-          </button>
 
           {!isMine && (
             <div style={{ display: 'flex', alignItems: 'center', gap: 6, justifyContent: 'center', marginTop: 12, fontSize: 12, color: 'var(--ink-3)' }}>
