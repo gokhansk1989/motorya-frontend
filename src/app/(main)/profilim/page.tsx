@@ -175,7 +175,15 @@ export default function ProfilePage() {
 
   const changePassword = useMutation({
     mutationFn: (data: PasswordData) => api.patch('/users/me/password', data),
-    onSuccess: () => { toast.success('Şifre değiştirildi'); passwordForm.reset(); },
+    onSuccess: () => {
+      // Sifre degisince sunucu tum oturumlari kapatiyor; bu sekmedeki jeton
+      // da artik gecersiz. Kullaniciyi bir sonraki istekte genel "oturum
+      // doldu" ekranina dusurmek yerine burada acikca bilgilendiriyoruz.
+      passwordForm.reset();
+      toast.success('Şifren değişti. Güvenlik için tüm cihazlarda çıkış yapıldı.');
+      logout();
+      setTimeout(() => router.replace('/giris?sifre=degisti'), 1200);
+    },
     onError: () => toast.error('Şifre değiştirilemedi'),
   });
 

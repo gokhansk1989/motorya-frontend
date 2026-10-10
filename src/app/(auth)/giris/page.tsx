@@ -31,6 +31,7 @@ function LoginPage() {
   // durumlarda yönlendirme hiç olmuyor ve arayüz giriş yapılmış gibi
   // görünürken bütün istekler sessizce boş dönüyordu.
   const oturumDoldu = params.get('oturum') === 'doldu';
+  const sifreDegisti = params.get('sifre') === 'degisti';
 
   // Nereden geldiyse oraya döndür. Açık yönlendirme olmaması için yalnızca
   // kendi sitemizdeki bir yol kabul ediliyor.
@@ -92,7 +93,24 @@ function LoginPage() {
           <MarkaLogo yukseklik={40} />
           <p style={{ marginTop: 10, color: 'var(--ink-3)', fontSize: 14 }}>Hesabına giriş yap</p>
 
-        {oturumDoldu && (
+        {sifreDegisti && (
+          <div style={{
+            display: 'flex', alignItems: 'flex-start', gap: 10, marginTop: 18,
+            padding: '12px 14px', borderRadius: 10, textAlign: 'left',
+            background: 'color-mix(in oklch, var(--good) 10%, transparent)',
+            border: '1px solid color-mix(in oklch, var(--good) 30%, transparent)',
+          }}>
+            <Clock size={17} style={{ color: 'var(--good)', flexShrink: 0, marginTop: 1 }} />
+            <div>
+              <p style={{ margin: 0, fontSize: 13.5, fontWeight: 600, color: 'var(--ink)' }}>Şifren değişti</p>
+              <p style={{ margin: '3px 0 0', fontSize: 13, color: 'var(--ink-2)', lineHeight: 1.5 }}>
+                Güvenliğin için tüm cihazlarda çıkış yapıldı. Yeni şifrenle giriş yapabilirsin.
+              </p>
+            </div>
+          </div>
+        )}
+
+        {oturumDoldu && !sifreDegisti && (
           <div style={{
             display: 'flex', alignItems: 'flex-start', gap: 10, marginTop: 18,
             padding: '12px 14px', borderRadius: 10, textAlign: 'left',
