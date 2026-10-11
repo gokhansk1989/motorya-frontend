@@ -12,6 +12,7 @@ import Link from 'next/link';
 import { CategoryIcon } from '@/components/icons/CategoryIcons';
 import { motion, AnimatePresence } from 'framer-motion';
 import { matchCategories, matchBrands, CategorySuggestionsDropdown, type BrandLite } from '@/components/ui/CategorySuggestions';
+import { formatPrice } from '@/lib/utils';
 
 interface Category { id: string; name: string; slug: string; parentId: string | null; }
 
@@ -55,8 +56,8 @@ function PriceDropPanel() {
                   <div style={{ flex: 1, minWidth: 0 }}>
                     <p style={{ fontSize: 12, color: 'var(--ink-2)', margin: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{l.title}</p>
                     <p style={{ fontSize: 11.5, margin: '2px 0 0', display: 'flex', alignItems: 'center', gap: 5 }}>
-                      <span style={{ color: 'var(--ink-3)', textDecoration: 'line-through' }}>{Number(l.originalPrice).toLocaleString('tr-TR')}₺</span>
-                      <span style={{ color: 'var(--bad)', fontWeight: 700 }}>{Number(l.price).toLocaleString('tr-TR')}₺</span>
+                      <span style={{ color: 'var(--ink-3)', textDecoration: 'line-through' }}>{formatPrice(Number(l.originalPrice))}</span>
+                      <span style={{ color: 'var(--bad)', fontWeight: 700 }}>{formatPrice(Number(l.price))}</span>
                     </p>
                   </div>
                   <span style={{ fontSize: 10.5, fontWeight: 700, color: 'var(--bad)', flexShrink: 0 }}>%{discount}</span>
@@ -161,8 +162,8 @@ function PriceDropMobileStrip() {
               </div>
               <p className="m-pricedrop-mobile-title">{l.title}</p>
               <p className="m-pricedrop-mobile-price">
-                <span className="old">{Number(l.originalPrice).toLocaleString('tr-TR')}₺</span>
-                <span className="new">{Number(l.price).toLocaleString('tr-TR')}₺</span>
+                <span className="old">{formatPrice(Number(l.originalPrice))}</span>
+                <span className="new">{formatPrice(Number(l.price))}</span>
               </p>
             </Link>
           );

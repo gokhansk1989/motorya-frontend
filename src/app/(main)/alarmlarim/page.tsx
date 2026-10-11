@@ -9,6 +9,7 @@ import { BellPlus, Bell, Trash2, Loader2, ExternalLink } from 'lucide-react';
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 import toast from 'react-hot-toast';
+import { formatPrice } from '@/lib/utils';
 
 function savedSearchToUrl(alarm: import('@/hooks/useSavedSearches').SavedSearch) {
   const p = new URLSearchParams();
@@ -225,8 +226,8 @@ function FiyatAlarmIcerik() {
                 </p>
                 <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
                   {alarm.search && <span className="m-chip" style={{ height: 22, fontSize: 11 }}>🔍 {alarm.search}</span>}
-                  {alarm.minPrice && <span className="m-chip" style={{ height: 22, fontSize: 11 }}>Min {Number(alarm.minPrice).toLocaleString('tr-TR')}₺</span>}
-                  {alarm.maxPrice && <span className="m-chip" style={{ height: 22, fontSize: 11 }}>Max {Number(alarm.maxPrice).toLocaleString('tr-TR')}₺</span>}
+                  {alarm.minPrice && <span className="m-chip" style={{ height: 22, fontSize: 11 }}>Min {formatPrice(Number(alarm.minPrice))}</span>}
+                  {alarm.maxPrice && <span className="m-chip" style={{ height: 22, fontSize: 11 }}>Max {formatPrice(Number(alarm.maxPrice))}</span>}
                   {alarm.city && <span className="m-chip" style={{ height: 22, fontSize: 11 }}>📍 {alarm.city}</span>}
                   {alarm.condition && <span className="m-chip" style={{ height: 22, fontSize: 11 }}>{CONDITION_LABELS[alarm.condition]}</span>}
                 </div>
@@ -292,7 +293,7 @@ function FiyatAlarmIcerik() {
                   </div>
                   <div style={{ flex: 1, minWidth: 0 }}>
                     <p style={{ fontSize: 13.5, fontWeight: 600, color: 'var(--ink)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{listing.title}</p>
-                    <p style={{ fontSize: 12, color: 'var(--ink-3)', fontFamily: 'var(--font-mono)' }}>{Number(listing.price).toLocaleString('tr-TR')} ₺</p>
+                    <p style={{ fontSize: 12, color: 'var(--ink-3)', fontFamily: 'var(--font-mono)' }}>{formatPrice(Number(listing.price))}</p>
                   </div>
                   <button
                     onClick={() => {

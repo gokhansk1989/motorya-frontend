@@ -7,6 +7,7 @@ import { EmptyState } from '@/components/ui/EmptyState';
 import { jsonLdHtml } from '@/lib/jsonLd';
 import { SSR_API_URL } from '@/lib/apiBase';
 import { robotsIcinIlanSayisi } from '@/lib/seoRobots';
+import { formatPrice } from '@/lib/utils';
 
 // Bu sayfa API'ye kendi GENEL adresimiz üzerinden gidiyordu: istek sunucudan
 // çıkıp Cloudflare'e dönüyor, kenar kurallarına takılıyor ve sunucunun kendi
@@ -204,7 +205,7 @@ export default async function CategoryBrandPage({ params }: Props) {
                         {listing.title}
                       </p>
                       <p style={{ fontFamily: 'var(--font-mono)', fontWeight: 700, fontSize: 15, color: 'var(--accent)', margin: 0 }}>
-                        {Number(listing.price).toLocaleString('tr-TR')} ₺
+                        {formatPrice(Number(listing.price))}
                       </p>
                       {listing.city && <p style={{ fontSize: 11.5, color: 'var(--ink-3)', marginTop: 4 }}>{listing.city}</p>}
                     </div>

@@ -96,7 +96,7 @@ export function ListingCard({ listing }: { listing: Listing }) {
         </Link>
         <div style={{ display: 'flex', alignItems: 'baseline', gap: 8, flexWrap: 'wrap' }}>
           <span className="m-price">
-            {formatPrice(listing.price)}<span className="cur">₺</span>
+            {formatPrice(listing.price)}
           </span>
           {listing.originalPrice && (
             <span className="m-price-old">{formatPrice(listing.originalPrice)}</span>

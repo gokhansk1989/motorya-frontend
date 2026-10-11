@@ -69,6 +69,19 @@ export default function MyListingsPage() {
   const listings = Array.isArray(data) ? data : (data?.items ?? []);
   const filtered = filter === 'ALL' ? listings : listings.filter((l: any) => l.status === filter);
 
+  // Bos ekranda sekmeye uygun mesaj gosteriyoruz. Onceden her sekmede
+  // "Henuz ilan yok, ilk ilanini olustur" yaziyordu; hesapta baska
+  // sekmelerde ilan varken bu yanlisti.
+  const BOS_MESAJ: Record<string, string> = {
+    ALL: 'Henüz ilan yok',
+    ACTIVE: 'Yayında ilanınız yok',
+    ARCHIVED: 'Pasif ilanınız yok',
+    PENDING_REVIEW: 'Onay bekleyen ilanınız yok',
+    RESERVED: 'Rezerve ilanınız yok',
+    SOLD: 'Henüz satıldı olarak işaretlediğiniz ilan yok',
+  };
+  const hicIlanYok = listings.length === 0;
+
   const tabs = [
     { key: 'ALL',           label: 'Tümü',          count: listings.length },
     { key: 'ACTIVE',        label: 'Aktif',          count: listings.filter((l: any) => l.status === 'ACTIVE').length },
@@ -111,11 +124,24 @@ export default function MyListingsPage() {
       ) : filtered.length === 0 ? (
         <div style={{ textAlign: 'center', padding: '80px 0', color: 'var(--ink-3)' }}>
           <Package size={44} style={{ margin: '0 auto 16px', opacity: 0.3 }} />
-          <p style={{ fontSize: 16, fontWeight: 600, marginBottom: 8, color: 'var(--ink-2)' }}>Henüz ilan yok</p>
-          <p style={{ fontSize: 13, marginBottom: 20 }}>İlk ilanını oluştur, ekipmanını sat</p>
-          <Link href="/ilan-ver" className="m-btn m-btn-primary" style={{ display: 'inline-flex', alignItems: 'center', gap: 6, height: 42, padding: '0 20px', borderRadius: 10, textDecoration: 'none', fontSize: 14 }}>
-            <Plus size={16} />İlan Ver
-          </Link>
+          <p style={{ fontSize: 16, fontWeight: 600, marginBottom: 8, color: 'var(--ink-2)' }}>
+            {BOS_MESAJ[filter] ?? 'Bu sekmede ilan yok'}
+          </p>
+          {hicIlanYok ? (
+            <>
+              <p style={{ fontSize: 13, marginBottom: 20 }}>İlk ilanını oluştur, ekipmanını sat</p>
+              <Link href="/ilan-ver" className="m-btn m-btn-primary" style={{ display: 'inline-flex', alignItems: 'center', gap: 6, height: 42, padding: '0 20px', borderRadius: 10, textDecoration: 'none', fontSize: 14 }}>
+                <Plus size={16} />İlan Ver
+              </Link>
+            </>
+          ) : (
+            <>
+              <p style={{ fontSize: 13, marginBottom: 20 }}>Diğer sekmelerde ilanların var.</p>
+              <button onClick={() => setFilter('ALL')} className="m-btn m-btn-ghost" style={{ height: 42, padding: '0 20px', fontSize: 14 }}>
+                Tüm ilanlarımı göster
+              </button>
+            </>
+          )}
         </div>
       ) : (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
@@ -136,7 +162,7 @@ export default function MyListingsPage() {
                       <p style={{ fontWeight: 600, color: 'var(--ink)', fontSize: 13.5, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', flex: 1, minWidth: 0 }}>{l.title}</p>
                       <span style={{ flexShrink: 0, fontSize: 10.5, fontWeight: 700, fontFamily: 'var(--font-mono)', padding: '2px 7px', borderRadius: 20, background: st.bg, color: st.color }}>{st.label}</span>
                     </div>
-                    <p style={{ color: 'var(--accent)', fontWeight: 700, fontSize: 14, fontFamily: 'var(--font-mono)' }}>{formatPrice(l.price)} ₺</p>
+                    <p style={{ color: 'var(--accent)', fontWeight: 700, fontSize: 14, fontFamily: 'var(--font-mono)' }}>{formatPrice(l.price)}</p>
                     <p style={{ fontSize: 11, color: 'var(--ink-3)', marginTop: 2 }}>{l.viewCount ?? 0} görüntülenme · {l.favoriteCount ?? 0} favori</p>
                   </div>
                 </Link>

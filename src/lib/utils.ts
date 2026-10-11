@@ -5,8 +5,18 @@ export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
 }
 
+/**
+ * Sitedeki tek fiyat bicimi: "15.000 ₺".
+ *
+ * Onceden style:'currency' kullaniliyordu ve tr-TR bunu "₺15.000" diye
+ * simge onde uretiyordu; cagiran yerlerin cogu sonuna bir ₺ daha
+ * ekledigi icin ekranda "₺15.000 ₺" gorunuyordu. Simgeyi burada, sayinin
+ * ardina koyuyoruz; cagiran taraf ayrica ₺ eklemiyor.
+ */
 export function formatPrice(amount: number | string) {
-  return new Intl.NumberFormat('tr-TR', { style: 'currency', currency: 'TRY', minimumFractionDigits: 0 }).format(Number(amount));
+  const n = Number(amount);
+  if (!Number.isFinite(n)) return '—';
+  return `${new Intl.NumberFormat('tr-TR', { maximumFractionDigits: 0 }).format(n)} ₺`;
 }
 
 export function timeAgo(date: string | Date) {

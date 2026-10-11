@@ -14,6 +14,7 @@ import { CoverCropModal } from '@/components/listings/CoverCropModal';
 import { IL_ILCE, ALL_CITIES } from '@/lib/il-ilce';
 import { analytics } from '@/lib/analytics';
 import { useAuthStore } from '@/store/auth';
+import { formatPrice } from '@/lib/utils';
 
 type Category = { id: string; name: string; slug: string; parentId: string | null; };
 
@@ -512,7 +513,7 @@ export default function CreateListingPage() {
                     <div>
                       <div style={{ fontSize: 11, color: 'var(--ink-3)', marginBottom: 2 }}>Satılan ort.</div>
                       <div style={{ fontWeight: 800, fontFamily: 'var(--font-mono)', fontSize: 16, color: 'var(--good)' }}>
-                        {Math.round(priceGuide.sold.avg).toLocaleString('tr-TR')} ₺
+                        {formatPrice(Math.round(priceGuide.sold.avg))}
                       </div>
                     </div>
                   )}
@@ -520,14 +521,14 @@ export default function CreateListingPage() {
                     <div>
                       <div style={{ fontSize: 11, color: 'var(--ink-3)', marginBottom: 2 }}>Aktif ort.</div>
                       <div style={{ fontWeight: 800, fontFamily: 'var(--font-mono)', fontSize: 16, color: 'var(--ink)' }}>
-                        {Math.round(priceGuide.active.avg).toLocaleString('tr-TR')} ₺
+                        {formatPrice(Math.round(priceGuide.active.avg))}
                       </div>
                     </div>
                   )}
                   <div>
                     <div style={{ fontSize: 11, color: 'var(--ink-3)', marginBottom: 2 }}>Aralık</div>
                     <div style={{ fontWeight: 700, fontFamily: 'var(--font-mono)', fontSize: 13, color: 'var(--ink-2)' }}>
-                      {Math.round(priceGuide.all.min).toLocaleString('tr-TR')} – {Math.round(priceGuide.all.max).toLocaleString('tr-TR')} ₺
+                      {Math.round(priceGuide.all.min).toLocaleString('tr-TR')} – {formatPrice(Math.round(priceGuide.all.max))}
                     </div>
                   </div>
                 </div>

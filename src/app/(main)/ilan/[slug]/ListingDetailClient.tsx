@@ -139,6 +139,7 @@ export default function ListingDetailClient({ initialListing }: { initialListing
   // isteyebiliyoruz.
   const alicisiyim = !!user && listing.status === 'SOLD' && listing.soldToUserId === user.id;
   const [onaylaniyor, setOnaylaniyor] = useState(false);
+  const [kartIndirildi, setKartIndirildi] = useState(false);
   const qc = useQueryClient();
   const images = listing.images || [];
   const discountPct = listing.originalPrice
@@ -293,7 +294,7 @@ export default function ListingDetailClient({ initialListing }: { initialListing
             <button
               onClick={async () => {
                 const url = `${window.location.origin}/ilan/${id}`;
-                const shareText = `${listing.title} — ${formatPrice(listing.price)} ₺`;
+                const shareText = `${listing.title} — ${formatPrice(listing.price)}`;
                 if (navigator.share) {
                   try {
                     await navigator.share({ title: shareText, url });
@@ -373,7 +374,7 @@ export default function ListingDetailClient({ initialListing }: { initialListing
 
             <div style={{ display: 'flex', alignItems: 'baseline', gap: 12, marginBottom: 4 }}>
               <span className="m-price" style={{ fontSize: 34 }}>
-                {formatPrice(listing.price)}<span className="cur" style={{ fontSize: 18 }}>₺</span>
+                {formatPrice(listing.price)}
               </span>
               {/* Ustu cizili fiyat, saticinin ilan verirken kendi girdigi
                   liste fiyatidir; sistemin takip ettigi onceki ilan fiyati
@@ -422,12 +423,12 @@ export default function ListingDetailClient({ initialListing }: { initialListing
                 <span style={{ fontSize: 11, color: 'var(--ink-3)', fontWeight: 600 }}>📊 Piyasa</span>
                 {priceGuide.sold?.avg && (
                   <span style={{ fontSize: 12, color: 'var(--ink-2)' }}>
-                    Satış ort. <strong style={{ color: 'var(--good)' }}>{Math.round(priceGuide.sold.avg).toLocaleString('tr-TR')} ₺</strong>
+                    Satış ort. <strong style={{ color: 'var(--good)' }}>{formatPrice(Math.round(priceGuide.sold.avg))}</strong>
                   </span>
                 )}
                 {priceGuide.active?.avg && (
                   <span style={{ fontSize: 12, color: 'var(--ink-2)' }}>
-                    Aktif ort. <strong>{Math.round(priceGuide.active.avg).toLocaleString('tr-TR')} ₺</strong>
+                    Aktif ort. <strong>{formatPrice(Math.round(priceGuide.active.avg))}</strong>
                   </span>
                 )}
                 <span style={{ fontSize: 11, color: 'var(--ink-3)' }}>{priceGuide.totalCount} ilan</span>
@@ -616,6 +617,7 @@ export default function ListingDetailClient({ initialListing }: { initialListing
                       indir.download = `motorya-${listing.id}.png`;
                       indir.click();
                       URL.revokeObjectURL(indir.href);
+                      setKartIndirildi(true);
                       toast.success('Story kartın indirildi');
                     } catch {
                       toast.error('Kart oluşturulamadı, tekrar dene');
@@ -626,6 +628,34 @@ export default function ListingDetailClient({ initialListing }: { initialListing
                   <ImageDown size={16} />
                   Story kartı indir
                 </button>
+
+                {/* Instagram'a otomatik paylasim YAPMIYORUZ; gorsel kullanicinin
+                    cihazina iniyor, paylasimi kendisi yapiyor. Baglanti da
+                    otomatik eklenmedigi icin hatirlatiyoruz. */}
+                {kartIndirildi && (
+                  <div style={{ padding: '12px 14px', borderRadius: 10, background: 'var(--bg-2)', border: '1px solid var(--line-soft)' }}>
+                    <p style={{ margin: '0 0 8px', fontSize: 12.5, color: 'var(--ink-2)', lineHeight: 1.55 }}>
+                      Görsel cihazına indi. Instagram hikâyene eklerken{' '}
+                      <strong style={{ color: 'var(--ink)' }}>ilan bağlantısını da koymayı unutma</strong> —
+                      bağlantı görselin içine gömülü değil.
+                    </p>
+                    <button
+                      onClick={async () => {
+                        const adres = `${window.location.origin}/ilan/${listing.slug ?? listing.id}`;
+                        try {
+                          await navigator.clipboard.writeText(adres);
+                          toast.success('İlan bağlantısı kopyalandı');
+                        } catch {
+                          toast.error('Kopyalanamadı, adres çubuğundan alabilirsin');
+                        }
+                      }}
+                      className="m-btn m-btn-ghost"
+                      style={{ width: '100%', height: 38, fontSize: 13 }}
+                    >
+                      İlan bağlantısını kopyala
+                    </button>
+                  </div>
+                )}
               </div>
             )}
 
@@ -775,9 +805,9 @@ export default function ListingDetailClient({ initialListing }: { initialListing
                       {o.status === 'PENDING' ? 'Bekliyor' : o.status === 'COUNTER_OFFERED' ? 'Karşı Teklif' : o.status === 'ACCEPTED' ? 'Kabul' : 'Reddedildi'}
                     </span>
                   </div>
-                  <span className="m-accent" style={{ fontFamily: 'var(--font-display)', fontWeight: 800, fontSize: 16 }}>{formatPrice(o.amount)} ₺</span>
+                  <span className="m-accent" style={{ fontFamily: 'var(--font-display)', fontWeight: 800, fontSize: 16 }}>{formatPrice(o.amount)}</span>
                   {o.counterAmount && (
-                    <div style={{ fontSize: 12, color: '#8b5cf6', fontWeight: 600, marginTop: 2 }}>Karşı teklifiniz: {formatPrice(o.counterAmount)} ₺</div>
+                    <div style={{ fontSize: 12, color: '#8b5cf6', fontWeight: 600, marginTop: 2 }}>Karşı teklifiniz: {formatPrice(o.counterAmount)}</div>
                   )}
                   {o.message && <p style={{ fontSize: 12, color: 'var(--ink-3)', marginTop: 4 }}>{o.message}</p>}
                 </div>
@@ -823,7 +853,7 @@ export default function ListingDetailClient({ initialListing }: { initialListing
           <div className="m-surface-2 m-modal-sheet" style={{ padding: 24, width: '100%', maxWidth: 420 }}>
             <h3 className="m-display" style={{ fontSize: 20, margin: '0 0 6px' }}>Karşı Teklif Yap</h3>
             <p style={{ fontSize: 13, color: 'var(--ink-3)', marginBottom: 18 }}>
-              Alıcı teklifi: <strong>{formatPrice(counterModal.buyerAmount)} ₺</strong> · İlan fiyatı: <strong>{formatPrice(listing.price)} ₺</strong>
+              Alıcı teklifi: <strong>{formatPrice(counterModal.buyerAmount)}</strong> · İlan fiyatı: <strong>{formatPrice(listing.price)}</strong>
             </p>
             <label className="m-label">Karşı teklif tutarı (₺)</label>
             <input

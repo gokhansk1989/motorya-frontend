@@ -33,9 +33,10 @@ import { ListingCard } from '@/components/listings/ListingCard';
 import { usePushNotifications } from '@/hooks/usePushNotifications';
 import Link from 'next/link';
 import toast from 'react-hot-toast';
+import { formatPrice } from '@/lib/utils';
 
 const profileSchema = z.object({
-  // Gercek ad-soyad: yayinlanmaz, yalnizca fatura ve kimlik dogrulama icin.
+  // Gercek ad-soyad: yayinlanmaz, yalnizca hesap kayitlarinda tutulur.
   // Herkese gorunen ad ayri bir alan (kullanici adi) ve ayri bir uctan
   // kaydediliyor - kurallari farkli.
   realName: z.string().min(2, 'En az 2 karakter'),
@@ -343,17 +344,40 @@ export default function ProfilePage() {
             <div style={{ background: 'var(--bg-1)', border: '1px solid var(--line-soft)', borderRadius: 12, padding: '12px 0', textAlign: 'center' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: 4, justifyContent: 'center', marginBottom: 4 }}>
                 <ShoppingBag size={13} style={{ color: 'var(--accent)' }} />
-                <span style={{ fontWeight: 700, fontSize: 16, fontFamily: 'var(--font-mono)', color: 'var(--ink)' }}>{profile.salesCount ?? 0}</span>
+                <span style={{ fontWeight: 700, fontSize: 16, fontFamily: 'var(--font-mono)', color: 'var(--ink)' }}>
+                  {profile.onayliSatis ?? 0}<span style={{ color: 'var(--ink-3)', fontWeight: 400 }}>/{profile.salesCount ?? 0}</span>
+                </span>
               </div>
-              <p style={{ fontSize: 11, color: 'var(--ink-3)' }}>satış</p>
+              <p style={{ fontSize: 11, color: 'var(--ink-3)' }}>alıcı onaylı / beyan</p>
             </div>
             <div style={{ background: 'var(--bg-1)', border: '1px solid var(--line-soft)', borderRadius: 12, padding: '12px 0', textAlign: 'center' }}>
               <span style={{ fontWeight: 700, fontSize: 16, fontFamily: 'var(--font-mono)', color: (profile.trustScore ?? 0) >= 70 ? 'var(--good)' : (profile.trustScore ?? 0) >= 40 ? '#f59e0b' : 'var(--ink-3)' }}>
-                {(profile.trustScore ?? 0) > 0 ? profile.trustScore : '—'}
+                {(profile.trustScore ?? 0) > 0 ? `${profile.trustScore}/100` : '—'}
               </span>
-              <p style={{ fontSize: 11, color: 'var(--ink-3)', marginTop: 4 }}>güven</p>
+              <p style={{ fontSize: 11, color: 'var(--ink-3)', marginTop: 4 }}>güven puanı</p>
             </div>
           </div>
+
+          {/* Puanin neyi anlattigini acikliyor; SSS'teki hesaplama ile ayni.
+              <details> JavaScript gerektirmiyor ve klavyeyle acilabiliyor. */}
+          <details style={{ marginTop: 12 }}>
+            <summary style={{ fontSize: 12, color: 'var(--ink-3)', cursor: 'pointer' }}>
+              Güven puanı nasıl hesaplanır?
+            </summary>
+            <div style={{ fontSize: 12.5, color: 'var(--ink-2)', lineHeight: 1.6, marginTop: 8, padding: '10px 12px', background: 'var(--bg-2)', borderRadius: 10 }}>
+              <p style={{ margin: '0 0 8px' }}>0–100 arasında otomatik hesaplanır. Bugün katkı sağlayanlar:</p>
+              <ul style={{ margin: 0, paddingLeft: 18, display: 'flex', flexDirection: 'column', gap: 4 }}>
+                <li>E-posta doğrulaması — 10 puan</li>
+                <li>Satıldı işaretlenen ilan sayısı — en çok 30 puan</li>
+                <li>Alınan değerlendirmeler — en çok 20 puan</li>
+                <li>Platform davranışı — en çok 10 puan</li>
+              </ul>
+              <p style={{ margin: '8px 0 0' }}>
+                Puan geçmiş etkinliğin özetidir; satıcı güvencesi ya da ödeme koruması değildir.
+                Motorya ödemeye aracılık etmez.
+              </p>
+            </div>
+          </details>
 
           {/* Rozetler */}
           {(profile.badges ?? []).length > 0 && (
@@ -451,7 +475,7 @@ export default function ProfilePage() {
                 <label style={lbl}>Ad Soyad <span style={{ fontWeight: 400, opacity: 0.5 }}>yayınlanmaz</span></label>
                 <input {...profileForm.register('realName')} style={inp(!!profileForm.formState.errors.realName)} />
                 {profileForm.formState.errors.realName && <p style={{ marginTop: 5, fontSize: 12, color: 'var(--bad)', fontFamily: 'var(--font-mono)' }}>{profileForm.formState.errors.realName.message}</p>}
-                <p style={{ marginTop: 5, fontSize: 11, color: 'var(--ink-3)' }}>Fatura ve kimlik doğrulama için saklanır; ilanlarınızda ve mesajlarınızda görünmez.</p>
+                <p style={{ marginTop: 5, fontSize: 11, color: 'var(--ink-3)' }}>Yalnızca hesap kayıtlarında tutulur; ilanlarınızda, profilinizde ve mesajlarınızda görünmez.</p>
               </div>
               <div>
                 <label style={lbl}>Hakkımda <span style={{ fontWeight: 400, opacity: 0.5 }}>opsiyonel</span></label>
@@ -461,7 +485,7 @@ export default function ProfilePage() {
                 <label style={lbl}>T.C. Kimlik No <span style={{ fontWeight: 400, opacity: 0.5 }}>ilan vermek için gerekli</span></label>
                 <input {...profileForm.register('tcKimlik')} inputMode="numeric" maxLength={11} placeholder="10000000000" style={inp(!!profileForm.formState.errors.tcKimlik)} />
                 {profileForm.formState.errors.tcKimlik && <p style={{ marginTop: 5, fontSize: 12, color: 'var(--bad)', fontFamily: 'var(--font-mono)' }}>{profileForm.formState.errors.tcKimlik.message}</p>}
-                <p style={{ marginTop: 5, fontSize: 11, color: 'var(--ink-3)' }}>KVKK kapsamında güvenli alışveriş için alınır; ilanınızda görünmez.</p>
+                <p style={{ marginTop: 5, fontSize: 11, color: 'var(--ink-3)' }}>Satıcı kaydı tutma yükümlülüğü için alınır. Kimlik doğrulaması değildir — numaranın size ait olduğu doğrulanmaz. İlanınızda görünmez.</p>
               </div>
               <div>
                 <label style={lbl}>Cep Telefonu <span style={{ fontWeight: 400, opacity: 0.5 }}>opsiyonel</span></label>
@@ -668,7 +692,7 @@ export default function ProfilePage() {
                     <div style={{ flex: 1, minWidth: 0 }}>
                       <p style={{ fontSize: 13.5, fontWeight: 600, color: 'var(--ink)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', marginBottom: 3 }}>{listing.title}</p>
                       <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                        <span style={{ fontSize: 12.5, fontWeight: 700, fontFamily: 'var(--font-mono)', color: 'var(--ink)' }}>{Number(listing.price).toLocaleString('tr-TR')} ₺</span>
+                        <span style={{ fontSize: 12.5, fontWeight: 700, fontFamily: 'var(--font-mono)', color: 'var(--ink)' }}>{formatPrice(Number(listing.price))}</span>
                         <span style={{ fontSize: 11, fontWeight: 700, fontFamily: 'var(--font-mono)', padding: '2px 7px', borderRadius: 20, background: statusBg, color: statusColor }}>{statusLabel}</span>
                       </div>
                     </div>
@@ -844,8 +868,8 @@ export default function ProfilePage() {
                     </p>
                     <div style={{ display: 'flex', flexWrap: 'wrap', gap: 5, marginBottom: 3 }}>
                       {s.search && <span style={{ fontSize: 11, padding: '1px 7px', borderRadius: 20, background: 'var(--bg-2)', color: 'var(--ink-3)', border: '1px solid var(--line-soft)' }}>🔍 {s.search}</span>}
-                      {s.minPrice && <span style={{ fontSize: 11, padding: '1px 7px', borderRadius: 20, background: 'var(--bg-2)', color: 'var(--ink-3)', border: '1px solid var(--line-soft)' }}>Min {Number(s.minPrice).toLocaleString('tr-TR')}₺</span>}
-                      {s.maxPrice && <span style={{ fontSize: 11, padding: '1px 7px', borderRadius: 20, background: 'var(--bg-2)', color: 'var(--ink-3)', border: '1px solid var(--line-soft)' }}>Max {Number(s.maxPrice).toLocaleString('tr-TR')}₺</span>}
+                      {s.minPrice && <span style={{ fontSize: 11, padding: '1px 7px', borderRadius: 20, background: 'var(--bg-2)', color: 'var(--ink-3)', border: '1px solid var(--line-soft)' }}>Min {formatPrice(Number(s.minPrice))}</span>}
+                      {s.maxPrice && <span style={{ fontSize: 11, padding: '1px 7px', borderRadius: 20, background: 'var(--bg-2)', color: 'var(--ink-3)', border: '1px solid var(--line-soft)' }}>Max {formatPrice(Number(s.maxPrice))}</span>}
                       {s.city && <span style={{ fontSize: 11, padding: '1px 7px', borderRadius: 20, background: 'var(--bg-2)', color: 'var(--ink-3)', border: '1px solid var(--line-soft)' }}>📍 {s.city}</span>}
                       {s.condition && <span style={{ fontSize: 11, padding: '1px 7px', borderRadius: 20, background: 'var(--bg-2)', color: 'var(--ink-3)', border: '1px solid var(--line-soft)' }}>{CONDITION_LABELS[s.condition] ?? s.condition}</span>}
                     </div>
@@ -941,11 +965,15 @@ export default function ProfilePage() {
                   Tarayıcı Bildirimleri
                 </p>
                 <p style={{ fontSize: 12.5, color: 'var(--ink-3)', lineHeight: 1.5 }}>
-                  {permission === 'denied'
-                    ? 'Tarayıcı izni engellendi. Tarayıcı site ayarlarından izin verin.'
-                    : pushIsOn
-                      ? 'Fiyat düşüşü, teklif ve mesaj bildirimleri açık.'
-                      : 'Teklif, mesaj ve fiyat düşüşlerinden anında haberdar ol.'}
+                  {permission === 'unsupported'
+                    ? 'Bu tarayıcı anlık bildirimleri desteklemiyor. Aşağıdaki tercihlerin e-postalar için geçerli olmaya devam eder.'
+                    : permission === 'denied'
+                      ? 'Tarayıcı izni engellenmiş. Tarayıcının site ayarlarından izin verirsen açabilirsin.'
+                      : pushIsOn
+                        ? 'Açık — bu cihazın tarayıcısına anlık bildirim gönderiliyor.'
+                        : permission === 'granted'
+                          ? 'Tarayıcı izni var ama bu cihaz kayıtlı değil. Açmak için düğmeye dokun.'
+                          : 'Kapalı — açtığında tarayıcı izin soracak.'}
                 </p>
               </div>
               {permission === 'unsupported' ? (
@@ -978,24 +1006,38 @@ export default function ProfilePage() {
               return (
                 <div key={key} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '12px 0', borderBottom: '1px solid var(--line-soft)' }}>
                   <p style={{ fontSize: 13.5, color: 'var(--ink-2)' }}>{label}</p>
-                  <button
-                    disabled={!pushIsOn}
-                    onClick={() => updateNotifPrefs.mutate({ [key]: !isOn })}
-                    title={!pushIsOn ? 'Önce tarayıcı bildirimlerini açın' : undefined}
-                    style={{
-                      fontSize: 11.5, fontWeight: 700, fontFamily: 'var(--font-mono)', padding: '2px 10px', borderRadius: 20,
-                      border: 'none', cursor: pushIsOn ? 'pointer' : 'not-allowed', opacity: pushIsOn ? 1 : 0.5,
-                      background: isOn ? 'color-mix(in oklch, var(--good) 12%, transparent)' : 'var(--bg-2)',
-                      color: isOn ? 'var(--good)' : 'var(--ink-3)',
-                    }}>
-                    {isOn ? 'Açık' : 'Kapalı'}
-                  </button>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0 }}>
+                    {/* Bu tercihler yalnizca tarayici bildirimlerini degil,
+                        e-postalari da yonetiyor (bkz. offers/tasks servisleri).
+                        Onceden tarayici izni yokken kilitliydiler; bu, kullanicinin
+                        e-posta bildirimlerini kapatmasini da engelliyordu. */}
+                    {isOn && !pushIsOn && permission !== 'unsupported' && (
+                      <span style={{ fontSize: 10.5, color: 'var(--ink-3)', whiteSpace: 'nowrap' }}>
+                        e-posta ile
+                      </span>
+                    )}
+                    <button
+                      onClick={() => updateNotifPrefs.mutate({ [key]: !isOn })}
+                      style={{
+                        fontSize: 11.5, fontWeight: 700, fontFamily: 'var(--font-mono)', padding: '2px 10px', borderRadius: 20,
+                        border: 'none', cursor: 'pointer',
+                        background: isOn ? 'color-mix(in oklch, var(--good) 12%, transparent)' : 'var(--bg-2)',
+                        color: isOn ? 'var(--good)' : 'var(--ink-3)',
+                      }}>
+                      {isOn ? 'Açık' : 'Kapalı'}
+                    </button>
+                  </div>
                 </div>
               );
             })}
 
             <p style={{ fontSize: 12, color: 'var(--ink-3)', marginTop: 14, lineHeight: 1.6 }}>
-              Uygulama içi bildirimler her zaman aktiftir. Tarayıcı bildirimleri yalnızca sitenin açık olmadığı anlarda çalışır.
+              <strong style={{ color: 'var(--ink-2)' }}>Üç ayrı kanal var.</strong>{' '}
+              <strong style={{ color: 'var(--ink-2)' }}>Uygulama içi bildirimler</strong> her zaman açıktır ve
+              zil simgesinde birikir. <strong style={{ color: 'var(--ink-2)' }}>E-posta</strong> ve{' '}
+              <strong style={{ color: 'var(--ink-2)' }}>tarayıcı bildirimleri</strong> ise yukarıdaki
+              tercihlerine uyar; tarayıcı bildirimi ayrıca cihazından izin ister ve yalnızca
+              site kapalıyken işe yarar. İzin vermesen de tercihlerin e-postalar için geçerlidir.
             </p>
           </div>
 

@@ -90,8 +90,8 @@ function SentOffers() {
               {o.listing?.title}
             </Link>
             <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 4, flexWrap: 'wrap' }}>
-              <span style={{ fontFamily: 'var(--font-mono)', fontWeight: 700, fontSize: 15, color: 'var(--accent)' }}>{formatPrice(o.amount)} ₺</span>
-              <span style={{ fontFamily: 'var(--font-mono)', fontSize: 12, color: 'var(--ink-3)', textDecoration: 'line-through' }}>{formatPrice(o.listing?.price)} ₺</span>
+              <span style={{ fontFamily: 'var(--font-mono)', fontWeight: 700, fontSize: 15, color: 'var(--accent)' }}>{formatPrice(o.amount)}</span>
+              <span style={{ fontFamily: 'var(--font-mono)', fontSize: 12, color: 'var(--ink-3)', textDecoration: 'line-through' }}>{formatPrice(o.listing?.price)}</span>
               <span style={{ fontSize: 11, color: 'var(--ink-3)' }}>{timeAgo(o.createdAt)}</span>
             </div>
             {o.message && <p style={{ fontSize: 12, color: 'var(--ink-3)', marginTop: 4, overflow: 'hidden', display: '-webkit-box', WebkitLineClamp: 1, WebkitBoxOrient: 'vertical' }}>{o.message}</p>}
@@ -110,7 +110,7 @@ function SentOffers() {
             {o.status === 'COUNTER_OFFERED' && o.counterAmount && (
               <div style={{ marginTop: 10, padding: '10px 12px', borderRadius: 10, background: 'color-mix(in oklch, #8b5cf6 8%, var(--bg-1))', border: '1.5px solid color-mix(in oklch, #8b5cf6 25%, transparent)' }}>
                 <div style={{ fontSize: 12, fontWeight: 700, color: '#8b5cf6', marginBottom: 4 }}>Satıcının karşı teklifi</div>
-                <div style={{ fontFamily: 'var(--font-mono)', fontWeight: 800, fontSize: 17, color: '#8b5cf6' }}>{formatPrice(o.counterAmount)} ₺</div>
+                <div style={{ fontFamily: 'var(--font-mono)', fontWeight: 800, fontSize: 17, color: '#8b5cf6' }}>{formatPrice(o.counterAmount)}</div>
                 {o.counterMessage && <p style={{ fontSize: 12, color: 'var(--ink-3)', marginTop: 4 }}>{o.counterMessage}</p>}
                 <div style={{ display: 'flex', gap: 8, marginTop: 10 }}>
                   <button
@@ -234,12 +234,12 @@ function ReceivedOffers() {
                 {o.listing?.title}
               </Link>
               <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 4, flexWrap: 'wrap' }}>
-                <span style={{ fontFamily: 'var(--font-mono)', fontWeight: 700, fontSize: 15, color: 'var(--accent)' }}>{formatPrice(o.amount)} ₺</span>
-                <span style={{ fontFamily: 'var(--font-mono)', fontSize: 12, color: 'var(--ink-3)', textDecoration: 'line-through' }}>{formatPrice(o.listing?.price)} ₺</span>
+                <span style={{ fontFamily: 'var(--font-mono)', fontWeight: 700, fontSize: 15, color: 'var(--accent)' }}>{formatPrice(o.amount)}</span>
+                <span style={{ fontFamily: 'var(--font-mono)', fontSize: 12, color: 'var(--ink-3)', textDecoration: 'line-through' }}>{formatPrice(o.listing?.price)}</span>
               </div>
               {o.counterAmount && (
                 <div style={{ fontSize: 12, color: '#8b5cf6', fontWeight: 600, marginTop: 4 }}>
-                  Karşı teklifiniz: {formatPrice(o.counterAmount)} ₺
+                  Karşı teklifiniz: {formatPrice(o.counterAmount)}
                 </div>
               )}
               <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginTop: 5 }}>
@@ -328,7 +328,7 @@ function ReceivedOffers() {
           <div className="m-surface-2" style={{ padding: 24, width: '100%', maxWidth: 420 }}>
             <h3 className="m-display" style={{ fontSize: 20, margin: '0 0 6px' }}>Karşı Teklif Yap</h3>
             <p style={{ fontSize: 13, color: 'var(--ink-3)', marginBottom: 18 }}>
-              Alıcı teklifi: <strong>{formatPrice(counterModal.buyerAmount)} ₺</strong> · İlan fiyatı: <strong>{formatPrice(counterModal.listingPrice)} ₺</strong>
+              Alıcı teklifi: <strong>{formatPrice(counterModal.buyerAmount)}</strong> · İlan fiyatı: <strong>{formatPrice(counterModal.listingPrice)}</strong>
             </p>
             <label className="m-label">Karşı teklif tutarı (₺)</label>
             <input

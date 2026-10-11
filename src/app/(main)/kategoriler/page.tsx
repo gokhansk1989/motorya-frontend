@@ -58,7 +58,10 @@ async function kategorileriGetir(): Promise<Category[]> {
 export default async function KategorilerPage() {
   const hepsi = await kategorileriGetir();
   const ustler = hepsi.filter(c => !c.parentId);
-  const altSayisi = hepsi.length - ustler.length;
+  // Sayiyi kartlarda gosterilenle ayni kaynaktan uretiyoruz: basit cikarma,
+  // ebeveyni listede olmayan bir kayit sizdiginda kartlarla celisiyordu.
+  const ustIdler = new Set(ustler.map(c => c.id));
+  const altSayisi = hepsi.filter(c => c.parentId && ustIdler.has(c.parentId)).length;
 
   const jsonLd = {
     '@context': 'https://schema.org',

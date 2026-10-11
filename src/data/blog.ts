@@ -898,7 +898,7 @@ Motorya ve diğer platformlarda aynı model ve yıla ait fiyatları karşılaşt
 
 ## 12. Ödeme Güvenliği
 
-Bireysel alımlarda nakit yerine banka havalesi kullanın; makbuz alın. Motorya gibi platformlarda escrow (emanet ödeme) sistemi sizi korur.
+Bireysel alımlarda nakit yerine banka havalesi kullanın; makbuz alın. Motorya bir ilan platformudur, ödemeye aracılık etmez: parayı ürünü görmeden göndermeyin.
     `,
   },
   {
