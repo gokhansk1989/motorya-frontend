@@ -212,17 +212,18 @@ function FiyatAlarmIcerik() {
       ) : (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
           {alarms.map(alarm => (
-            <div key={alarm.id} className="m-surface"
-              style={{ padding: '16px 20px', borderRadius: 'var(--radius)', display: 'flex', alignItems: 'center', gap: 14, flexWrap: 'wrap' }}
+            <div key={alarm.id} className="m-surface m-alarm-satir"
+              style={{ padding: '16px 20px', borderRadius: 'var(--radius)' }}
             >
-              <div style={{ width: 40, height: 40, borderRadius: 10, background: 'color-mix(in oklch, var(--accent) 15%, var(--bg-2))', display: 'grid', placeItems: 'center', flexShrink: 0 }}>
-                <Bell size={18} style={{ color: 'var(--accent)' }} />
-              </div>
-              <div style={{ flex: 1, minWidth: 0 }}>
-                <p style={{ fontWeight: 600, fontSize: 14, margin: '0 0 4px', color: 'var(--ink)', display: 'flex', alignItems: 'center', gap: 6 }}>
+              <div className="m-alarm-bilgi">
+                <div style={{ width: 40, height: 40, borderRadius: 10, background: 'color-mix(in oklch, var(--accent) 15%, var(--bg-2))', display: 'grid', placeItems: 'center', flexShrink: 0 }}>
+                  <Bell size={18} style={{ color: 'var(--accent)' }} />
+                </div>
+                <div style={{ flex: 1, minWidth: 0 }}>
+                <p style={{ fontWeight: 600, fontSize: 14, margin: '0 0 4px', color: 'var(--ink)', overflowWrap: 'anywhere' }}>
                   {alarm.label}
                 </p>
-                <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, minWidth: 0 }}>
                   {alarm.search && <span className="m-chip" style={{ height: 22, fontSize: 11 }}>🔍 {alarm.search}</span>}
                   {alarm.minPrice && <span className="m-chip" style={{ height: 22, fontSize: 11 }}>Min {formatPrice(Number(alarm.minPrice))}</span>}
                   {alarm.maxPrice && <span className="m-chip" style={{ height: 22, fontSize: 11 }}>Max {formatPrice(Number(alarm.maxPrice))}</span>}
@@ -236,13 +237,14 @@ function FiyatAlarmIcerik() {
                 ) : (
                   <p style={{ fontSize: 11, color: 'var(--ink-3)', marginTop: 4 }}>Henüz eşleşme yok</p>
                 )}
+                </div>
               </div>
               {/* "Sonuçları Gör" mutlak konumlu ve opacity:0 idi: yalnızca
                   fareyle üzerine gelince görünüyordu, bu yüzden alarm adıyla
                   çöp kutusu arasında geniş bir boşluk kalıyordu. Eylemler
                   artık kalıcı bir grup; silme ayırıcıyla ve kırmızı tonla
                   diğerlerinden ayrılıyor, ayrıca onay istiyor. */}
-              <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0 }}>
+              <div className="m-alarm-eylem">
                 <Link
                   href={savedSearchToUrl(alarm)}
                   style={{ height: 32, padding: '0 12px', borderRadius: 8, border: '1px solid var(--accent)', background: 'color-mix(in oklch, var(--accent) 10%, transparent)', color: 'var(--accent)', fontSize: 12.5, fontWeight: 600, textDecoration: 'none', display: 'flex', alignItems: 'center', gap: 5, whiteSpace: 'nowrap' }}

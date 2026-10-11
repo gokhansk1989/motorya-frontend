@@ -132,7 +132,18 @@ input, textarea, select { font-family: inherit; color: var(--ink); }
 .m-fixed-bottom-stack { display: none; }
 
 /* ---------- listing detail ---------- */
-.m-detail-grid { display: grid; grid-template-columns: 1.25fr 0.95fr; gap: 36px; align-items: start; }
+.m-detail-grid {
+  display: grid;
+  grid-template-columns: 1.25fr 0.95fr;
+  grid-template-areas:
+    "galeri bilgi"
+    "alt    bilgi";
+  gap: 36px;
+  align-items: start;
+}
+.m-detail-galeri { grid-area: galeri; min-width: 0; }
+.m-detail-alt    { grid-area: alt;    min-width: 0; }
+.m-detail-right  { grid-area: bilgi;  min-width: 0; }
 
 /* ---------- feedback widget ---------- */
 .m-feedback-widget { position: fixed; right: 24px; bottom: 24px; z-index: 90; }
@@ -156,7 +167,13 @@ input, textarea, select { font-family: inherit; color: var(--ink); }
   .m-btn.lg { height: 46px; padding: 0 18px; font-size: 15px; }
 
   /* listing detail */
-  .m-detail-grid  { grid-template-columns: 1fr !important; gap: 20px !important; }
+  /* Tek sutuna inince sira: galeri -> baslik/fiyat/eylemler -> aciklama.
+     Boylece temel ilan bilgisi icin asagi kaydirmak gerekmiyor. */
+  .m-detail-grid {
+    grid-template-columns: 1fr !important;
+    grid-template-areas: "galeri" "bilgi" "alt" !important;
+    gap: 20px !important;
+  }
   /* CSS grid hücreleri default min-width:auto ile içeriğe göre büyür;
      mobilde uzun bir kelime/URL kolonu ekranı taşırıyordu. */
   .m-detail-grid > * { min-width: 0; }
@@ -169,6 +186,11 @@ input, textarea, select { font-family: inherit; color: var(--ink); }
      adres çubuğu açılıp kapanırken iki BAĞIMSIZ position:fixed eleman olarak senkron
      kayıyordu. Şimdi TEK fixed kapsayıcı (bu) altında flex-column ile birlikte hareket
      ediyorlar — biri var/yok olsa da diğeri her zaman doğru konumda kalır. */
+  /* Tam ekran bir panel (orn. arama filtreleri) acikken sabit alt cubuk
+     panelin uzerine biniyordu; panelin en alttaki eylemi erisilemez
+     kaliyordu. Panel govdeye .m-panel-acik koyuyor. */
+  body.m-panel-acik .m-fixed-bottom-stack { display: none; }
+
   .m-fixed-bottom-stack {
     display: flex; flex-direction: column;
     position: fixed; left: 0; right: 0; bottom: 0; z-index: 100;
@@ -522,6 +544,24 @@ textarea.m-field { height: auto; padding: 12px 14px; resize: vertical; line-heig
 @media (max-width: 580px) {
   .m-my-listing-item    { flex-wrap: wrap; }
   .m-my-listing-actions { width: 100%; justify-content: flex-end; padding-top: 8px; border-top: 1px solid var(--line-soft); margin-top: 2px; }
+}
+
+/* ---------- alarm satiri ---------- */
+/* Masaustu: ikon+metin solda, eylemler sagda tek satir.
+   Mobil: eylemler alt satira iner; kriter cipleri "Sonuclari Gor"
+   dugmesinin uzerine binmiyor ve uzun adlar karttan tasmiyor. */
+.m-alarm-satir { display: flex; align-items: center; gap: 14px; }
+.m-alarm-bilgi { display: flex; align-items: center; gap: 14px; flex: 1; min-width: 0; }
+.m-alarm-eylem { display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
+
+@media (max-width: 640px) {
+  .m-alarm-satir { flex-direction: column; align-items: stretch; gap: 12px; }
+  .m-alarm-bilgi { width: 100%; }
+  .m-alarm-eylem {
+    width: 100%; justify-content: space-between;
+    padding-top: 12px; border-top: 1px solid var(--line-soft);
+  }
+  .m-alarm-eylem > a { flex: 1; justify-content: center; }
 }
 
 /* ---------- listing grid — ortalanmış, son satır da hizalı ---------- */

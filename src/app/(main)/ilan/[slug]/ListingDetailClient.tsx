@@ -275,8 +275,12 @@ export default function ListingDetailClient({ initialListing }: { initialListing
       </div>
 
       <div className="m-detail-grid">
-        {/* LEFT — galeri + açıklama */}
-        <div className="m-detail-left">
+        {/* Mobilde baslik ve fiyat, aciklama ile teknik ozelliklerin ALTINDA
+            kaliyordu: tek sutuna inince once bu sutunun tamami, sonra sag
+            sutun geliyordu. Sol sutunu galeri ve alt icerik diye ikiye
+            ayirdik; sira artik galeri -> baslik/fiyat/eylemler -> aciklama.
+            Masaustunde grid alanlariyla eski iki sutunlu duzen korunuyor. */}
+        <div className="m-detail-galeri">
           {/* Gallery */}
           <div
             className="m-surface-2"
@@ -347,6 +351,9 @@ export default function ListingDetailClient({ initialListing }: { initialListing
             </div>
           )}
 
+        </div>
+
+        <div className="m-detail-alt">
           {/* Description */}
           <div className="m-surface" style={{ padding: '22px 24px', marginTop: 24 }}>
             <h3 className="m-display" style={{ fontSize: 18, margin: '0 0 12px' }}>Açıklama</h3>

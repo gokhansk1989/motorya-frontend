@@ -1,5 +1,5 @@
 'use client';
-import { Suspense, useState, useCallback } from 'react';
+import { Suspense, useState, useCallback, useEffect } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useSearch } from '@/hooks/useSearch';
 import { useCreateSavedSearch } from '@/hooks/useSavedSearches';
@@ -348,6 +348,22 @@ function SearchPageInner() {
   const cats = categories ?? [];
   const brnds = brands ?? [];
 
+  // Panel acikken sabit alt gezinme cubugu panelin alt kismini ortuyordu ve
+  // arka plandaki liste kayabiliyordu. Panel acikken govdeye bir sinif
+  // koyup cubugu gizliyor, kaydirmayi da kilitliyoruz; kapaninca ikisi de
+  // geri geliyor.
+  useEffect(() => {
+    if (!showFilters) return;
+    const govde = document.body;
+    const eskiOverflow = govde.style.overflow;
+    govde.classList.add('m-panel-acik');
+    govde.style.overflow = 'hidden';
+    return () => {
+      govde.classList.remove('m-panel-acik');
+      govde.style.overflow = eskiOverflow;
+    };
+  }, [showFilters]);
+
   const filterFieldProps = {
     categories: cats,
     brands: brnds,
@@ -496,8 +512,16 @@ function SearchPageInner() {
               <FilterFields {...filterFieldProps} />
             </div>
 
-            {/* Actions */}
-            <div style={{ marginTop: 24, display: 'flex', flexDirection: 'column', gap: 10 }}>
+            {/* Eylemler panelin altina yapisik: panel uzun oldugunda
+                "Sifirla" ekranin disinda kaliyordu. */}
+            <div style={{
+              position: 'sticky', bottom: 0, marginTop: 24,
+              display: 'flex', flexDirection: 'column', gap: 10,
+              background: 'var(--bg-0, #fff)',
+              paddingTop: 12,
+              paddingBottom: 'calc(8px + env(safe-area-inset-bottom))',
+              borderTop: '1px solid var(--line-soft)',
+            }}>
               <button
                 onClick={() => setShowFilters(false)}
                 className="m-btn m-btn-primary"

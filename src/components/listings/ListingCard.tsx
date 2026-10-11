@@ -110,26 +110,32 @@ export function ListingCard({ listing }: { listing: Listing }) {
         {/* Sehir, tarih ve goruntulenme 12px ve --ink-3 ile yaziliyordu; bes
             sutunlu masaustu duzeninde okunmasi zordu. Bir punto buyutup bir
             ton koyulastirdik - yerlesim ayni kaliyor. */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginTop: 9, color: 'var(--ink-2)', fontSize: 13, whiteSpace: 'nowrap', overflow: 'hidden' }}>
-          {/* Öncelik sırası: şehir > tarih > görüntülenme. Dar kartlarda (mobil
-              2 sütun) daralmayı yalnızca tarih emer; şehir hiç kısalmaz —
-              önceden tek esnek öğe şehir olduğu için "Bursa" 6px'e inip "B"
-              olarak görünüyordu. Görüntülenme 0 ise gürültü, gösterilmiyor. */}
-          {listing.city && (
-            <>
-              <MapPin size={14} style={{ flexShrink: 0 }} />
-              <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: 80, flexShrink: 0 }}>{listing.city}</span>
-            </>
-          )}
-          {views > 0 && (
-            <>
-              {listing.city && <span style={{ width: 3, height: 3, borderRadius: '50%', background: 'currentColor', opacity: 0.6, flexShrink: 0 }} />}
-              <Eye size={14} style={{ flexShrink: 0 }} />
-              <span style={{ flexShrink: 0 }}>{views}</span>
-            </>
-          )}
-          <div style={{ flex: 1, minWidth: 0 }} />
-          <span style={{ flexShrink: 1, minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis' }}>{timeAgo(listing.createdAt)}</span>
+        {/* Sehir, goruntulenme ve tarih tek satirda zorlaniyordu: dar
+            kartlarda tarih kirpiliyor, favorilerde ucu birden sigmiyordu.
+            Iki gruba ayirip sarmaya izin veriyoruz - sigdiginda tek satir,
+            sigmadiginda tarih alt satira iniyor. Uzun sehir adi kendi
+            icinde kisaliyor, tarih hic kirpilmiyor. */}
+        <div style={{
+          display: 'flex', flexWrap: 'wrap', alignItems: 'center',
+          justifyContent: 'space-between', gap: '2px 8px', marginTop: 9,
+          color: 'var(--ink-2)', fontSize: 13,
+        }}>
+          <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6, minWidth: 0, whiteSpace: 'nowrap' }}>
+            {listing.city && (
+              <>
+                <MapPin size={14} style={{ flexShrink: 0 }} />
+                <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: 110 }}>{listing.city}</span>
+              </>
+            )}
+            {views > 0 && (
+              <>
+                {listing.city && <span style={{ width: 3, height: 3, borderRadius: '50%', background: 'currentColor', opacity: 0.6, flexShrink: 0 }} />}
+                <Eye size={14} style={{ flexShrink: 0 }} />
+                <span style={{ flexShrink: 0 }}>{views}</span>
+              </>
+            )}
+          </span>
+          <span style={{ whiteSpace: 'nowrap', flexShrink: 0 }}>{timeAgo(listing.createdAt)}</span>
         </div>
       </div>
     </article>
