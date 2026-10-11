@@ -7,7 +7,7 @@ import { useListings, usePriceDrops } from '@/hooks/useListings';
 import { ListingCard } from '@/components/listings/ListingCard';
 import { api } from '@/lib/api';
 import { useAuthStore } from '@/store/auth';
-import { Search, ChevronRight, ChevronDown, Star, TrendingDown } from 'lucide-react';
+import { Search, ChevronRight, ChevronDown, Star, TrendingDown, Clock } from 'lucide-react';
 import Link from 'next/link';
 import { CategoryIcon } from '@/components/icons/CategoryIcons';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -29,6 +29,51 @@ const FIYAT_DUSUSU_ESIGI = 3;
 // Bu liste fiyat GECMISINE bakmiyor - oyle bir veri tutulmuyor. Olcut,
 // saticinin ilan verirken girdigi liste fiyatinin istenen fiyattan yuksek
 // olmasi. Basliklar bu yuzden "fiyati dustu" demiyor.
+/**
+ * Masaustunde basligin sagindaki alan.
+ *
+ * Burada yalnizca "liste fiyatinin altinda" paneli vardi ve esik (3 ilan)
+ * dolmadiginda hic cizilmiyordu; 1440px'te saginda genis bos bir alan
+ * kaliyordu. Esik dolmazsa yerine son eklenen ilanlardan sade bir vitrin
+ * koyuyoruz - hareketsiz, yalnizca fotograf, baslik ve fiyat.
+ */
+function YanPanel() {
+  const { data } = usePriceDrops(10);
+  if ((data ?? []).length >= FIYAT_DUSUSU_ESIGI) return <PriceDropPanel />;
+  return <SonIlanlarPaneli />;
+}
+
+function SonIlanlarPaneli() {
+  const { data } = useListings({ limit: 3 }, true);
+  const items = (Array.isArray(data) ? data : data?.items ?? []).slice(0, 3);
+  if (items.length === 0) return null;
+
+  return (
+    <div className="m-hide-mobile" style={{ width: 280, flexShrink: 0 }}>
+      <div style={{ background: 'var(--bg-1)', border: '1px solid var(--line-soft)', borderRadius: 16, padding: 14, display: 'flex', flexDirection: 'column', gap: 10 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 7 }}>
+          <Clock size={15} style={{ color: 'var(--accent)' }} />
+          <span style={{ fontWeight: 700, fontSize: 13, color: 'var(--ink)' }}>Yeni Eklenenler</span>
+        </div>
+        {items.map((l: any) => (
+          <Link key={l.id} href={`/ilan/${l.slug ?? l.id}`} style={{ display: 'flex', alignItems: 'center', gap: 10, textDecoration: 'none' }}>
+            <div style={{ width: 52, height: 52, borderRadius: 9, background: 'var(--bg-2)', overflow: 'hidden', flexShrink: 0 }}>
+              {l.images?.[0] && <img src={l.images[0].url} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />}
+            </div>
+            <div style={{ minWidth: 0, flex: 1 }}>
+              <p style={{ margin: 0, fontSize: 12.5, color: 'var(--ink-2)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{l.title}</p>
+              <p style={{ margin: '3px 0 0', fontSize: 13, fontWeight: 700, color: 'var(--accent)' }}>{formatPrice(l.price)}</p>
+            </div>
+          </Link>
+        ))}
+        <Link href="/ara" style={{ fontSize: 12.5, fontWeight: 600, color: 'var(--accent)', textDecoration: 'none', textAlign: 'center', paddingTop: 2 }}>
+          Tüm ilanlara bak →
+        </Link>
+      </div>
+    </div>
+  );
+}
+
 function PriceDropPanel() {
   const { data } = usePriceDrops(10);
   const items = data ?? [];
@@ -134,7 +179,7 @@ function HeroSection({ onSearch, categories, brands }: { onSearch: (q: string) =
             {focused && <CategorySuggestionsDropdown query={val} matches={matches} brandMatches={brandMatches} anchorRef={searchBoxRef} onSearchQuery={onSearch} />}
           </form>
         </div>
-        <PriceDropPanel />
+        <YanPanel />
       </div>
     </section>
   );

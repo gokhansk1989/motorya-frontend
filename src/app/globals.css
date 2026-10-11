@@ -299,6 +299,10 @@ input, textarea, select { font-family: inherit; color: var(--ink); }
   color: var(--ink); display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical;
   overflow: hidden; margin: 0 0 8px; min-height: 2.5em;
 }
+/* Blog basliklari ilan basliklarindan uzun; dort sutunlu masaustu
+   duzeninde iki satir cogunu kesiyordu. Uc satira cikariyoruz ve
+   min-height'i de buyutuyoruz ki kartlarin alt hizasi bozulmasin. */
+.m-card-title--blog { -webkit-line-clamp: 3; min-height: 3.75em; }
 
 /* ---------- price ---------- */
 .m-price { font-family: var(--font-display); font-weight: 800; font-size: 19px; letter-spacing: -0.01em; color: var(--ink); }

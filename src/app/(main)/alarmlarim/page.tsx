@@ -213,9 +213,7 @@ function FiyatAlarmIcerik() {
         <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
           {alarms.map(alarm => (
             <div key={alarm.id} className="m-surface"
-              style={{ padding: '16px 20px', borderRadius: 'var(--radius)', display: 'flex', alignItems: 'center', gap: 14, position: 'relative' }}
-              onMouseEnter={e => { const btn = e.currentTarget.querySelector<HTMLElement>('[data-hover-btn]'); if (btn) btn.style.opacity = '1'; }}
-              onMouseLeave={e => { const btn = e.currentTarget.querySelector<HTMLElement>('[data-hover-btn]'); if (btn) btn.style.opacity = '0'; }}
+              style={{ padding: '16px 20px', borderRadius: 'var(--radius)', display: 'flex', alignItems: 'center', gap: 14, flexWrap: 'wrap' }}
             >
               <div style={{ width: 40, height: 40, borderRadius: 10, background: 'color-mix(in oklch, var(--accent) 15%, var(--bg-2))', display: 'grid', placeItems: 'center', flexShrink: 0 }}>
                 <Bell size={18} style={{ color: 'var(--accent)' }} />
@@ -239,17 +237,31 @@ function FiyatAlarmIcerik() {
                   <p style={{ fontSize: 11, color: 'var(--ink-3)', marginTop: 4 }}>Henüz eşleşme yok</p>
                 )}
               </div>
-              <Link
-                href={savedSearchToUrl(alarm)}
-                data-hover-btn
-                style={{ position: 'absolute', right: 52, top: '50%', transform: 'translateY(-50%)', opacity: 0, transition: 'opacity .15s', height: 30, padding: '0 12px', borderRadius: 8, border: '1px solid var(--accent)', background: 'color-mix(in oklch, var(--accent) 10%, transparent)', color: 'var(--accent)', fontSize: 12, fontWeight: 600, textDecoration: 'none', display: 'flex', alignItems: 'center', gap: 5, whiteSpace: 'nowrap' }}
-              >
-                <ExternalLink size={12} /> Sonuçları Gör
-              </Link>
-              <button onClick={() => deleteMut.mutate(alarm.id)} disabled={deleteMut.isPending}
-                style={{ padding: 8, background: 'none', border: 'none', color: 'var(--ink-3)', cursor: 'pointer', borderRadius: 8, flexShrink: 0 }}>
-                <Trash2 size={16} />
-              </button>
+              {/* "Sonuçları Gör" mutlak konumlu ve opacity:0 idi: yalnızca
+                  fareyle üzerine gelince görünüyordu, bu yüzden alarm adıyla
+                  çöp kutusu arasında geniş bir boşluk kalıyordu. Eylemler
+                  artık kalıcı bir grup; silme ayırıcıyla ve kırmızı tonla
+                  diğerlerinden ayrılıyor, ayrıca onay istiyor. */}
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0 }}>
+                <Link
+                  href={savedSearchToUrl(alarm)}
+                  style={{ height: 32, padding: '0 12px', borderRadius: 8, border: '1px solid var(--accent)', background: 'color-mix(in oklch, var(--accent) 10%, transparent)', color: 'var(--accent)', fontSize: 12.5, fontWeight: 600, textDecoration: 'none', display: 'flex', alignItems: 'center', gap: 5, whiteSpace: 'nowrap' }}
+                >
+                  <ExternalLink size={13} /> Sonuçları Gör
+                </Link>
+                <span style={{ width: 1, height: 22, background: 'var(--line)' }} />
+                <button
+                  onClick={() => {
+                    if (!confirm(`"${alarm.label}" alarmı silinsin mi?`)) return;
+                    deleteMut.mutate(alarm.id);
+                  }}
+                  disabled={deleteMut.isPending}
+                  title="Alarmı sil"
+                  aria-label={`${alarm.label} alarmını sil`}
+                  style={{ width: 32, height: 32, display: 'grid', placeItems: 'center', background: 'none', border: '1px solid var(--line)', color: 'var(--bad)', cursor: 'pointer', borderRadius: 8, flexShrink: 0 }}>
+                  <Trash2 size={15} />
+                </button>
+              </div>
             </div>
           ))}
         </div>

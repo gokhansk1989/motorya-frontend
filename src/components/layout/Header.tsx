@@ -5,11 +5,7 @@ import { useState, useEffect, useRef } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { useAuthStore } from '@/store/auth';
 import { api } from '@/lib/api';
-import {
-  Search, Bell, MessageSquare, User, Plus, Zap, LogOut,
-  Menu, X, Home, Tag, Newspaper, Heart, ListPlus,
-  BellPlus, ChevronDown, LayoutGrid,
-} from 'lucide-react';
+import { Search, Bell, MessageSquare, User, Plus, Zap, LogOut, Menu, X, Home, Tag, Newspaper, Heart, ListPlus, BellPlus, ChevronDown, LayoutGrid } from 'lucide-react';
 import { useNotifications, useOzet } from '@/hooks/useNotifications';
 import { matchCategories, matchBrands, CategorySuggestionsDropdown, type CategoryLite, type BrandLite } from '@/components/ui/CategorySuggestions';
 import { MarkaLogo } from '@/components/ui/MarkaLogo';
@@ -26,6 +22,7 @@ export function Header() {
   const { user, logout: clearAuth } = useAuthStore();
   const [searchVal, setSearchVal] = useState('');
   const [menuOpen, setMenuOpen] = useState(false);
+  const [katMenu, setKatMenu] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
   const [userDropOpen, setUserDropOpen] = useState(false);
   const [searchFocused, setSearchFocused] = useState(false);
@@ -38,6 +35,8 @@ export function Header() {
     queryKey: ['categories'],
     queryFn: () => api.get('/listings/meta/categories').then(r => r.data),
   });
+  const ustKategoriler = headerCategories.filter(c => !c.parentId);
+
   const { data: headerBrands = [] } = useQuery<BrandLite[]>({
     queryKey: ['brands'],
     queryFn: () => api.get('/listings/meta/brands').then(r => r.data),
@@ -162,8 +161,52 @@ export function Header() {
 
           {/* Desktop nav */}
           <nav className="desktop-nav" style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
+            {/* "Keşfet" yalnizca ana sayfaya gidiyordu, yani logonun kopyasiydi;
+                masaustunde kategorilere hic dogrudan erisim yoktu. Yerine
+                ustune gelince 11 ust kategoriyi acan tek bir menu koyduk —
+                ikinci bir kategori menusu acmadan. */}
+            <div
+              onMouseEnter={() => setKatMenu(true)}
+              onMouseLeave={() => setKatMenu(false)}
+              style={{ position: 'relative' }}
+            >
+              <Link
+                href="/kategoriler"
+                onFocus={() => setKatMenu(true)}
+                style={{
+                  display: 'inline-flex', alignItems: 'center', gap: 4,
+                  color: pathname.startsWith('/kategori') ? 'var(--ink)' : 'var(--ink-3)',
+                  fontFamily: 'var(--font-display)', fontWeight: 600, fontSize: 14,
+                  padding: '6px 2px', textDecoration: 'none', whiteSpace: 'nowrap',
+                  borderBottom: '2px solid ' + (pathname.startsWith('/kategori') ? 'var(--accent)' : 'transparent'),
+                }}
+              >
+                Kategoriler
+                <ChevronDown size={14} style={{ opacity: 0.7 }} />
+              </Link>
+
+              {katMenu && ustKategoriler.length > 0 && (
+                <div style={{
+                  position: 'absolute', top: '100%', left: -10, marginTop: 6, zIndex: 60,
+                  background: 'var(--bg-1)', border: '1px solid var(--line)', borderRadius: 12,
+                  boxShadow: 'var(--shadow-m, 0 8px 24px rgba(0,0,0,.10))', padding: 8,
+                  display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 2, minWidth: 340,
+                }}>
+                  {ustKategoriler.map(c => (
+                    <Link key={c.id} href={`/kategori/${c.slug}`} onClick={() => setKatMenu(false)} style={{
+                      padding: '8px 10px', borderRadius: 8, fontSize: 13.5, color: 'var(--ink-2)',
+                      textDecoration: 'none', whiteSpace: 'nowrap',
+                    }}>{c.name}</Link>
+                  ))}
+                  <Link href="/kategoriler" onClick={() => setKatMenu(false)} style={{
+                    gridColumn: '1 / -1', marginTop: 4, padding: '8px 10px', borderTop: '1px solid var(--line-soft)',
+                    fontSize: 13, fontWeight: 600, color: 'var(--accent)', textDecoration: 'none',
+                  }}>Tüm kategoriler →</Link>
+                </div>
+              )}
+            </div>
+
             {[
-              { href: '/', label: 'Keşfet' },
               { href: '/blog', label: 'Blog' },
               { href: '/ara', label: 'Detaylı Ara' },
               ...(user ? [{ href: '/ilanlarim', label: 'İlanlarım' }] : []),

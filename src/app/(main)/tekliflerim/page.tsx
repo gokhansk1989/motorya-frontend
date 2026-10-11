@@ -393,8 +393,11 @@ export default function OffersPage() {
     if (p === 'received' || p === 'sent') setTab(p);
   }, []);
 
+  // 760px'de 1440 ekranda iki yanda genis bosluk kaliyordu. Satirlar zaten
+  // yatay; genisleyince urun, fiyat, durum ve eylemler ayni bakista
+  // taranabiliyor. Mobilde m-wrap kendi dolgusuyla daraliyor.
   return (
-    <div className="m-wrap" style={{ maxWidth: 760, paddingTop: 36, paddingBottom: 60 }}>
+    <div className="m-wrap" style={{ maxWidth: 1080, paddingTop: 36, paddingBottom: 60 }}>
       <h1 className="m-display" style={{ fontSize: 28, color: 'var(--ink)', marginBottom: 24 }}>Teklifler</h1>
 
       <div style={{ display: 'flex', gap: 4, borderBottom: '1px solid var(--line-soft)', marginBottom: 24 }}>

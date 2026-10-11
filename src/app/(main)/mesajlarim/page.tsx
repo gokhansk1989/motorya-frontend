@@ -219,6 +219,34 @@ export default function MessagesPage() {
                         />
                       )}
                     </div>
+
+                    {/* Ilan baglami. Ayni kisiyle birden fazla konusma oldugunda
+                        hangisinin hangi ilana ait oldugu satirdan anlasilmiyordu.
+                        Veri zaten geliyor (backend conversation.listing donuyor);
+                        iliski tahmin edilmiyor, baglanti yoksa satir da cikmiyor. */}
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 5, marginTop: 3 }}>
+                      {conv.listing ? (
+                        <>
+                          {conv.listing.images?.[0] && (
+                            <img
+                              src={conv.listing.images[0].url}
+                              alt=""
+                              style={{ width: 16, height: 16, borderRadius: 3, objectFit: 'cover', flexShrink: 0 }}
+                            />
+                          )}
+                          <span style={{
+                            fontSize: 11.5, color: 'var(--ink-3)',
+                            overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
+                          }}>
+                            {conv.listing.title}
+                          </span>
+                        </>
+                      ) : (
+                        <span style={{ fontSize: 11.5, color: 'var(--ink-3)', fontStyle: 'italic' }}>
+                          İlana bağlı değil
+                        </span>
+                      )}
+                    </div>
                   </div>
                 </button>
               );

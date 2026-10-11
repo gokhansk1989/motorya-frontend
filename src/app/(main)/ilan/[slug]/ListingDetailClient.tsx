@@ -1,5 +1,5 @@
 'use client';
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState, useMemo } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useListingBySlug, useToggleFavorite, useFavoriteIds, useSimilarListings, useListingsByIds, useMarkSold, useBuyerCandidates, useReserveListing, useUnreserveListing, usePriceGuide } from '@/hooks/useListings';
@@ -141,6 +141,34 @@ export default function ListingDetailClient({ initialListing }: { initialListing
   const [onaylaniyor, setOnaylaniyor] = useState(false);
   const [kartIndirildi, setKartIndirildi] = useState(false);
   const qc = useQueryClient();
+
+  // Marka, kategori, beden ve sehir yukarida zaten ayri cip olarak basiliyor;
+  // listing.tags bunlarin slug hallerini de tasiyor. Sonuc, yalnizca
+  // buyuk/kucuk harf ve tire farki olan tekrarlardi (#Dainese ile #dainese,
+  // #Manisa ile #manisa gibi). Normalize edip ayikliyoruz. Anlami farkli
+  // etiketler (orn. kategori "Kışlık Eldiven" ile "eldiven") farkli
+  // normalize edildikleri icin birlesmiyor.
+  const tekrarsizEtiketler = useMemo(() => {
+    const normalle = (v: string) =>
+      v.toLocaleLowerCase('tr-TR').replace(/[\s-]+/g, '')
+        .replace(/ı/g, 'i').replace(/ş/g, 's').replace(/ğ/g, 'g')
+        .replace(/ü/g, 'u').replace(/ö/g, 'o').replace(/ç/g, 'c');
+
+    const gosterilenler = new Set(
+      [listing.brand?.name, listing.category?.name, listing.sizeLabel, listing.city]
+        .filter(Boolean)
+        .map(v => normalle(String(v))),
+    );
+
+    const sonuc: string[] = [];
+    for (const t of (listing.tags ?? []) as string[]) {
+      const n = normalle(t);
+      if (gosterilenler.has(n)) continue;
+      gosterilenler.add(n);
+      sonuc.push(t);
+    }
+    return sonuc;
+  }, [listing.tags, listing.brand, listing.category, listing.sizeLabel, listing.city]);
   const images = listing.images || [];
   const discountPct = listing.originalPrice
     ? Math.round((1 - Number(listing.price) / Number(listing.originalPrice)) * 100)
@@ -336,7 +364,7 @@ export default function ListingDetailClient({ initialListing }: { initialListing
               {listing.city && (
                 <Link href={`/ara?city=${encodeURIComponent(listing.city)}`} className="m-chip" style={{ height: 30, fontSize: 12.5, textDecoration: 'none' }}>#{listing.city}</Link>
               )}
-              {(listing.tags ?? []).map((tag: string) => (
+              {tekrarsizEtiketler.map((tag: string) => (
                 <Link key={tag} href={`/ara?q=${encodeURIComponent(tag)}`} className="m-chip" style={{ height: 30, fontSize: 12.5, textDecoration: 'none' }}>#{tag}</Link>
               ))}
             </div>
@@ -556,52 +584,11 @@ export default function ListingDetailClient({ initialListing }: { initialListing
             )}
             {isMine && (
               <div style={{ marginTop: 20, display: 'flex', flexDirection: 'column', gap: 10 }}>
-                {listing.status === 'ACTIVE' && (
-                  <>
-                    <button
-                      className="m-btn m-btn-primary"
-                      style={{ width: '100%' }}
-                      disabled={markSold.isPending}
-                      onClick={() => setShowSoldModal(true)}
-                    >
-                      Satıldı İşaretle
-                    </button>
-                    <button
-                      className="m-btn m-btn-ghost"
-                      style={{ width: '100%' }}
-                      disabled={reserveListing.isPending}
-                      onClick={handleReserve}
-                    >
-                      Rezerve Et (48 saat)
-                    </button>
-                  </>
-                )}
-                {listing.status === 'RESERVED' && (
-                  <>
-                    <button
-                      className="m-btn m-btn-primary"
-                      style={{ width: '100%' }}
-                      disabled={markSold.isPending}
-                      onClick={() => setShowSoldModal(true)}
-                    >
-                      Satıldı İşaretle
-                    </button>
-                    <button
-                      className="m-btn m-btn-ghost"
-                      style={{ width: '100%' }}
-                      disabled={unreserveListing.isPending}
-                      onClick={handleUnreserve}
-                    >
-                      Rezervasyonu Kaldır
-                    </button>
-                  </>
-                )}
-                {listing.status === 'SOLD' && (
-                  <div style={{ padding: '12px', borderRadius: 10, background: 'var(--bg-2)', fontSize: 14, fontWeight: 600, textAlign: 'center', color: 'var(--ink-3)' }}>
-                    Bu ilan satıldı
-                  </div>
-                )}
-                <Link href={`/ilanlarim/duzenle/${listing.id}`} className="m-btn m-btn-ghost block" style={{ width: '100%', display: 'flex', justifyContent: 'center', textDecoration: 'none' }}>
+                {/* Gunluk kullanim eylemleri once: ilani duzenlemek ve
+                    paylasmak sik yapilan isler. Durum degisiklikleri (satildi,
+                    rezerve) asagida ayri bir grupta duruyor - geri alinmasi
+                    zor oldugu icin birincil dugme olarak en uste konmamali. */}
+                <Link href={`/ilanlarim/duzenle/${listing.id}`} className="m-btn m-btn-primary block" style={{ width: '100%', display: 'flex', justifyContent: 'center', textDecoration: 'none' }}>
                   İlanı Düzenle
                 </Link>
                 {/* Story karti: 1080x1920 gorsel backend'de uretilir. Tam Story
@@ -632,6 +619,62 @@ export default function ListingDetailClient({ initialListing }: { initialListing
                 {/* Instagram'a otomatik paylasim YAPMIYORUZ; gorsel kullanicinin
                     cihazina iniyor, paylasimi kendisi yapiyor. Baglanti da
                     otomatik eklenmedigi icin hatirlatiyoruz. */}
+                {/* Durum degisikligi: ayri cerceve, ikincil dugmeler.
+                    "Satildi" zaten alici sectiren bir pencere aciyor, yani
+                    tek tiklamayla tetiklenmiyor. */}
+                <div style={{ marginTop: 6, paddingTop: 14, borderTop: '1px solid var(--line-soft)' }}>
+                  <p style={{ fontSize: 11.5, fontWeight: 700, letterSpacing: '0.04em', color: 'var(--ink-3)', textTransform: 'uppercase', margin: '0 0 10px' }}>
+                    İlan durumu
+                  </p>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+                {listing.status === 'ACTIVE' && (
+                  <>
+                    <button
+                      className="m-btn"
+                      style={{ width: '100%' }}
+                      disabled={markSold.isPending}
+                      onClick={() => setShowSoldModal(true)}
+                    >
+                      Satıldı İşaretle
+                    </button>
+                    <button
+                      className="m-btn m-btn-ghost"
+                      style={{ width: '100%' }}
+                      disabled={reserveListing.isPending}
+                      onClick={handleReserve}
+                    >
+                      Rezerve Et (48 saat)
+                    </button>
+                  </>
+                )}
+                {listing.status === 'RESERVED' && (
+                  <>
+                    <button
+                      className="m-btn"
+                      style={{ width: '100%' }}
+                      disabled={markSold.isPending}
+                      onClick={() => setShowSoldModal(true)}
+                    >
+                      Satıldı İşaretle
+                    </button>
+                    <button
+                      className="m-btn m-btn-ghost"
+                      style={{ width: '100%' }}
+                      disabled={unreserveListing.isPending}
+                      onClick={handleUnreserve}
+                    >
+                      Rezervasyonu Kaldır
+                    </button>
+                  </>
+                )}
+                {listing.status === 'SOLD' && (
+                  <div style={{ padding: '12px', borderRadius: 10, background: 'var(--bg-2)', fontSize: 14, fontWeight: 600, textAlign: 'center', color: 'var(--ink-3)' }}>
+                    Bu ilan satıldı
+                  </div>
+                )}
+                  </div>
+                </div>
+
                 {kartIndirildi && (
                   <div style={{ padding: '12px 14px', borderRadius: 10, background: 'var(--bg-2)', border: '1px solid var(--line-soft)' }}>
                     <p style={{ margin: '0 0 8px', fontSize: 12.5, color: 'var(--ink-2)', lineHeight: 1.55 }}>
@@ -728,7 +771,7 @@ export default function ListingDetailClient({ initialListing }: { initialListing
                           {l.title}
                         </p>
                         <p className="m-price" style={{ fontSize: 13.5 }}>
-                          {Number(l.price).toLocaleString('tr-TR')}<span className="cur" style={{ fontSize: 10 }}>₺</span>
+                          {formatPrice(l.price)}
                         </p>
                       </div>
                     </div>

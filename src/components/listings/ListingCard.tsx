@@ -18,7 +18,7 @@ function ConditionPill({ condition }: { condition: string }) {
   };
   const c = map[condition] ?? { label: condition, tone: 'var(--good)' };
   return (
-    <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6, fontFamily: 'var(--font-mono)', fontSize: 11, fontWeight: 700, letterSpacing: '0.03em', color: 'var(--ink-2)' }}>
+    <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6, fontFamily: 'var(--font-mono)', fontSize: 11.5, fontWeight: 700, letterSpacing: '0.03em', color: 'var(--ink-2)' }}>
       <span style={{ width: 8, height: 8, borderRadius: 2, background: c.tone, flexShrink: 0 }} />
       {c.label}
     </span>
@@ -107,21 +107,24 @@ export function ListingCard({ listing }: { listing: Listing }) {
             </span>
           )}
         </div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginTop: 9, color: 'var(--ink-3)', fontSize: 12, whiteSpace: 'nowrap', overflow: 'hidden' }}>
+        {/* Sehir, tarih ve goruntulenme 12px ve --ink-3 ile yaziliyordu; bes
+            sutunlu masaustu duzeninde okunmasi zordu. Bir punto buyutup bir
+            ton koyulastirdik - yerlesim ayni kaliyor. */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginTop: 9, color: 'var(--ink-2)', fontSize: 13, whiteSpace: 'nowrap', overflow: 'hidden' }}>
           {/* Öncelik sırası: şehir > tarih > görüntülenme. Dar kartlarda (mobil
               2 sütun) daralmayı yalnızca tarih emer; şehir hiç kısalmaz —
               önceden tek esnek öğe şehir olduğu için "Bursa" 6px'e inip "B"
               olarak görünüyordu. Görüntülenme 0 ise gürültü, gösterilmiyor. */}
           {listing.city && (
             <>
-              <MapPin size={13} style={{ flexShrink: 0 }} />
-              <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: 72, flexShrink: 0 }}>{listing.city}</span>
+              <MapPin size={14} style={{ flexShrink: 0 }} />
+              <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: 80, flexShrink: 0 }}>{listing.city}</span>
             </>
           )}
           {views > 0 && (
             <>
               {listing.city && <span style={{ width: 3, height: 3, borderRadius: '50%', background: 'currentColor', opacity: 0.6, flexShrink: 0 }} />}
-              <Eye size={13} style={{ flexShrink: 0 }} />
+              <Eye size={14} style={{ flexShrink: 0 }} />
               <span style={{ flexShrink: 0 }}>{views}</span>
             </>
           )}

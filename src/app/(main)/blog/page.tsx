@@ -85,7 +85,7 @@ export default function BlogPage() {
                     <div style={{ marginBottom: 10 }}>
                       <span className="m-badge verify" style={{ fontSize: 10 }}>{post.category}</span>
                     </div>
-                    <h3 className="m-card-title" style={{ fontSize: 15, flex: 1 }}>{post.title}</h3>
+                    <h3 className="m-card-title m-card-title--blog" style={{ fontSize: 15, flex: 1 }}>{post.title}</h3>
                     <p style={{ fontSize: 13, color: 'var(--ink-3)', lineHeight: 1.5, marginBottom: 14, display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
                       {post.excerpt}
                     </p>

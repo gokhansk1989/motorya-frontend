@@ -91,8 +91,11 @@ export default function MyListingsPage() {
     { key: 'SOLD',          label: 'Satıldı',        count: listings.filter((l: any) => l.status === 'SOLD').length },
   ];
 
+  // 760px'de 1440 ekranda iki yanda genis bosluk kaliyordu. Satirlar zaten
+  // yatay; genisleyince urun, fiyat, durum ve eylemler ayni bakista
+  // taranabiliyor. Mobilde m-wrap kendi dolgusuyla daraliyor.
   return (
-    <div className="m-wrap" style={{ maxWidth: 760, paddingTop: 36, paddingBottom: 60 }}>
+    <div className="m-wrap" style={{ maxWidth: 1080, paddingTop: 36, paddingBottom: 60 }}>
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 28 }}>
         <h1 className="m-display" style={{ fontSize: 28, color: 'var(--ink)' }}>İlanlarım</h1>
         <Link href="/ilan-ver" className="m-btn m-btn-primary" style={{ display: 'inline-flex', alignItems: 'center', gap: 8, height: 44, padding: '0 20px', borderRadius: 10, textDecoration: 'none', fontSize: 14, fontWeight: 600 }}>
@@ -154,16 +157,16 @@ export default function MyListingsPage() {
                 onMouseEnter={e => (e.currentTarget.style.borderColor = 'var(--line-soft)')}
                 onMouseLeave={e => (e.currentTarget.style.borderColor = 'var(--line)')}>
                 <Link href={`/ilan/${l.slug ?? l.id}`} style={{ display: 'flex', alignItems: 'center', gap: 12, flex: 1, minWidth: 0, textDecoration: 'none' }}>
-                  <div style={{ width: 66, height: 66, borderRadius: 10, background: 'var(--bg-2)', overflow: 'hidden', flexShrink: 0, border: '1px solid var(--line)' }}>
+                  <div style={{ width: 76, height: 76, borderRadius: 10, background: 'var(--bg-2)', overflow: 'hidden', flexShrink: 0, border: '1px solid var(--line)' }}>
                     {l.images?.[0] && <img src={l.images[0].url} style={{ width: '100%', height: '100%', objectFit: 'cover' }} alt="" />}
                   </div>
                   <div style={{ flex: 1, minWidth: 0 }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}>
-                      <p style={{ fontWeight: 600, color: 'var(--ink)', fontSize: 13.5, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', flex: 1, minWidth: 0 }}>{l.title}</p>
+                      <p style={{ fontWeight: 600, color: 'var(--ink)', fontSize: 15, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', flex: 1, minWidth: 0 }}>{l.title}</p>
                       <span style={{ flexShrink: 0, fontSize: 10.5, fontWeight: 700, fontFamily: 'var(--font-mono)', padding: '2px 7px', borderRadius: 20, background: st.bg, color: st.color }}>{st.label}</span>
                     </div>
-                    <p style={{ color: 'var(--accent)', fontWeight: 700, fontSize: 14, fontFamily: 'var(--font-mono)' }}>{formatPrice(l.price)}</p>
-                    <p style={{ fontSize: 11, color: 'var(--ink-3)', marginTop: 2 }}>{l.viewCount ?? 0} görüntülenme · {l.favoriteCount ?? 0} favori</p>
+                    <p style={{ color: 'var(--accent)', fontWeight: 700, fontSize: 15.5, fontFamily: 'var(--font-mono)' }}>{formatPrice(l.price)}</p>
+                    <p style={{ fontSize: 12.5, color: 'var(--ink-2)', marginTop: 3 }}>{l.viewCount ?? 0} görüntülenme · {l.favoriteCount ?? 0} favori</p>
                   </div>
                 </Link>
                 <div className="m-my-listing-actions">
