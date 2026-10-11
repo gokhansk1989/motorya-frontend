@@ -353,43 +353,6 @@ export default function ListingDetailClient({ initialListing }: { initialListing
 
         </div>
 
-        <div className="m-detail-alt">
-          {/* Description */}
-          <div className="m-surface" style={{ padding: '22px 24px', marginTop: 24 }}>
-            <h3 className="m-display" style={{ fontSize: 18, margin: '0 0 12px' }}>Açıklama</h3>
-            <p style={{ lineHeight: 1.65, fontSize: 14.5, color: 'var(--ink-2)', whiteSpace: 'pre-wrap' }}>{listing.description}</p>
-            <div style={{ display: 'flex', gap: 8, marginTop: 16, flexWrap: 'wrap' }}>
-              {listing.brand && (
-                <Link href={`/ara?brandId=${listing.brand.id}`} className="m-chip" style={{ height: 30, fontSize: 12.5, textDecoration: 'none' }}>#{listing.brand.name}</Link>
-              )}
-              {listing.category && (
-                <Link href={`/ara?categoryId=${listing.category.id}`} className="m-chip" style={{ height: 30, fontSize: 12.5, textDecoration: 'none' }}>#{listing.category.name}</Link>
-              )}
-              {listing.sizeLabel && (
-                <Link href={`/ara?q=${encodeURIComponent(listing.sizeLabel)}`} className="m-chip" style={{ height: 30, fontSize: 12.5, textDecoration: 'none' }}>#{listing.sizeLabel}</Link>
-              )}
-              {listing.city && (
-                <Link href={`/ara?city=${encodeURIComponent(listing.city)}`} className="m-chip" style={{ height: 30, fontSize: 12.5, textDecoration: 'none' }}>#{listing.city}</Link>
-              )}
-              {tekrarsizEtiketler.map((tag: string) => (
-                <Link key={tag} href={`/ara?q=${encodeURIComponent(tag)}`} className="m-chip" style={{ height: 30, fontSize: 12.5, textDecoration: 'none' }}>#{tag}</Link>
-              ))}
-            </div>
-          </div>
-
-          {/* Specs */}
-          <div className="m-surface" style={{ padding: '22px 24px', marginTop: 20 }}>
-            <h3 className="m-display" style={{ fontSize: 18, margin: '0 0 8px' }}>Teknik özellikler</h3>
-            {specs.map(([k, v]) => (
-              <div key={k} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '12px 0', borderBottom: '1px solid var(--line-soft)' }}>
-                <span style={{ fontSize: 13.5, color: 'var(--ink-3)' }}>{k}</span>
-                <span style={{ fontSize: 13.5, fontWeight: 600 }}>{v}</span>
-              </div>
-            ))}
-          </div>
-        </div>
-
-        {/* RIGHT — buy box (sticky) */}
         <div className="m-detail-sticky m-detail-right" style={{ position: 'sticky', top: 88 }}>
           <div className="m-surface-2" style={{ padding: '22px 24px' }}>
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
@@ -828,6 +791,42 @@ export default function ListingDetailClient({ initialListing }: { initialListing
               </button>
             </div>
           )}
+        </div>
+
+        <div className="m-detail-alt">
+          {/* Description */}
+          <div className="m-surface" style={{ padding: '22px 24px', marginTop: 24 }}>
+            <h3 className="m-display" style={{ fontSize: 18, margin: '0 0 12px' }}>Açıklama</h3>
+            <p style={{ lineHeight: 1.65, fontSize: 14.5, color: 'var(--ink-2)', whiteSpace: 'pre-wrap' }}>{listing.description}</p>
+            <div style={{ display: 'flex', gap: 8, marginTop: 16, flexWrap: 'wrap' }}>
+              {listing.brand && (
+                <Link href={`/ara?brandId=${listing.brand.id}`} className="m-chip" style={{ height: 30, fontSize: 12.5, textDecoration: 'none' }}>#{listing.brand.name}</Link>
+              )}
+              {listing.category && (
+                <Link href={`/ara?categoryId=${listing.category.id}`} className="m-chip" style={{ height: 30, fontSize: 12.5, textDecoration: 'none' }}>#{listing.category.name}</Link>
+              )}
+              {listing.sizeLabel && (
+                <Link href={`/ara?q=${encodeURIComponent(listing.sizeLabel)}`} className="m-chip" style={{ height: 30, fontSize: 12.5, textDecoration: 'none' }}>#{listing.sizeLabel}</Link>
+              )}
+              {listing.city && (
+                <Link href={`/ara?city=${encodeURIComponent(listing.city)}`} className="m-chip" style={{ height: 30, fontSize: 12.5, textDecoration: 'none' }}>#{listing.city}</Link>
+              )}
+              {tekrarsizEtiketler.map((tag: string) => (
+                <Link key={tag} href={`/ara?q=${encodeURIComponent(tag)}`} className="m-chip" style={{ height: 30, fontSize: 12.5, textDecoration: 'none' }}>#{tag}</Link>
+              ))}
+            </div>
+          </div>
+
+          {/* Specs */}
+          <div className="m-surface" style={{ padding: '22px 24px', marginTop: 20 }}>
+            <h3 className="m-display" style={{ fontSize: 18, margin: '0 0 8px' }}>Teknik özellikler</h3>
+            {specs.map(([k, v]) => (
+              <div key={k} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '12px 0', borderBottom: '1px solid var(--line-soft)' }}>
+                <span style={{ fontSize: 13.5, color: 'var(--ink-3)' }}>{k}</span>
+                <span style={{ fontSize: 13.5, fontWeight: 600 }}>{v}</span>
+              </div>
+            ))}
+          </div>
         </div>
       </div>
 
