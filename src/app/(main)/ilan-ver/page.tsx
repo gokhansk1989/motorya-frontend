@@ -3,11 +3,12 @@ import { useRouter } from 'next/navigation';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { api } from '@/lib/api';
 import { useCreateListing, usePriceGuide } from '@/hooks/useListings';
 import { Upload, X, ChevronDown, Zap, Camera, ImagePlus, ChevronRight, Check } from 'lucide-react';
 import { useRef, useState, useMemo, useEffect } from 'react';
+import { gecerliTcKimlik } from '@/lib/tcKimlik';
 import toast from 'react-hot-toast';
 import { CoverCropModal } from '@/components/listings/CoverCropModal';
 import { IL_ILCE, ALL_CITIES } from '@/lib/il-ilce';
@@ -261,21 +262,11 @@ export default function CreateListingPage() {
 
   // Tum hook'lar cagrildiktan sonra guard: hooks order kuralini bozmuyoruz.
   if (!authReady || !user) return null;
+  // TC kimlik numarasi ilan vermek icin gerekli. Onceden kullanici profile
+  // yonlendiriliyordu: baska bir sayfaya gidip donmek, akisi kiriyordu.
+  // Artik numara burada, akistan cikmadan alinabiliyor.
   if (me && !me.tcKimlik) {
-    return (
-      <div className="m-wrap" style={{ padding: '48px 16px', maxWidth: 560 }}>
-        <div className="m-surface-2" style={{ padding: 28, borderRadius: 16, textAlign: 'center' }}>
-          <h1 style={{ fontSize: 22, margin: '0 0 12px' }}>Once profilini tamamla</h1>
-          <p style={{ color: 'var(--ink-2)', lineHeight: 1.6, marginBottom: 24 }}>
-            Ilan verebilmek icin profilinde T.C. Kimlik numaranin dolu olmasi gerekiyor.
-            Bu bilgi guvenli alisveris ve dolandiricilik onlemleri icin aliniyor; ilanda gorunmez.
-          </p>
-          <button className="m-btn m-btn-primary" onClick={() => router.push('/profilim')} style={{ height: 46, padding: '0 24px' }}>
-            Profilime Git
-          </button>
-        </div>
-      </div>
-    );
+    return <TcKimlikAdimi />;
   }
 
   return (
@@ -593,6 +584,84 @@ export default function CreateListingPage() {
           onSkip={handleCropSkip}
         />
       )}
+    </div>
+  );
+}
+
+// Ilan vermeden once bir kez istenen T.C. kimlik adimi.
+function TcKimlikAdimi() {
+  const qc = useQueryClient();
+  const [deger, setDeger] = useState('');
+  const [kaydediliyor, setKaydediliyor] = useState(false);
+  const bicimTamam = deger.length === 11 && gecerliTcKimlik(deger);
+
+  const kaydet = async () => {
+    if (!bicimTamam) { toast.error('Geçerli bir T.C. Kimlik numarası gir'); return; }
+    setKaydediliyor(true);
+    try {
+      await api.patch('/users/me', { tcKimlik: deger });
+      // Sorguyu tazeleyince bu ekran kapaniyor ve kullanici dogrudan
+      // ilan formuna dusuyor; sayfa degistirmeye gerek kalmiyor.
+      await qc.invalidateQueries({ queryKey: ['me-tc-check'] });
+      toast.success('Kaydedildi, ilanını verebilirsin');
+    } catch (e: any) {
+      toast.error(e?.response?.data?.message ?? 'Kaydedilemedi');
+    } finally {
+      setKaydediliyor(false);
+    }
+  };
+
+  return (
+    <div className="m-wrap" style={{ padding: '36px 16px 60px', maxWidth: 560 }}>
+      <h1 className="m-display" style={{ fontSize: 24, margin: '0 0 8px' }}>Son bir adım</h1>
+      <p style={{ color: 'var(--ink-2)', fontSize: 14.5, lineHeight: 1.65, marginBottom: 20 }}>
+        İlan verebilmek için T.C. kimlik numaranı bir kez kaydetmen gerekiyor.
+        Bunu yalnızca bu sefer soruyoruz; sonraki ilanlarında tekrar istenmez.
+      </p>
+
+      <div className="m-surface-2" style={{ padding: 18, borderRadius: 14, marginBottom: 18 }}>
+        <label className="m-label" style={{ display: 'block', marginBottom: 6 }}>T.C. Kimlik No</label>
+        <input
+          value={deger}
+          onChange={e => setDeger(e.target.value.replace(/\D/g, '').slice(0, 11))}
+          inputMode="numeric"
+          autoComplete="off"
+          placeholder="11 haneli numaran"
+          className="m-field"
+          style={{ height: 46, fontFamily: 'var(--font-mono)', letterSpacing: 1 }}
+        />
+        <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 6, fontSize: 12 }}>
+          <span style={{ color: deger.length === 11 && !bicimTamam ? 'var(--bad)' : 'var(--ink-3)' }}>
+            {deger.length === 11 && !bicimTamam ? 'Bu numara geçerli görünmüyor' : 'Yalnızca rakam'}
+          </span>
+          <span style={{ color: bicimTamam ? 'var(--good)' : 'var(--ink-3)', fontFamily: 'var(--font-mono)' }}>
+            {deger.length}/11
+          </span>
+        </div>
+        <button
+          type="button"
+          onClick={kaydet}
+          disabled={!bicimTamam || kaydediliyor}
+          className="m-btn m-btn-primary"
+          style={{ width: '100%', height: 46, marginTop: 14 }}
+        >
+          {kaydediliyor ? 'Kaydediliyor…' : 'Kaydet ve ilana devam et'}
+        </button>
+      </div>
+
+      <div style={{ fontSize: 13, color: 'var(--ink-2)', lineHeight: 1.7, background: 'var(--bg-2)', borderRadius: 12, padding: '14px 16px' }}>
+        <p style={{ margin: '0 0 8px', fontWeight: 600, color: 'var(--ink)' }}>Bu bilgi ne için alınıyor?</p>
+        <p style={{ margin: '0 0 8px' }}>
+          Motorya bir pazar yeri; satış yapan üyelerin kaydını tutmakla yükümlü.
+          Numara, bir sorun çıktığında satıcının kayıtlardan bulunabilmesini sağlar.
+        </p>
+        <p style={{ margin: 0 }}>
+          <strong style={{ color: 'var(--ink)' }}>Kimlik doğrulaması değildir.</strong> Numaranın
+          sana ait olduğunu doğrulamıyoruz ve profilinde &ldquo;kimlik doğrulandı&rdquo; gibi bir
+          rozet çıkmaz. Numara ilanında, profilinde ve mesajlarında <strong style={{ color: 'var(--ink)' }}>görünmez</strong>;
+          yalnızca hesap kayıtlarında tutulur.
+        </p>
+      </div>
     </div>
   );
 }
