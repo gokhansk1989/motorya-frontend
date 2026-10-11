@@ -23,6 +23,18 @@ export function Header() {
   const [searchVal, setSearchVal] = useState('');
   const [menuOpen, setMenuOpen] = useState(false);
   const [katMenu, setKatMenu] = useState(false);
+  // Menuyu hemen kapatmak, fare tetikleyiciden menuye inerken aradaki
+  // bosluga geldiginde menuyu kaciriyordu. Kisa bir gecikme ve menunun
+  // ustundeki seffaf kopru alani birlikte bunu cozuyor.
+  const katMenuZaman = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const katMenuAc = () => {
+    if (katMenuZaman.current) clearTimeout(katMenuZaman.current);
+    setKatMenu(true);
+  };
+  const katMenuKapat = () => {
+    if (katMenuZaman.current) clearTimeout(katMenuZaman.current);
+    katMenuZaman.current = setTimeout(() => setKatMenu(false), 220);
+  };
   const [searchOpen, setSearchOpen] = useState(false);
   const [userDropOpen, setUserDropOpen] = useState(false);
   const [searchFocused, setSearchFocused] = useState(false);
@@ -166,13 +178,13 @@ export function Header() {
                 ustune gelince 11 ust kategoriyi acan tek bir menu koyduk —
                 ikinci bir kategori menusu acmadan. */}
             <div
-              onMouseEnter={() => setKatMenu(true)}
-              onMouseLeave={() => setKatMenu(false)}
+              onMouseEnter={katMenuAc}
+              onMouseLeave={katMenuKapat}
               style={{ position: 'relative' }}
             >
               <Link
                 href="/kategoriler"
-                onFocus={() => setKatMenu(true)}
+                onFocus={katMenuAc}
                 style={{
                   display: 'inline-flex', alignItems: 'center', gap: 4,
                   color: pathname.startsWith('/kategori') ? 'var(--ink)' : 'var(--ink-3)',
@@ -186,22 +198,27 @@ export function Header() {
               </Link>
 
               {katMenu && ustKategoriler.length > 0 && (
-                <div style={{
-                  position: 'absolute', top: '100%', left: -10, marginTop: 6, zIndex: 60,
-                  background: 'var(--bg-1)', border: '1px solid var(--line)', borderRadius: 12,
-                  boxShadow: 'var(--shadow-m, 0 8px 24px rgba(0,0,0,.10))', padding: 8,
-                  display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 2, minWidth: 340,
-                }}>
-                  {ustKategoriler.map(c => (
-                    <Link key={c.id} href={`/kategori/${c.slug}`} onClick={() => setKatMenu(false)} style={{
-                      padding: '8px 10px', borderRadius: 8, fontSize: 13.5, color: 'var(--ink-2)',
-                      textDecoration: 'none', whiteSpace: 'nowrap',
-                    }}>{c.name}</Link>
-                  ))}
-                  <Link href="/kategoriler" onClick={() => setKatMenu(false)} style={{
-                    gridColumn: '1 / -1', marginTop: 4, padding: '8px 10px', borderTop: '1px solid var(--line-soft)',
-                    fontSize: 13, fontWeight: 600, color: 'var(--accent)', textDecoration: 'none',
-                  }}>Tüm kategoriler →</Link>
+                <div
+                  onMouseEnter={katMenuAc}
+                  onMouseLeave={katMenuKapat}
+                  style={{ position: 'absolute', top: '100%', left: -10, zIndex: 60, paddingTop: 10 }}
+                >
+                  <div style={{
+                    background: 'var(--bg-1)', border: '1px solid var(--line)', borderRadius: 12,
+                    boxShadow: 'var(--shadow-m, 0 8px 24px rgba(0,0,0,.10))', padding: 8,
+                    display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 2, minWidth: 340,
+                  }}>
+                    {ustKategoriler.map(c => (
+                      <Link key={c.id} href={`/kategori/${c.slug}`} onClick={() => setKatMenu(false)} style={{
+                        padding: '8px 10px', borderRadius: 8, fontSize: 13.5, color: 'var(--ink-2)',
+                        textDecoration: 'none', whiteSpace: 'nowrap',
+                      }}>{c.name}</Link>
+                    ))}
+                    <Link href="/kategoriler" onClick={() => setKatMenu(false)} style={{
+                      gridColumn: '1 / -1', marginTop: 4, padding: '8px 10px', borderTop: '1px solid var(--line-soft)',
+                      fontSize: 13, fontWeight: 600, color: 'var(--accent)', textDecoration: 'none',
+                    }}>Tüm kategoriler →</Link>
+                  </div>
                 </div>
               )}
             </div>
