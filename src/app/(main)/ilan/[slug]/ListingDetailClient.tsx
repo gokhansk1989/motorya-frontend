@@ -1,7 +1,7 @@
 'use client';
 import { useEffect, useRef, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useListingBySlug, useToggleFavorite, useFavoriteIds, useSimilarListings, useListingsByIds, useMarkSold, useBuyerCandidates, useReserveListing, useUnreserveListing, usePriceGuide } from '@/hooks/useListings';
 import { useCreateOffer, useListingOffers, useRespondOffer, useCounterOffer, useOfferUpdates } from '@/hooks/useOffers';
 import { useAuthStore } from '@/store/auth';
@@ -135,6 +135,11 @@ export default function ListingDetailClient({ initialListing }: { initialListing
   );
 
   const isMine = user?.id === listing.seller.id;
+  // Satici satildi isaretlerken alici olarak bu kullaniciyi secmisse onay
+  // isteyebiliyoruz.
+  const alicisiyim = !!user && listing.status === 'SOLD' && listing.soldToUserId === user.id;
+  const [onaylaniyor, setOnaylaniyor] = useState(false);
+  const qc = useQueryClient();
   const images = listing.images || [];
   const discountPct = listing.originalPrice
     ? Math.round((1 - Number(listing.price) / Number(listing.originalPrice)) * 100)
@@ -503,9 +508,49 @@ export default function ListingDetailClient({ initialListing }: { initialListing
                 🔒 Bu ilan geçici olarak rezerve edildi
               </div>
             )}
-            {!isMine && listing.status === 'SOLD' && (
+            {!isMine && listing.status === 'SOLD' && !alicisiyim && (
               <div style={{ marginTop: 18, padding: '14px 18px', borderRadius: 12, background: 'var(--bg-2)', border: '1.5px solid var(--line)', fontSize: 14, fontWeight: 600, textAlign: 'center', color: 'var(--ink-3)' }}>
                 Bu ilan satılmıştır
+              </div>
+            )}
+
+            {/* Satici "satildi" dedi ve alici olarak seni gosterdi. Onayin,
+                bu alisverisi saticinin tek tarafli beyanindan cikarip iki
+                tarafin kabul ettigi bir kayda donusturuyor. */}
+            {alicisiyim && !listing.buyerConfirmedAt && (
+              <div style={{ marginTop: 18, padding: '16px 18px', borderRadius: 12, background: 'color-mix(in oklch, var(--accent) 7%, var(--bg-1))', border: '1.5px solid color-mix(in oklch, var(--accent) 28%, transparent)' }}>
+                <p style={{ margin: '0 0 4px', fontSize: 14.5, fontWeight: 700, color: 'var(--ink)' }}>
+                  Bu alışverişi onaylıyor musun?
+                </p>
+                <p style={{ margin: '0 0 12px', fontSize: 13, color: 'var(--ink-2)', lineHeight: 1.55 }}>
+                  Satıcı bu ürünü sana sattığını belirtti. Onaylarsan satıcının
+                  profilinde &ldquo;alıcı onaylı&rdquo; alışveriş olarak görünür. Onay geri alınamaz.
+                </p>
+                <button
+                  onClick={async () => {
+                    setOnaylaniyor(true);
+                    try {
+                      await api.patch(`/listings/${listing.id}/alisverisi-onayla`);
+                      await qc.invalidateQueries({ queryKey: ['listing', listing.id] });
+                      toast.success('Alışverişi onayladın, teşekkürler');
+                    } catch (e: any) {
+                      toast.error(e?.response?.data?.message ?? 'Onaylanamadı');
+                    } finally {
+                      setOnaylaniyor(false);
+                    }
+                  }}
+                  disabled={onaylaniyor}
+                  className="m-btn m-btn-primary"
+                  style={{ width: '100%' }}
+                >
+                  {onaylaniyor ? 'Gönderiliyor…' : 'Evet, bu alışverişi yaptım'}
+                </button>
+              </div>
+            )}
+
+            {alicisiyim && listing.buyerConfirmedAt && (
+              <div style={{ marginTop: 18, padding: '14px 18px', borderRadius: 12, background: 'color-mix(in oklch, var(--good) 9%, transparent)', border: '1.5px solid color-mix(in oklch, var(--good) 28%, transparent)', fontSize: 14, fontWeight: 600, textAlign: 'center', color: 'var(--good)' }}>
+                Bu alışverişi onayladın
               </div>
             )}
             {isMine && (

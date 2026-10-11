@@ -176,9 +176,11 @@ export default function PublicProfilePage({ params }: { params: Promise<{ id: st
           <div style={{ background: 'var(--bg-2)', borderRadius: 10, padding: '10px 8px', textAlign: 'center' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 3, justifyContent: 'center', marginBottom: 3 }}>
               <ShoppingBag size={13} style={{ color: 'var(--accent)' }} />
-              <span style={{ fontWeight: 700, fontSize: 16, fontFamily: 'var(--font-mono)' }}>{user.salesCount ?? 0}</span>
+              <span style={{ fontWeight: 700, fontSize: 16, fontFamily: 'var(--font-mono)' }}>
+                {user.onayliSatis ?? 0}<span style={{ color: 'var(--ink-3)', fontWeight: 400 }}>/{user.salesCount ?? 0}</span>
+              </span>
             </div>
-            <p style={{ fontSize: 10, color: 'var(--ink-3)' }}>satıldı işaretlenen</p>
+            <p style={{ fontSize: 10, color: 'var(--ink-3)' }}>alıcı onaylı / beyan</p>
           </div>
 
           <div style={{ background: 'var(--bg-2)', borderRadius: 10, padding: '10px 8px', textAlign: 'center' }}>
@@ -217,10 +219,12 @@ export default function PublicProfilePage({ params }: { params: Promise<{ id: st
               <li>Platform davranışı — en çok 10 puan</li>
             </ul>
             <p style={{ margin: '8px 0 0' }}>
-              &ldquo;Satıldı işaretlenen&rdquo; sayısı satıcının kendi beyanıdır; alıcıdan
-              onay alınmaz ve Motorya satışı doğrulamaz. Değerlendirmeler ise
-              yalnızca satıcının kabul ettiği tekliflerden sonra bırakılabilir.
-              Puan bir güvence değil, geçmiş etkinliğin özetidir.
+              Satış kartındaki ilk sayı <strong>alıcının onayladığı</strong> alışveriş
+              sayısı, ikincisi satıcının <strong>satıldı olarak işaretlediği</strong> ilan
+              sayısıdır. İşaretleme satıcının beyanıdır; alıcı ayrıca onaylamadıkça
+              Motorya satışı doğrulamaz. Değerlendirmeler yalnızca satıcının kabul
+              ettiği tekliflerden sonra bırakılabilir. Puan bir güvence değil,
+              geçmiş etkinliğin özetidir.
             </p>
           </div>
         </details>

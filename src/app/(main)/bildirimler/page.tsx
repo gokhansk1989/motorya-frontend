@@ -29,6 +29,8 @@ const TYPE_META: Record<string, { icon: any; color: string }> = {
   'listing.approved':         { icon: Package,         color: 'var(--good)' },
   'listing.rejected':         { icon: Package,         color: 'var(--bad)' },
   'listing.sold':             { icon: CheckCircle,     color: 'var(--good)' },
+  'sale.confirm_request':     { icon: CheckCircle,     color: 'var(--accent)' },
+  'sale.confirmed':           { icon: CheckCircle,     color: 'var(--good)' },
   'listing.featured':         { icon: Sparkles,        color: 'var(--accent)' },
   'offer.received':           { icon: Tag,             color: 'var(--accent)' },
   'offer.accepted':           { icon: Tag,             color: 'var(--good)' },
@@ -67,6 +69,10 @@ function getNavTarget(n: Notif): string | null {
     case 'listing.approved':        return p.listingSlug ? `/ilan/${p.listingSlug}` : p.listingId ? `/ilan/${p.listingId}` : '/ilanlarim';
     case 'listing.rejected':        return p.listingId ? `/ilanlarim/duzenle/${p.listingId}` : '/ilanlarim';
     case 'listing.sold':            return p.listingSlug ? `/ilan/${p.listingSlug}` : '/ilanlarim';
+    // Onay istegi ve onay bildirimi: ikisi de ilan sayfasina gidiyor,
+    // onay dugmesi orada duruyor.
+    case 'sale.confirm_request':    return p.listingSlug ? `/ilan/${p.listingSlug}` : '/favoriler';
+    case 'sale.confirmed':          return p.listingSlug ? `/ilan/${p.listingSlug}` : '/ilanlarim';
     case 'listing.featured':        return p.listingSlug ? `/ilan/${p.listingSlug}` : p.listingId ? `/ilan/${p.listingId}` : '/ilanlarim';
     case 'offer.received':          return p.listingSlug ? `/ilan/${p.listingSlug}` : p.listingId ? `/ilan/${p.listingId}` : '/tekliflerim?tab=received';
     case 'offer.accepted':          return p.listingSlug ? `/ilan/${p.listingSlug}` : p.listingId ? `/ilan/${p.listingId}` : '/tekliflerim?tab=sent';
