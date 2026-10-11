@@ -32,17 +32,11 @@ const FIYAT_DUSUSU_ESIGI = 3;
 /**
  * Masaustunde basligin sagindaki alan.
  *
- * Burada yalnizca "liste fiyatinin altinda" paneli vardi ve esik (3 ilan)
- * dolmadiginda hic cizilmiyordu; 1440px'te saginda genis bos bir alan
- * kaliyordu. Esik dolmazsa yerine son eklenen ilanlardan sade bir vitrin
- * koyuyoruz - hareketsiz, yalnizca fotograf, baslik ve fiyat.
+ * Burada once "liste fiyatinin altinda" paneli vardi; esik (3 ilan)
+ * dolmadiginda hic cizilmedigi icin 1440px'te sagda genis bos bir alan
+ * kaliyordu. Yerine her zaman dolu olan "Yeni Eklenenler" kondu:
+ * hareketsiz, yalnizca fotograf, baslik ve fiyat.
  */
-function YanPanel() {
-  const { data } = usePriceDrops(10);
-  if ((data ?? []).length >= FIYAT_DUSUSU_ESIGI) return <PriceDropPanel />;
-  return <SonIlanlarPaneli />;
-}
-
 function SonIlanlarPaneli() {
   const { data } = useListings({ limit: 3 }, true);
   const items = (Array.isArray(data) ? data : data?.items ?? []).slice(0, 3);
@@ -69,48 +63,6 @@ function SonIlanlarPaneli() {
         <Link href="/ara" style={{ fontSize: 12.5, fontWeight: 600, color: 'var(--accent)', textDecoration: 'none', textAlign: 'center', paddingTop: 2 }}>
           Tüm ilanlara bak →
         </Link>
-      </div>
-    </div>
-  );
-}
-
-function PriceDropPanel() {
-  const { data } = usePriceDrops(10);
-  const items = data ?? [];
-  if (items.length < FIYAT_DUSUSU_ESIGI) return null;
-
-  return (
-    <div
-      className="m-hide-mobile"
-      style={{ width: 280, flexShrink: 0 }}
-    >
-      <div style={{ background: 'var(--bg-1)', border: '1px solid var(--line-soft)', borderRadius: 16, padding: '14px 14px 4px', height: 360, display: 'flex', flexDirection: 'column' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 7, marginBottom: 12, flexShrink: 0 }}>
-          <TrendingDown size={15} style={{ color: 'var(--bad)' }} />
-          <span style={{ fontWeight: 700, fontSize: 13, color: 'var(--ink)' }}>Liste Fiyatının Altında</span>
-        </div>
-        <div className="m-marquee-wrap" style={{ flex: 1, maskImage: 'linear-gradient(to bottom, transparent, black 8%, black 92%, transparent)' }}>
-          <div className="m-marquee-track-v" style={{ '--marquee-duration': `${items.length * 4}s` } as React.CSSProperties}>
-            {[...items, ...items].map((l: any, i: number) => {
-              const discount = Math.round((1 - Number(l.price) / Number(l.originalPrice)) * 100);
-              return (
-                <Link key={`${l.id}-${i}`} href={`/ilan/${l.slug ?? l.id}`} style={{ display: 'flex', alignItems: 'center', gap: 10, textDecoration: 'none', padding: '6px 4px' }}>
-                  <div style={{ width: 40, height: 40, borderRadius: 8, background: 'var(--bg-2)', overflow: 'hidden', flexShrink: 0 }}>
-                    {l.images?.[0] && <img src={l.images[0].url} style={{ width: '100%', height: '100%', objectFit: 'cover' }} alt="" />}
-                  </div>
-                  <div style={{ flex: 1, minWidth: 0 }}>
-                    <p style={{ fontSize: 12, color: 'var(--ink-2)', margin: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{l.title}</p>
-                    <p style={{ fontSize: 11.5, margin: '2px 0 0', display: 'flex', alignItems: 'center', gap: 5 }}>
-                      <span style={{ color: 'var(--ink-3)', textDecoration: 'line-through' }}>{formatPrice(Number(l.originalPrice))}</span>
-                      <span style={{ color: 'var(--bad)', fontWeight: 700 }}>{formatPrice(Number(l.price))}</span>
-                    </p>
-                  </div>
-                  <span style={{ fontSize: 10.5, fontWeight: 700, color: 'var(--bad)', flexShrink: 0 }}>%{discount}</span>
-                </Link>
-              );
-            })}
-          </div>
-        </div>
       </div>
     </div>
   );
@@ -179,7 +131,7 @@ function HeroSection({ onSearch, categories, brands }: { onSearch: (q: string) =
             {focused && <CategorySuggestionsDropdown query={val} matches={matches} brandMatches={brandMatches} anchorRef={searchBoxRef} onSearchQuery={onSearch} />}
           </form>
         </div>
-        <YanPanel />
+        <SonIlanlarPaneli />
       </div>
     </section>
   );
