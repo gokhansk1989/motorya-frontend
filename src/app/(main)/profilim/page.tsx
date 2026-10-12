@@ -139,7 +139,7 @@ export default function ProfilePage() {
   // Kayitta sorulmayan, profilde tamamlanabilen alanlar.
   const eksikAlanlar: string[] = [];
   if (profile) {
-    if (!profile.tcKimlik) eksikAlanlar.push('T.C. kimlik numarası');
+    if (!profile.tcKimlikVar) eksikAlanlar.push('T.C. kimlik numarası');
     if (!profile.phone) eksikAlanlar.push('telefon');
     if (!profile.city) eksikAlanlar.push('il');
     if (!profile.birthDate) eksikAlanlar.push('doğum tarihi');
@@ -154,7 +154,9 @@ export default function ProfilePage() {
         city: profile.city ?? '',
         district: profile.district ?? '',
         avatarUrl: profile.avatarUrl ?? '',
-        tcKimlik: profile.tcKimlik ?? '',
+        // Sunucu artik tam numarayi dondurmuyor; alan bos baslar ve yalnizca
+        // degistirmek isteyen kullanici yeniden girer.
+        tcKimlik: '',
         phone: profile.phone ?? '',
         birthDate: profile.birthDate ? new Date(profile.birthDate).toISOString().slice(0,10) : '',
         gender: profile.gender ?? '',
@@ -197,6 +199,7 @@ export default function ProfilePage() {
     onError: () => toast.error('Şifre değiştirilemedi'),
   });
 
+  const [tcDegistir, setTcDegistir] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [deletePassword, setDeletePassword] = useState('');
 
@@ -481,11 +484,27 @@ export default function ProfilePage() {
                 <label style={lbl}>Hakkımda <span style={{ fontWeight: 400, opacity: 0.5 }}>opsiyonel</span></label>
                 <textarea {...profileForm.register('bio')} rows={3} style={{ ...inp(), height: 'auto', padding: '10px 14px', resize: 'vertical' }} placeholder="Kendinizden kısaca bahsedin…" />
               </div>
+              {/* Numaranin tamami artik sunucudan gelmiyor; kayitli deger
+                  maskeli gosteriliyor. Degistirmek icin yeniden yazmak
+                  yeterli - eski degeri okumaya gerek yok. */}
               <div>
                 <label style={lbl}>T.C. Kimlik No <span style={{ fontWeight: 400, opacity: 0.5 }}>ilan vermek için gerekli</span></label>
-                <input {...profileForm.register('tcKimlik')} inputMode="numeric" maxLength={11} placeholder="10000000000" style={inp(!!profileForm.formState.errors.tcKimlik)} />
-                {profileForm.formState.errors.tcKimlik && <p style={{ marginTop: 5, fontSize: 12, color: 'var(--bad)', fontFamily: 'var(--font-mono)' }}>{profileForm.formState.errors.tcKimlik.message}</p>}
-                <p style={{ marginTop: 5, fontSize: 11, color: 'var(--ink-3)' }}>Satıcı kaydı tutma yükümlülüğü için alınır. Kimlik doğrulaması değildir — numaranın size ait olduğu doğrulanmaz. İlanınızda görünmez.</p>
+                {profile.tcKimlikVar && !tcDegistir ? (
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                    <span style={{ ...inp(), display: 'flex', alignItems: 'center', fontFamily: 'var(--font-mono)', letterSpacing: 1, color: 'var(--ink-2)' }}>
+                      {profile.tcKimlikMaskeli ?? '•••••••••••'}
+                    </span>
+                    <button type="button" onClick={() => setTcDegistir(true)} className="m-btn m-btn-ghost" style={{ height: 40, flexShrink: 0, fontSize: 13 }}>
+                      Değiştir
+                    </button>
+                  </div>
+                ) : (
+                  <>
+                    <input {...profileForm.register('tcKimlik')} inputMode="numeric" maxLength={11} placeholder={profile.tcKimlikVar ? 'Yeni numarayı gir' : '10000000000'} style={inp(!!profileForm.formState.errors.tcKimlik)} />
+                    {profileForm.formState.errors.tcKimlik && <p style={{ marginTop: 5, fontSize: 12, color: 'var(--bad)', fontFamily: 'var(--font-mono)' }}>{profileForm.formState.errors.tcKimlik.message}</p>}
+                  </>
+                )}
+                <p style={{ marginTop: 5, fontSize: 11, color: 'var(--ink-3)' }}>Satıcı kaydı tutma yükümlülüğü için alınır. Kimlik doğrulaması değildir — numaranın size ait olduğu doğrulanmaz. İlanınızda görünmez ve tam hali bu ekranda gösterilmez.</p>
               </div>
               <div>
                 <label style={lbl}>Cep Telefonu <span style={{ fontWeight: 400, opacity: 0.5 }}>opsiyonel</span></label>

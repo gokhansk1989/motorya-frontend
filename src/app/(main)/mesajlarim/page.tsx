@@ -152,9 +152,15 @@ export default function MessagesPage() {
         <div className={activeId ? 'm-msg-list--hidden' : ''} style={{ borderRight: '1px solid var(--line-soft)', display: 'flex', flexDirection: 'column', background: 'var(--bg-1)' }}>
           <div style={{ padding: '16px 18px', borderBottom: '1px solid var(--line-soft)' }}>
             <h1 className="m-display" style={{ fontSize: 18, margin: 0 }}>Mesajlar</h1>
+            {/* "Uctan uca sifreli" YANLISTI: konusma anahtari sunucudaki ana
+                anahtarla sarmalaniyor, sunucu her okumada mesaji cozuyor ve
+                SUPER_ADMIN icin /admin/conversations/:id/messages ucu var.
+                Yani sifreleme DEPOLAMADA var, uctan uca degil. */}
             <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginTop: 4, fontSize: 11.5, color: 'var(--ink-3)' }}>
               <Lock size={11} />
-              Uçtan uca şifreli
+              <span title="Mesaj içerikleri veritabanında şifreli saklanır. Uçtan uca şifreleme değildir: yetkili Motorya personeli şikâyet incelemesinde içeriğe erişebilir.">
+                Şifreli saklanıyor
+              </span>
             </div>
           </div>
 
