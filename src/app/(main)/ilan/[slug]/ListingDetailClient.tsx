@@ -699,7 +699,9 @@ export default function ListingDetailClient({ initialListing }: { initialListing
             <div style={{ flex: 1 }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}>
                 <span className="m-display" style={{ fontSize: 16, fontWeight: 600 }}>{listing.seller.displayName}</span>
-                {(sellerProfile?.badges ?? []).filter((b: any) => ['email_verified', 'identity_verified', 'phone_verified'].includes(b.key)).map((b: any) => (
+                {/* identity_verified ve phone_verified rozetleri kaldirildi:
+                    boyle bir dogrulama akisi yok, hicbir kullanicida cikmiyordu. */}
+                {(sellerProfile?.badges ?? []).filter((b: any) => b.key === 'email_verified').map((b: any) => (
                   <span key={b.key} title={b.label} style={{ fontSize: 14 }}>{b.icon}</span>
                 ))}
               </div>
@@ -947,8 +949,9 @@ export default function ListingDetailClient({ initialListing }: { initialListing
           <div className="m-surface-2 m-modal-sheet" style={{ padding: 24, width: '100%', maxWidth: 440 }}>
             <h3 className="m-display" style={{ fontSize: 20, margin: '0 0 6px' }}>İlan Satıldı</h3>
             <p style={{ fontSize: 13, color: 'var(--ink-3)', marginBottom: 20, lineHeight: 1.55 }}>
-              Alıcıyı seçerseniz ikiniz de birbirinizi değerlendirebilirsiniz.
-              Bu, profilinizdeki güven puanını oluşturur.
+              Alıcıyı seçerseniz ikiniz de birbirinizi değerlendirebilirsiniz ve
+              alıcı alışverişi onaylayabilir. Onaylanan alışverişler profilinizde
+              beyandan ayrı gösterilir.
             </p>
 
             {buyersLoading ? (

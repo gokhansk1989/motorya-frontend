@@ -23,7 +23,7 @@ const sections: Section[] = [
       },
       {
         q: 'Kargo ile satış yapılabilir mi?',
-        a: 'Kargo seçeneği satıcıya bağlıdır. Kargo ile alışveriş yapacaksanız satıcının güven skoruna ve yorumlarına dikkat edin. Ödemeyi kargo şirketi aracılığıyla kapıda yapmanızı öneririz.',
+        a: 'Kargo seçeneği satıcıya bağlıdır. Kargo ile alışveriş yapacaksanız satıcının değerlendirmelerine, üyelik süresine ve alıcı onaylı satış sayısına bakın. Ödemeyi kargo şirketi aracılığıyla kapıda yapmanızı öneririz.',
       },
       {
         q: 'Dolandırıcılıkla karşılaşırsam ne yapmalıyım?',
@@ -114,7 +114,7 @@ const sections: Section[] = [
   },
   {
     icon: Star,
-    title: 'Güven Skoru & Rozetler',
+    title: 'Rozetler & Değerlendirmeler',
     color: '#f59e0b',
     items: [
       {
@@ -122,8 +122,8 @@ const sections: Section[] = [
         a: 'Tek doğrulama e-posta adresidir: her üye kayıt sırasında adresini doğrular. Ayrıca her ilan yayına girmeden önce ekibimizce incelenir ve her ilan ile kullanıcı şikâyet edilebilir. Kimlik doğrulaması, adres doğrulaması veya satıcı güvencesi sunmuyoruz. Satıcıyı değerlendirirken profilindeki yorumlara ve üyelik süresine bakın.',
       },
       {
-        q: 'Güven skoru nasıl hesaplanır?',
-        a: 'Güven puanı 0-100 arasında otomatik hesaplanır. Bugün puana katkı sağlayan şeyler: e-posta doğrulaması (10 puan), satıcının satıldı olarak işaretlediği ilan sayısı (en çok 30 puan), aldığınız değerlendirmeler (en çok 20 puan) ve platform davranışı (en çok 10 puan). Puan bir güvence değil, geçmiş etkinliğin özetidir.',
+        q: 'Bir satıcının güvenilir olup olmadığını nasıl anlarım?',
+        a: 'Tek bir puana bakmak yerine şunlara bakın: aldığı değerlendirmeler, alıcı onaylı satış sayısı, ne zamandır üye olduğu ve ilanlarının ne kadar ayrıntılı olduğu. Motorya satıcılar için bir güvence vermez; ödemeye de aracılık etmez.',
       },
       {
         q: 'Rozetler nasıl kazanılır?',

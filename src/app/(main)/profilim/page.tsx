@@ -332,7 +332,7 @@ export default function ProfilePage() {
           </div>
 
           {/* Stats row */}
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 10 }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 10 }}>
             <div style={{ background: 'var(--bg-1)', border: '1px solid var(--line-soft)', borderRadius: 12, padding: '12px 0', textAlign: 'center' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: 4, justifyContent: 'center', marginBottom: 4 }}>
                 <Star size={13} style={{ color: '#f59e0b' }} />
@@ -353,31 +353,19 @@ export default function ProfilePage() {
               </div>
               <p style={{ fontSize: 11, color: 'var(--ink-3)' }}>alıcı onaylı / beyan</p>
             </div>
-            <div style={{ background: 'var(--bg-1)', border: '1px solid var(--line-soft)', borderRadius: 12, padding: '12px 0', textAlign: 'center' }}>
-              <span style={{ fontWeight: 700, fontSize: 16, fontFamily: 'var(--font-mono)', color: (profile.trustScore ?? 0) >= 70 ? 'var(--good)' : (profile.trustScore ?? 0) >= 40 ? '#f59e0b' : 'var(--ink-3)' }}>
-                {(profile.trustScore ?? 0) > 0 ? `${profile.trustScore}/100` : '—'}
-              </span>
-              <p style={{ fontSize: 11, color: 'var(--ink-3)', marginTop: 4 }}>güven puanı</p>
-            </div>
           </div>
 
-          {/* Puanin neyi anlattigini acikliyor; SSS'teki hesaplama ile ayni.
-              <details> JavaScript gerektirmiyor ve klavyeyle acilabiliyor. */}
+          {/* Guven puani arayuzden kaldirildi (bkz. kullanici profili notu).
+              Satis sayaclarinin ne anlattigi burada kaliyor. */}
           <details style={{ marginTop: 12 }}>
             <summary style={{ fontSize: 12, color: 'var(--ink-3)', cursor: 'pointer' }}>
-              Güven puanı nasıl hesaplanır?
+              Satış sayıları ne anlama geliyor?
             </summary>
             <div style={{ fontSize: 12.5, color: 'var(--ink-2)', lineHeight: 1.6, marginTop: 8, padding: '10px 12px', background: 'var(--bg-2)', borderRadius: 10 }}>
-              <p style={{ margin: '0 0 8px' }}>0–100 arasında otomatik hesaplanır. Bugün katkı sağlayanlar:</p>
-              <ul style={{ margin: 0, paddingLeft: 18, display: 'flex', flexDirection: 'column', gap: 4 }}>
-                <li>E-posta doğrulaması — 10 puan</li>
-                <li>Satıldı işaretlenen ilan sayısı — en çok 30 puan</li>
-                <li>Alınan değerlendirmeler — en çok 20 puan</li>
-                <li>Platform davranışı — en çok 10 puan</li>
-              </ul>
-              <p style={{ margin: '8px 0 0' }}>
-                Puan geçmiş etkinliğin özetidir; satıcı güvencesi ya da ödeme koruması değildir.
-                Motorya ödemeye aracılık etmez.
+              <p style={{ margin: 0 }}>
+                İlk sayı alıcının onayladığı alışveriş sayısı, ikincisi senin satıldı
+                olarak işaretlediğin ilan sayısıdır. İşaretleme bir beyandır; alıcı
+                ayrıca onaylamadıkça Motorya satışı doğrulamaz.
               </p>
             </div>
           </details>

@@ -83,7 +83,6 @@ export default function PublicProfilePage({ params }: { params: Promise<{ id: st
   const soldListings   = (user.listings ?? []).filter((l: any) => l.status === 'SOLD');
   const reviews: any[] = user.reviewsReceived ?? [];
   const badges: any[]  = user.badges ?? [];
-  const trustScore: number = user.trustScore ?? 0;
   const displayedListings = listingTab === 'ACTIVE' ? activeListings : soldListings;
 
   const starCounts = [5, 4, 3, 2, 1].map(s => ({
@@ -160,7 +159,13 @@ export default function PublicProfilePage({ params }: { params: Promise<{ id: st
         </div>
 
         {/* Satır 2: Stats grid — 3 kart */}
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 8, marginBottom: badges.length > 0 || user.bio ? 14 : 0 }}>
+        {/* Guven puani arayuzden kaldirildi: 20 kullanicinin hicbirinde
+            degerlendirme yoktu, satisi olan tek kisiydi ve puanin 30'u
+            dogrulanmamis satici beyanina dayaniyordu. Ayirt etmeyen bir sayi,
+            ayirt ediyormus gibi gorunuyordu. Ham sinyaller (degerlendirme,
+            alici onayli satis, uyelik suresi, rozetler) duruyor.
+            Sunucu tarafindaki hesap korundu; ileride geri acilabilir. */}
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 8, marginBottom: badges.length > 0 || user.bio ? 14 : 0 }}>
           <div style={{ background: 'var(--bg-2)', borderRadius: 10, padding: '10px 8px', textAlign: 'center' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 3, justifyContent: 'center', marginBottom: 3 }}>
               <Star size={13} fill="#f59e0b" color="#f59e0b" />
@@ -183,48 +188,21 @@ export default function PublicProfilePage({ params }: { params: Promise<{ id: st
             <p style={{ fontSize: 10, color: 'var(--ink-3)' }}>alıcı onaylı / beyan</p>
           </div>
 
-          <div style={{ background: 'var(--bg-2)', borderRadius: 10, padding: '10px 8px', textAlign: 'center' }}>
-            <div style={{ marginBottom: 3 }}>
-              <span style={{
-                fontWeight: 700, fontSize: 16, fontFamily: 'var(--font-mono)',
-                color: trustScore >= 70 ? 'var(--good)' : trustScore >= 40 ? '#f59e0b' : 'var(--ink-3)',
-              }}>
-                {trustScore > 0 ? `${trustScore}/100` : '—'}
-              </span>
-            </div>
-            <p style={{ fontSize: 10, color: 'var(--ink-3)' }}>güven puanı</p>
-            {trustScore > 0 && (
-              <div style={{ height: 3, background: 'var(--bg-3)', borderRadius: 99, overflow: 'hidden', marginTop: 5, marginLeft: 8, marginRight: 8 }}>
-                <div style={{ height: '100%', width: `${trustScore}%`, borderRadius: 99, background: trustScore >= 70 ? 'var(--good)' : '#f59e0b' }} />
-              </div>
-            )}
-          </div>
         </div>
 
-        {/* Puanin neyi anlattigini acikliyor. <details> kullaniyoruz: JavaScript
-            gerektirmiyor, klavyeyle acilabiliyor ve ekran okuyucular durumu
-            dogru bildiriyor. */}
+        {/* Satis sayaclarinin ne anlama geldigini acikliyor. <details>
+            JavaScript gerektirmiyor ve klavyeyle acilabiliyor. */}
         <details style={{ marginBottom: 14 }}>
           <summary style={{ fontSize: 12, color: 'var(--ink-3)', cursor: 'pointer' }}>
-            Güven puanı nasıl hesaplanır?
+            Satış sayıları ne anlama geliyor?
           </summary>
           <div style={{ fontSize: 12.5, color: 'var(--ink-2)', lineHeight: 1.6, marginTop: 8, padding: '10px 12px', background: 'var(--bg-2)', borderRadius: 10 }}>
-            <p style={{ margin: '0 0 8px' }}>
-              0–100 arasında otomatik hesaplanır. Bugün katkı sağlayanlar:
-            </p>
-            <ul style={{ margin: 0, paddingLeft: 18, display: 'flex', flexDirection: 'column', gap: 4 }}>
-              <li>E-posta doğrulaması — 10 puan</li>
-              <li>Satıldı işaretlenen ilan sayısı — en çok 30 puan</li>
-              <li>Alınan değerlendirmeler — en çok 20 puan</li>
-              <li>Platform davranışı — en çok 10 puan</li>
-            </ul>
-            <p style={{ margin: '8px 0 0' }}>
-              Satış kartındaki ilk sayı <strong>alıcının onayladığı</strong> alışveriş
-              sayısı, ikincisi satıcının <strong>satıldı olarak işaretlediği</strong> ilan
-              sayısıdır. İşaretleme satıcının beyanıdır; alıcı ayrıca onaylamadıkça
-              Motorya satışı doğrulamaz. Değerlendirmeler yalnızca satıcının kabul
-              ettiği tekliflerden sonra bırakılabilir. Puan bir güvence değil,
-              geçmiş etkinliğin özetidir.
+            <p style={{ margin: 0 }}>
+              İlk sayı <strong>alıcının onayladığı</strong> alışveriş sayısı, ikincisi
+              satıcının <strong>satıldı olarak işaretlediği</strong> ilan sayısıdır.
+              İşaretleme satıcının beyanıdır; alıcı ayrıca onaylamadıkça Motorya
+              satışı doğrulamaz. Değerlendirmeler yalnızca satıcının kabul ettiği
+              tekliflerden sonra bırakılabilir.
             </p>
           </div>
         </details>
