@@ -13,6 +13,7 @@ import toast from 'react-hot-toast';
 import { CoverCropModal } from '@/components/listings/CoverCropModal';
 import { IL_ILCE, ALL_CITIES } from '@/lib/il-ilce';
 import { analytics } from '@/lib/analytics';
+import { olc, olcumBosalt, rastgeleKimlik, fotoHataKodu } from '@/lib/olcum';
 import { useAuthStore } from '@/store/auth';
 import { formatPrice } from '@/lib/utils';
 
@@ -131,6 +132,15 @@ export default function CreateListingPage() {
     staleTime: 30_000,
   });
 
+  // Akis kimligi: tek bir ilan verme girisiminin olaylarini birbirine
+  // bagliyor. Yalnizca bellekte duruyor - cerez/localStorage kullanilmiyor,
+  // bu yuzden yeni bir takip mekanizmasi baslatmiyor. Sayfa yenilenince yeni
+  // bir kimlik dogar; sunucu ayni kullanicinin 30 dakika icindeki akislarini
+  // tek girisim sayarak yenilemenin sayilari sismesini engelliyor.
+  const akisId = useRef<string>('');
+  if (!akisId.current) akisId.current = rastgeleKimlik();
+  const akisBasladi = useRef(false);
+
   const [step, setStep] = useState(1);
   const [imageUrls, setImageUrls] = useState<string[]>([]);
   const [uploading, setUploading] = useState(false);
@@ -143,6 +153,17 @@ export default function CreateListingPage() {
   const [selL2, setSelL2] = useState('');
   const [gender, setGender] = useState('');
 
+  // Formun gercekten acildigi an olculuyor: oturum hazir, T.C. kapisi
+  // gecilmis. Aksi halde girise yonlendirilen ya da kapiya dusen kullanici da
+  // "ilan vermeye baslamis" sayilir ve tamamlama orani oldugundan dusuk
+  // gorunurdu.
+  useEffect(() => {
+    if (akisBasladi.current) return;
+    if (!authReady || !user || !me || !me.tcKimlikVar) return;
+    akisBasladi.current = true;
+    olc('ilan_akis_basladi', undefined, akisId.current);
+  }, [authReady, user, me]);
+
   const uploadFiles = async (toUpload: File[]) => {
     setUploading(true);
     try {
@@ -152,7 +173,11 @@ export default function CreateListingPage() {
         headers: { 'Content-Type': 'multipart/form-data' },
       });
       setImageUrls(prev => [...prev, ...res.data.urls]);
-    } catch {
+      olc('ilan_foto_yuklendi', { adet: res.data.urls?.length ?? toUpload.length }, akisId.current);
+    } catch (err) {
+      // Yalnizca kaba hata kodu olculuyor; dosya adi, boyut ve sunucu mesaji
+      // gonderilmiyor.
+      olc('ilan_foto_hata', { hataKodu: fotoHataKodu(err) }, akisId.current);
       toast.error('Fotoğraf yüklenemedi');
     } finally {
       setUploading(false);
@@ -223,15 +248,30 @@ export default function CreateListingPage() {
 
   const handleNext = async () => {
     if (step === 1) {
-      if (!selL1) { toast.error('Lütfen bir kategori seçin'); return; }
+      if (!selL1) {
+        olc('ilan_form_hatasi', { alan: 'categoryId', kod: 'zorunlu' }, akisId.current);
+        toast.error('Lütfen bir kategori seçin'); return;
+      }
     }
     if (step === 2) {
-      if (imageUrls.length === 0) { toast.error('En az bir fotoğraf ekleyin'); return; }
+      if (imageUrls.length === 0) {
+        olc('ilan_form_hatasi', { alan: 'imageUrls', kod: 'zorunlu' }, akisId.current);
+        toast.error('En az bir fotoğraf ekleyin'); return;
+      }
     }
     if (step === 3) {
       const ok = await trigger(['title', 'description']);
-      if (!ok) return;
+      if (!ok) {
+        // Alan adi ve hata turu; kullanicinin yazdigi metin hicbir zaman
+        // gonderilmiyor.
+        for (const alan of ['title', 'description'] as const) {
+          const tur = (errors as any)?.[alan]?.type;
+          if (tur) olc('ilan_form_hatasi', { alan, kod: String(tur) }, akisId.current);
+        }
+        return;
+      }
     }
+    olc('ilan_adim_tamamlandi', { adim: step }, akisId.current);
     setStep(s => s + 1);
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
@@ -244,7 +284,7 @@ export default function CreateListingPage() {
   const onSubmit = async (data: FormData) => {
     if (imageUrls.length === 0) { toast.error('En az bir fotoğraf ekleyin'); return; }
     try {
-      await createListing.mutateAsync({
+      const olusan = await createListing.mutateAsync({
         ...data,
         brandId: data.brandId || undefined,
         city: data.city || undefined,
@@ -252,10 +292,16 @@ export default function CreateListingPage() {
         gender: gender || undefined,
         imageUrls,
       });
+      // Basari dugmeye tiklamayla degil, sunucunun ilani olusturup kimligini
+      // dondurmesiyle sayiliyor. 4. adim (Fiyat) ayri "adim tamamlandi"
+      // olayi uretmiyor; onun tamamlanmasi bu olayin kendisi.
+      olc('ilan_gonderildi', { listingId: (olusan as any)?.id }, akisId.current);
+      olcumBosalt();
       analytics.listingCreated({ price: Number(data.price) || undefined });
       toast.success('İlanınız oluşturuldu! Onaylandığında yayına alınacak.');
       router.push('/ilanlarim');
     } catch (err: any) {
+      olc('ilan_form_hatasi', { alan: 'gonderim', kod: String(err?.response?.status ?? 'ag') }, akisId.current);
       const msg = err?.response?.data?.message;
       toast.error(Array.isArray(msg) ? msg.join(', ') : (msg ?? 'İlan oluşturulamadı'));
     }
@@ -266,7 +312,10 @@ export default function CreateListingPage() {
   // TC kimlik numarasi ilan vermek icin gerekli. Onceden kullanici profile
   // yonlendiriliyordu: baska bir sayfaya gidip donmek, akisi kiriyordu.
   // Artik numara burada, akistan cikmadan alinabiliyor.
-  if (me && !me.tcKimlik) {
+  // /users/me artik ham T.C. numarasini dondurmuyor (maskeleme sonrasi);
+  // yalnizca tcKimlikVar bayragi geliyor. Eski alan adi okundugu surece
+  // numarasi kayitli kullanicilar da bu kapiya dusuyordu.
+  if (me && !me.tcKimlikVar) {
     return <TcKimlikAdimi />;
   }
 

@@ -1,5 +1,5 @@
 'use client';
-import { Suspense, useState, useCallback, useEffect } from 'react';
+import { Suspense, useState, useCallback, useEffect, useRef } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useSearch } from '@/hooks/useSearch';
 import { useCreateSavedSearch } from '@/hooks/useSavedSearches';
@@ -8,6 +8,7 @@ import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { api } from '@/lib/api';
 import { useAuthStore } from '@/store/auth';
 import { analytics } from '@/lib/analytics';
+import { olc } from '@/lib/olcum';
 import Link from 'next/link';
 import { Search, SlidersHorizontal, X, BellPlus, Info } from 'lucide-react';
 import { AdSlot } from '@/components/ui/AdSlot';
@@ -343,8 +344,44 @@ function SearchPageInner() {
 
   const hasActiveFilters = !!(categoryId || brandId || condition || city || sizeLabel || minPrice || maxPrice);
 
+  // Arama olayi sonuc dondukten SONRA uretiliyor: sonuc sayisini ve sifir
+  // sonuc durumunu ancak o zaman biliyoruz. Serbest metnin kendisi
+  // gonderilmiyor (kullanici arama kutusuna telefon/e-posta yazabiliyor),
+  // yalnizca metin girilip girilmedigi.
+  //
+  // Sayfa 2+ gezinmesi yeni arama sayilmiyor; yoksa listeyi karistiran
+  // kullanici arama sayisini sisirirdi.
   const items = data?.items ?? [];
   const meta = data?.meta;
+  const sonOlculen = useRef<string>('');
+  useEffect(() => {
+    if (isLoading || !meta || page !== 1) return;
+    const imza = JSON.stringify([q, categoryId, brandId, condition, gender, city, sizeLabel, minPrice, maxPrice, sort, meta.total]);
+    if (sonOlculen.current === imza) return;
+    sonOlculen.current = imza;
+
+    const filtreler: string[] = [];
+    if (categoryId) filtreler.push('kategori');
+    if (brandId) filtreler.push('marka');
+    if (condition) filtreler.push('durum');
+    if (gender) filtreler.push('cinsiyet');
+    if (city) filtreler.push('sehir');
+    if (sizeLabel) filtreler.push('beden');
+    if (minPrice !== undefined) filtreler.push('minFiyat');
+    if (maxPrice !== undefined) filtreler.push('maxFiyat');
+    if (sort && sort !== 'newest') filtreler.push('siralama');
+
+    const kategoriSlug = (categories ?? []).find((c: any) => c.id === categoryId)?.slug;
+
+    olc('arama_yapildi', {
+      sonucSayisi: meta.total ?? 0,
+      sifirSonuc: (meta.total ?? 0) === 0,
+      metinVar: !!q,
+      kategori: kategoriSlug,
+      filtreler: filtreler.length ? filtreler : undefined,
+    });
+  }, [isLoading, meta, page, q, categoryId, brandId, condition, gender, city, sizeLabel, minPrice, maxPrice, sort, categories]);
+
   const cats = categories ?? [];
   const brnds = brands ?? [];
 
@@ -663,7 +700,12 @@ function SearchPageInner() {
           <div className="m-listing-grid" style={{ gap: 12 }}>
             {items.map((item: any, i: number) => (
               <>
-                <ListingCard key={item.id} listing={item} />
+                {/* Arama -> detay gecisi kendi basina olay olarak olculuyor;
+                    boylece oturum kimligi tutmadan gecis orani hesaplanabiliyor.
+                    Favori kalbi kendi tiklamasini durduruyor, buraya gelmiyor. */}
+                <div key={item.id} onClick={() => olc('arama_sonuc_tiklandi', { listingId: item.id })}>
+                  <ListingCard listing={item} />
+                </div>
                 {(i + 1) % 6 === 0 && (
                   <div key={`ad-${i}`} style={{ gridColumn: '1/-1' }}>
                     <AdSlot slot={process.env.NEXT_PUBLIC_ADSENSE_SLOT_LISTING ?? ''} format="auto" />

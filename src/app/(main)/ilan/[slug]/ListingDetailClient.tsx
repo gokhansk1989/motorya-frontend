@@ -15,6 +15,7 @@ import { ListingCard } from '@/components/listings/ListingCard';
 import { AdSlot } from '@/components/ui/AdSlot';
 import { useCreateSavedSearch } from '@/hooks/useSavedSearches';
 import { analytics } from '@/lib/analytics';
+import { olc } from '@/lib/olcum';
 import toast from 'react-hot-toast';
 import Link from 'next/link';
 import { oneCikanGecerliMi } from '@/lib/oneCikan';
@@ -98,7 +99,25 @@ export default function ListingDetailClient({ initialListing }: { initialListing
       categoryName: listing.category?.name,
       price: Number(listing.price),
     });
-  }, [listing?.id]);
+    // Kaynak, oturum kimligi tutmadan yalnizca bir onceki sayfanin yolundan
+    // cikariliyor; hicbir sey cihaza yazilmiyor.
+    let kaynak = 'dogrudan';
+    try {
+      const ref = document.referrer ? new URL(document.referrer) : null;
+      if (ref && ref.origin === window.location.origin) {
+        kaynak = ref.pathname.startsWith('/ara') ? 'arama' : 'liste';
+      }
+    } catch {
+      // referrer okunamazsa dogrudan sayilir
+    }
+    // Ilan sahibinin kendi ilanini goruntulemesi isaretleniyor; rapor bunu
+    // donusum hesaplarindan cikariyor.
+    olc('ilan_detay_goruntulendi', {
+      listingId: listing.id,
+      kaynak,
+      kendiIlani: !!user && user.id === listing.seller?.id,
+    });
+  }, [listing?.id, listing?.seller?.id, user?.id]);
 
   const [imgIdx, setImgIdx] = useState(0);
   const galleryTouchX = useRef(0);
@@ -480,6 +499,14 @@ export default function ListingDetailClient({ initialListing }: { initialListing
                     className="m-btn m-btn-primary"
                     style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}
                     onClick={async () => {
+                      // Dugmeye tiklama GONDERILMIS MESAJ DEGIL: mesajin
+                      // sunucuda kaydedildigi Message tablosundan okunuyor.
+                      // Ikisinin arasindaki fark, mesajlasmaya baslayip
+                      // vazgecenleri gosteriyor.
+                      olc('mesaj_butonu_tiklandi', {
+                        listingId: listing.id,
+                        kendiIlani: !!user && user.id === listing.seller?.id,
+                      });
                       if (!user) { toast.error('Mesaj göndermek için giriş yapmalısın'); router.push('/giris'); return; }
                       try {
                         const conv = await startConversation.mutateAsync({ otherUserId: listing.seller.id, listingId: listing.id });

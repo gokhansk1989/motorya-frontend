@@ -1,0 +1,164 @@
+/**
+ * Huni olcumu — istemci tarafi.
+ *
+ * GA'dan ayri bir sistem, ama ayni olaylari iki yere gondermiyor:
+ * lib/analytics.ts Google Ads'in teklif algoritmasini besleyen donusum
+ * sinyallerini gonderiyor (uye olma, ilan olusturma, teklif). Buradaki
+ * olaylar ise GA'ya hic gitmiyor ve GA'nin cevaplayamadigi sorulara bakiyor:
+ * formun hangi adiminda birakildigi, aramanin sonuc uretip uretmedigi, mesaj
+ * dugmesine basilip mesaj gonderilmedigi. GA ayrica cerez onayina bagli ve
+ * kendi panelimizden sorgulanamiyor; bu yuzden huni olcumu birinci taraf.
+ *
+ * Cihaz kimligi YOK: cerez, localStorage, sessionStorage ve parmak izi
+ * kullanilmiyor. Iliskilendirme ya oturum acmis kullanicinin kimligiyle
+ * (sunucu tarafinda, token'dan) ya da yalnizca bellekte yasayan rastgele
+ * akis kimligiyle yapiliyor. Bu nedenle olcum yeni bir takip mekanizmasi
+ * baslatmiyor ve cerez onayi gerektirmiyor.
+ */
+
+import { API_URL } from './apiBase';
+
+/** Sozlukteki olay adlari. Backend'deki olay-sozlugu.ts ile ayni olmali. */
+export type OlayAdi =
+  | 'ilan_akis_basladi'
+  | 'ilan_adim_tamamlandi'
+  | 'ilan_foto_yuklendi'
+  | 'ilan_foto_hata'
+  | 'ilan_form_hatasi'
+  | 'ilan_gonderildi'
+  | 'arama_yapildi'
+  | 'arama_sonuc_tiklandi'
+  | 'ilan_detay_goruntulendi'
+  | 'mesaj_butonu_tiklandi';
+
+type Props = Record<string, string | number | boolean | string[] | undefined>;
+
+interface Olay {
+  eventId: string;
+  name: OlayAdi;
+  flowId?: string;
+  props?: Props;
+}
+
+/** Rastgele kimlik. randomUUID yoksa (eski Safari, http) yedek uretici. */
+export function rastgeleKimlik(): string {
+  try {
+    if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') {
+      return crypto.randomUUID();
+    }
+    if (typeof crypto !== 'undefined' && crypto.getRandomValues) {
+      const b = crypto.getRandomValues(new Uint8Array(16));
+      return Array.from(b, (x) => x.toString(16).padStart(2, '0')).join('');
+    }
+  } catch {
+    // asagidaki yedege dusuyor
+  }
+  return `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 12)}`;
+}
+
+/**
+ * Bekleyen olaylar. Her tiklamada ayri HTTP istegi atmak yerine kisa bir
+ * pencerede toplanip tek istekte cikiyorlar.
+ */
+let kuyruk: Olay[] = [];
+let zamanlayici: ReturnType<typeof setTimeout> | null = null;
+
+const TOPLAMA_MS = 1500;
+const EN_FAZLA = 20;
+
+function govde(olaylar: Olay[]): string {
+  return JSON.stringify({ olaylar });
+}
+
+function gonder(olaylar: Olay[], kapanis = false) {
+  if (!olaylar.length) return;
+  const url = `${API_URL}/analitik/olay`;
+  const veri = govde(olaylar);
+
+  // Sayfa kapanirken fetch iptal edilir; sendBeacon tarayici tarafindan
+  // arka planda tamamlanir. Token tasimadigi icin bu istekler anonim
+  // sayilir - bilerek: kapanis aninda kimlik tasimaktansa olayi kaybetmemek
+  // daha degerli degil, o yuzden kapanista yalnizca kimlik gerektirmeyen
+  // olaylar gonderiliyor (bkz. olcumBosalt cagrilari).
+  if (kapanis && typeof navigator !== 'undefined' && navigator.sendBeacon) {
+    try {
+      navigator.sendBeacon(url, new Blob([veri], { type: 'application/json' }));
+      return;
+    } catch {
+      // fetch'e dusuyor
+    }
+  }
+
+  let token: string | null = null;
+  try {
+    token = localStorage.getItem('access_token');
+  } catch {
+    token = null;
+  }
+
+  // Olcum arizasi kullanicinin isini durdurmamali: yanit beklenmiyor,
+  // hata yutuluyor, hicbir yerde toast gosterilmiyor.
+  void fetch(url, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
+    },
+    body: veri,
+    keepalive: true,
+  }).catch(() => {});
+}
+
+/** Kuyrugu hemen bosaltir. Sayfa degisirken/kapanirken cagriliyor. */
+export function olcumBosalt(kapanis = false) {
+  if (zamanlayici) {
+    clearTimeout(zamanlayici);
+    zamanlayici = null;
+  }
+  const cikan = kuyruk;
+  kuyruk = [];
+  gonder(cikan, kapanis);
+}
+
+/**
+ * Olay kaydet. Hicbir kosulda hata firlatmaz ve cagiran kodu bekletmez.
+ *
+ * eventId burada uretiliyor: ag hatasinda ayni olay tekrar gonderilse bile
+ * sunucu benzersiz kimlikten taniyip bir kez sayiyor.
+ */
+export function olc(name: OlayAdi, props?: Props, flowId?: string) {
+  if (typeof window === 'undefined') return;
+  try {
+    kuyruk.push({ eventId: rastgeleKimlik(), name, flowId, props });
+    if (kuyruk.length >= EN_FAZLA) {
+      olcumBosalt();
+      return;
+    }
+    if (!zamanlayici) {
+      zamanlayici = setTimeout(() => olcumBosalt(), TOPLAMA_MS);
+    }
+  } catch {
+    // Olcum sessizce vazgecer.
+  }
+}
+
+if (typeof window !== 'undefined') {
+  // pagehide, mobil Safari'de unload'dan guvenilir calisiyor.
+  window.addEventListener('pagehide', () => olcumBosalt(true));
+  document.addEventListener('visibilitychange', () => {
+    if (document.visibilityState === 'hidden') olcumBosalt(true);
+  });
+}
+
+/** Fotograf yukleme hatasini kaba bir koda indirger. Mesaj metni gonderilmez. */
+export function fotoHataKodu(err: unknown): string {
+  const e = err as { response?: { status?: number }; code?: string };
+  if (e?.code === 'ERR_NETWORK' || e?.code === 'ECONNABORTED') return 'ag';
+  const s = e?.response?.status;
+  if (s === 413) return 'boyut';
+  if (s === 415) return 'tip';
+  if (s === 429) return 'limit';
+  if (s && s >= 500) return 'sunucu';
+  if (s && s >= 400) return 'istek';
+  return 'bilinmiyor';
+}
