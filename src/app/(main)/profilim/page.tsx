@@ -489,10 +489,10 @@ export default function ProfilePage() {
                   yeterli - eski degeri okumaya gerek yok. */}
               <div>
                 <label style={lbl}>T.C. Kimlik No <span style={{ fontWeight: 400, opacity: 0.5 }}>ilan vermek için gerekli</span></label>
-                {profile.tcKimlikVar && !tcDegistir ? (
+                {profile?.tcKimlikVar && !tcDegistir ? (
                   <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
                     <span style={{ ...inp(), display: 'flex', alignItems: 'center', fontFamily: 'var(--font-mono)', letterSpacing: 1, color: 'var(--ink-2)' }}>
-                      {profile.tcKimlikMaskeli ?? '•••••••••••'}
+                      {profile?.tcKimlikMaskeli ?? '•••••••••••'}
                     </span>
                     <button type="button" onClick={() => setTcDegistir(true)} className="m-btn m-btn-ghost" style={{ height: 40, flexShrink: 0, fontSize: 13 }}>
                       Değiştir
@@ -500,7 +500,7 @@ export default function ProfilePage() {
                   </div>
                 ) : (
                   <>
-                    <input {...profileForm.register('tcKimlik')} inputMode="numeric" maxLength={11} placeholder={profile.tcKimlikVar ? 'Yeni numarayı gir' : '10000000000'} style={inp(!!profileForm.formState.errors.tcKimlik)} />
+                    <input {...profileForm.register('tcKimlik')} inputMode="numeric" maxLength={11} placeholder={profile?.tcKimlikVar ? 'Yeni numarayı gir' : '10000000000'} style={inp(!!profileForm.formState.errors.tcKimlik)} />
                     {profileForm.formState.errors.tcKimlik && <p style={{ marginTop: 5, fontSize: 12, color: 'var(--bad)', fontFamily: 'var(--font-mono)' }}>{profileForm.formState.errors.tcKimlik.message}</p>}
                   </>
                 )}
