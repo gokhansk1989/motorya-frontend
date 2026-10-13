@@ -14,6 +14,7 @@ import { CoverCropModal } from '@/components/listings/CoverCropModal';
 import { IL_ILCE, ALL_CITIES } from '@/lib/il-ilce';
 import { analytics } from '@/lib/analytics';
 import { olc, olcumBosalt, rastgeleKimlik, fotoHataKodu } from '@/lib/olcum';
+import { olcuAlani, cinsiyetAlaniGosterilsinMi } from '@/lib/kategoriAlanlari';
 import { useAuthStore } from '@/store/auth';
 import { formatPrice } from '@/lib/utils';
 
@@ -107,6 +108,38 @@ function WizardProgress({ step }: { step: number }) {
   );
 }
 
+/**
+ * Gonderim oncesi ozet.
+ *
+ * Son adimda fiyat alanlarindan dogrudan gonder dugmesine geciliyordu:
+ * kullanici uc adim once sectigi kategoriyi ya da yukledigi fotografi
+ * gormeden ilani gonderiyordu. Ozet, gonderilecek seyin tamamini tek
+ * ekranda gosteriyor ve her bolum duzenlemeye geri donuyor - veriler
+ * korunuyor, cunku adimlar DOM'dan cikmiyor, yalnizca gizleniyor.
+ */
+function OzetSatiri({ etiket, deger, adim, adimaGit }: {
+  etiket: string; deger?: React.ReactNode; adim: number; adimaGit: (n: number) => void;
+}) {
+  const bos = deger === undefined || deger === null || deger === '' ;
+  return (
+    <div className="m-ozet-satir">
+      <span className="m-ozet-etiket" style={{ fontSize: 12.5, color: 'var(--ink-3)', fontFamily: 'var(--font-display)' }}>{etiket}</span>
+      <span className="m-ozet-deger" style={{ fontSize: 13.5, color: bos ? 'var(--ink-3)' : 'var(--ink)', minWidth: 0, lineHeight: 1.5, wordBreak: 'break-word' }}>
+        {bos ? '—' : deger}
+      </span>
+      <button
+        type="button"
+        onClick={() => adimaGit(adim)}
+        aria-label={`${etiket} alanını düzenle`}
+        style={{ background: 'none', border: 0, padding: '0 0 0 8px', color: 'var(--accent)', fontSize: 12.5, cursor: 'pointer', fontFamily: 'var(--font-display)' }}
+        className="m-ozet-eylem"
+      >
+        Düzenle
+      </button>
+    </div>
+  );
+}
+
 export default function CreateListingPage() {
   const router = useRouter();
   const user = useAuthStore(s => s.user);
@@ -125,7 +158,7 @@ export default function CreateListingPage() {
   }, [router]);
   // TC Kimlik yoksa backend POST /listings 400 doner. Formu doldurup submit
   // ettikten sonra hata almaktansa acilista kontrol edelim.
-  const { data: me } = useQuery({
+  const { data: me, isLoading: meYukleniyor, isError: meHata } = useQuery({
     queryKey: ['me-tc-check'],
     queryFn: () => api.get('/users/me').then(r => r.data),
     enabled: !!user,
@@ -140,6 +173,11 @@ export default function CreateListingPage() {
   const akisId = useRef<string>('');
   if (!akisId.current) akisId.current = rastgeleKimlik();
   const akisBasladi = useRef(false);
+  // Cift tiklama ve Enter tekrarlari ayni ilani iki kez olusturmasin.
+  // Dugmenin disabled olmasi tek basina yetmiyor: iki tiklama ayni render
+  // doneminde gelirse ikisi de gecer. Ref senkron okunup yazildigi icin
+  // arada render beklemiyor.
+  const gonderimDevamEdiyor = useRef(false);
 
   const [step, setStep] = useState(1);
   const [imageUrls, setImageUrls] = useState<string[]>([]);
@@ -223,18 +261,30 @@ export default function CreateListingPage() {
 
   const l1Cats = useMemo(() => allCategories.filter(c => !c.parentId), [allCategories]);
   const l2Cats = useMemo(() => allCategories.filter(c => c.parentId === selL1), [allCategories, selL1]);
+  // Alt kategorisi olan bir ana kategori secildiyse alt kategori ZORUNLU.
+  // Arama ana kategoriyi alt kategorileriyle cozuyor, yani ana kategoriye
+  // yazilan ilan "Topcase" filtresinde hic gorunmuyor - satici icin sessiz
+  // bir kayip. Sunucu da ayni kurali uyguluyor.
+  const altKategoriZorunlu = l2Cats.length > 0;
 
-  const GENDER_CATS = new Set(['mont', 'pantolon', 'eldiven', 'bot-cizme', 'koruma', 'casual-giyim', 'kask', 'mx-off-road']);
+  // Ozellik alanlari ana kategoriye gore belirleniyor (lib/kategoriAlanlari).
+  // Onceki liste 'casual-giyim' ve 'mx-off-road' gibi artik var olmayan
+  // slug'lar tasiyordu; beden alani ise hic kosula bagli degildi, Topcase
+  // ilaninda bile "S, M, 42, XL…" ornegi cikiyordu.
   const l1Slug = useMemo(() => allCategories.find(c => c.id === selL1)?.slug ?? '', [allCategories, selL1]);
-  const showGender = GENDER_CATS.has(l1Slug);
+  const olcu = olcuAlani(l1Slug);
+  const showGender = cinsiyetAlaniGosterilsinMi(l1Slug);
 
-  const { register, handleSubmit, setValue, watch, trigger, formState: { errors, isSubmitting } } = useForm<any>({
+  const { register, handleSubmit, setValue, watch, trigger, clearErrors, formState: { errors, isSubmitting } } = useForm<any>({
     resolver: zodResolver(schema),
     defaultValues: { condition: 'GOOD' },
   });
   const watchedCategoryId = watch('categoryId');
   const watchedBrandId = watch('brandId');
   const watchedCity = watch('city');
+  // Ozet icin: gonderim oncesi kullaniciya ne gonderecegini gostermek
+  // istiyoruz, bu yuzden alanlari izliyoruz.
+  const ozetDegerleri = watch(['title', 'description', 'condition', 'price', 'originalPrice', 'city', 'district', 'sizeLabel']);
   const { data: priceGuide } = usePriceGuide(watchedCategoryId, watchedBrandId || undefined);
 
   useEffect(() => {
@@ -244,6 +294,10 @@ export default function CreateListingPage() {
 
   function handleL1Change(id: string) {
     setSelL1(id); setSelL2(''); setGender('');
+    // Olcu alani kategoriye gore degistigi icin eski deger tasinmamali:
+    // mont icin "L" yazip cantaya gecen kullanicinin ilani "L kapasiteli
+    // topcase" olarak kaydedilirdi.
+    setValue('sizeLabel', '');
   }
 
   const handleNext = async () => {
@@ -251,6 +305,11 @@ export default function CreateListingPage() {
       if (!selL1) {
         olc('ilan_form_hatasi', { alan: 'categoryId', kod: 'zorunlu' }, akisId.current);
         toast.error('Lütfen bir kategori seçin'); return;
+      }
+      if (altKategoriZorunlu && !selL2) {
+        olc('ilan_form_hatasi', { alan: 'altKategori', kod: 'zorunlu' }, akisId.current);
+        toast.error('Lütfen alt kategori seçin — ilanın doğru listede görünmesi için gerekli');
+        return;
       }
     }
     if (step === 2) {
@@ -272,6 +331,10 @@ export default function CreateListingPage() {
       }
     }
     olc('ilan_adim_tamamlandi', { adim: step }, akisId.current);
+    // Yeni adim temiz acilsin: o adimin alanlarinda onceki bir dogrulamadan
+    // kalmis hata varsa kullanici henuz hicbir sey yapmadan hatayla
+    // karsilasiyor.
+    if (step === 3) clearErrors(['price', 'originalPrice']);
     setStep(s => s + 1);
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
@@ -281,8 +344,19 @@ export default function CreateListingPage() {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
+  // Ozetten bir bolume donus. Adimlar DOM'dan cikmadigi icin girilen
+  // bilgiler korunuyor; dogrulama hatasi tasimamak icin o adimin
+  // alanlarindaki eski hatalar temizleniyor.
+  const adimaGit = (n: number) => {
+    if (n === 4) clearErrors(['price', 'originalPrice']);
+    setStep(n);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
   const onSubmit = async (data: FormData) => {
     if (imageUrls.length === 0) { toast.error('En az bir fotoğraf ekleyin'); return; }
+    if (gonderimDevamEdiyor.current) return;
+    gonderimDevamEdiyor.current = true;
     try {
       const olusan = await createListing.mutateAsync({
         ...data,
@@ -298,24 +372,71 @@ export default function CreateListingPage() {
       olc('ilan_gonderildi', { listingId: (olusan as any)?.id }, akisId.current);
       olcumBosalt();
       analytics.listingCreated({ price: Number(data.price) || undefined });
-      toast.success('İlanınız oluşturuldu! Onaylandığında yayına alınacak.');
+      // "Yayinlandi" demiyoruz: ilan PENDING_REVIEW durumunda, moderasyondan
+      // gecmeden kimse goremiyor. Gonderildi ile yayinlandi ayri.
+      toast.success('İlanın onaya gönderildi. Onaylandığında yayına alınacak ve sana haber vereceğiz.');
       router.push('/ilanlarim');
     } catch (err: any) {
       olc('ilan_form_hatasi', { alan: 'gonderim', kod: String(err?.response?.status ?? 'ag') }, akisId.current);
       const msg = err?.response?.data?.message;
       toast.error(Array.isArray(msg) ? msg.join(', ') : (msg ?? 'İlan oluşturulamadı'));
+      // Hata halinde kilidi birak: kullanici duzeltip tekrar gonderebilsin.
+      // Basaride birakmiyoruz, zaten /ilanlarim'a gidiyoruz.
+      gonderimDevamEdiyor.current = false;
     }
   };
 
   // Tum hook'lar cagrildiktan sonra guard: hooks order kuralini bozmuyoruz.
   if (!authReady || !user) return null;
+
+  // Uygunluk BILINMEDEN form gosterilmiyor.
+  //
+  // Onceden kosul `me && !me.tcKimlikVar` idi: sorgu ucarken `me` undefined
+  // oldugu icin kosul false kaliyor ve KATEGORI FORMU aciliyordu. Yanit
+  // gelince ekran T.C. adimina atliyordu. Yerelde 76 ms, gercek agda
+  // 300-800 ms suren bir kirpisma; kullanici yanlis formu goruyor ve
+  // yazmaya baslayabiliyor.
+  if (meYukleniyor || !me) {
+    return (
+      <div className="m-wrap" style={{ maxWidth: 720, paddingTop: 28, paddingBottom: 80 }}>
+        <div style={{ marginBottom: 20 }}>
+          <h1 className="m-display" style={{ fontSize: 26, color: 'var(--ink)', marginBottom: 4 }}>İlan Ver</h1>
+          <p style={{ color: 'var(--ink-3)', fontSize: 14 }}>Hesabın hazırlanıyor…</p>
+        </div>
+        {/* Iskelet: formun yerini tutuyor, boylece yanit gelince sayfa
+            zıplamiyor. */}
+        <div className="m-form-card" style={{ ...card, display: 'flex', alignItems: 'center', gap: 12 }} aria-busy="true" aria-live="polite">
+          <span style={{ width: 18, height: 18, border: '2px solid var(--accent)', borderTopColor: 'transparent', borderRadius: '50%', animation: 'spin 0.7s linear infinite', display: 'inline-block', flexShrink: 0 }} />
+          <span style={{ fontSize: 14, color: 'var(--ink-2)' }}>İlan verme bilgileri kontrol ediliyor…</span>
+        </div>
+      </div>
+    );
+  }
+
+  // Kontrol basarisizsa da form acilmiyor: eksik bilgiyle doldurulan formun
+  // gonderimde reddedilmesi, en bastan soylemekten daha kotu.
+  if (meHata) {
+    return (
+      <div className="m-wrap" style={{ maxWidth: 720, paddingTop: 28, paddingBottom: 80 }}>
+        <div className="m-form-card" style={card}>
+          <p className="m-display" style={{ fontSize: 18, marginBottom: 8 }}>Bilgilerine ulaşamadık</p>
+          <p style={{ fontSize: 14, color: 'var(--ink-3)', marginBottom: 16, lineHeight: 1.6 }}>
+            İlan verme kontrolü yapılamadı. Bağlantını kontrol edip tekrar dene.
+          </p>
+          <button type="button" onClick={() => window.location.reload()} className="m-btn m-btn-primary" style={{ height: 44, padding: '0 20px' }}>
+            Tekrar dene
+          </button>
+        </div>
+      </div>
+    );
+  }
   // TC kimlik numarasi ilan vermek icin gerekli. Onceden kullanici profile
   // yonlendiriliyordu: baska bir sayfaya gidip donmek, akisi kiriyordu.
   // Artik numara burada, akistan cikmadan alinabiliyor.
   // /users/me artik ham T.C. numarasini dondurmuyor (maskeleme sonrasi);
   // yalnizca tcKimlikVar bayragi geliyor. Eski alan adi okundugu surece
   // numarasi kayitli kullanicilar da bu kapiya dusuyordu.
-  if (me && !me.tcKimlikVar) {
+  if (!me.tcKimlikVar) {
     return <TcKimlikAdimi />;
   }
 
@@ -328,7 +449,31 @@ export default function CreateListingPage() {
 
       <WizardProgress step={step} />
 
-      <form onSubmit={handleSubmit(onSubmit)}>
+      {/* Ortulu gonderim son adimdan ONCE kesiliyor.
+
+          Tarayici, metin alaninda Enter'a basildiginda formu submit ediyor.
+          Dort adim tek <form> icinde durdugu icin handleSubmit TUM semayi
+          dogruluyordu: kullanici 1. adimdayken fiyat hatasi GIZLI 4. adima
+          yaziliyor, hicbir uyari gorunmuyor, sonra fiyat adimina gecince
+          "Fiyat giriniz" hazir bekliyordu.
+
+          Korumayi onSubmit'in ICINE koymak yetmiyor - olculdu, hata devam
+          etti: handleSubmit dogrulamayi once yapiyor ve dogrulama
+          basarisizsa onSubmit'i hic cagirmiyor, yani oradaki kontrol
+          ulasilamaz. Kesme handleSubmit'ten ONCE olmali.
+
+          Ortulu gonderimi "Devam"a cevirmek hem karismayi bitiriyor hem de
+          Enter'in beklenen davranisini veriyor. */}
+      <form
+        onSubmit={(e) => {
+          if (step < 4) {
+            e.preventDefault();
+            void handleNext();
+            return;
+          }
+          return handleSubmit(onSubmit)(e);
+        }}
+      >
 
         {/* ── STEP 1: Kategori ── */}
         <div className="m-form-card" style={{ ...card, display: step === 1 ? 'block' : 'none' }}>
@@ -505,10 +650,12 @@ export default function CreateListingPage() {
                     <ChevronDown size={15} style={{ position: 'absolute', right: 12, top: '50%', transform: 'translateY(-50%)', color: 'var(--ink-3)', pointerEvents: 'none' }} />
                   </div>
                 </div>
-                <div>
-                  <label style={lbl}>Beden</label>
-                  <input {...register('sizeLabel')} style={inputSt()} placeholder="S, M, 42, XL…" />
-                </div>
+                {olcu.tur !== 'yok' && (
+                  <div>
+                    <label style={lbl}>{olcu.etiket}</label>
+                    <input {...register('sizeLabel')} style={inputSt()} placeholder={olcu.ipucu} />
+                  </div>
+                )}
                 <div>
                   <label style={lbl}>İl</label>
                   <div style={{ position: 'relative' }}>
@@ -585,6 +732,79 @@ export default function CreateListingPage() {
             )}
           </div>
 
+        {/* ── Gonderim oncesi ozet (yalnizca son adimda) ── */}
+        {step === 4 && (
+          <div className="m-form-card" style={{ ...card, paddingTop: 20 }}>
+            <p style={{ ...lbl, fontSize: 15, marginBottom: 4 }}>Gönderim Özeti</p>
+            <p style={{ fontSize: 12.5, color: 'var(--ink-3)', marginBottom: 14, lineHeight: 1.55 }}>
+              Göndermeden önce kontrol et. Her satırı düzenleyebilirsin; girdiğin bilgiler korunur.
+            </p>
+
+            {/* Fotograflar: kapak ilk sirada, sayisiyla birlikte */}
+            <div className="m-ozet-satir">
+              <span className="m-ozet-etiket" style={{ fontSize: 12.5, color: 'var(--ink-3)', fontFamily: 'var(--font-display)' }}>Fotoğraflar</span>
+              <span className="m-ozet-deger" style={{ minWidth: 0 }}>
+                {imageUrls.length === 0 ? (
+                  <span style={{ fontSize: 13.5, color: 'var(--bad)' }}>Fotoğraf yok</span>
+                ) : (
+                  <span style={{ display: 'flex', gap: 6, flexWrap: 'wrap', alignItems: 'center' }}>
+                    {imageUrls.slice(0, 4).map((url, i) => (
+                      <img key={i} src={url} alt="" style={{ width: 40, height: 40, objectFit: 'cover', borderRadius: 6, border: i === 0 ? '2px solid var(--accent)' : '1px solid var(--line)' }} />
+                    ))}
+                    <span style={{ fontSize: 12.5, color: 'var(--ink-3)', fontFamily: 'var(--font-mono)' }}>
+                      {imageUrls.length} fotoğraf
+                    </span>
+                  </span>
+                )}
+              </span>
+              <button type="button" onClick={() => adimaGit(2)} aria-label="Fotoğrafları düzenle" className="m-ozet-eylem" style={{ background: 'none', border: 0, padding: '0 0 0 8px', color: 'var(--accent)', fontSize: 12.5, cursor: 'pointer', fontFamily: 'var(--font-display)' }}>
+                Düzenle
+              </button>
+            </div>
+
+            <OzetSatiri etiket="Kategori" adim={1} adimaGit={adimaGit}
+              deger={[
+                allCategories.find(c => c.id === selL1)?.name,
+                allCategories.find(c => c.id === selL2)?.name,
+              ].filter(Boolean).join(' › ')} />
+            <OzetSatiri etiket="Başlık" adim={3} adimaGit={adimaGit} deger={ozetDegerleri[0]} />
+            <OzetSatiri etiket="Açıklama" adim={3} adimaGit={adimaGit}
+              deger={ozetDegerleri[1] ? String(ozetDegerleri[1]).slice(0, 140) + (String(ozetDegerleri[1]).length > 140 ? '…' : '') : ''} />
+            <OzetSatiri etiket="Marka" adim={3} adimaGit={adimaGit}
+              deger={(brands ?? []).find((b: any) => b.id === watchedBrandId)?.name} />
+            <OzetSatiri etiket="Durum" adim={3} adimaGit={adimaGit}
+              deger={CONDITIONS.find(c => c.value === ozetDegerleri[2])?.label} />
+            {olcu.tur !== 'yok' && (
+              <OzetSatiri etiket={olcu.etiket} adim={3} adimaGit={adimaGit} deger={ozetDegerleri[7]} />
+            )}
+            {showGender && (
+              <OzetSatiri etiket="Cinsiyet" adim={3} adimaGit={adimaGit}
+                deger={gender ? gender.charAt(0) + gender.slice(1).toLowerCase() : ''} />
+            )}
+            <OzetSatiri etiket="Konum" adim={3} adimaGit={adimaGit}
+              deger={[ozetDegerleri[5], ozetDegerleri[6]].filter(Boolean).join(' / ')} />
+            <OzetSatiri etiket="Fiyat" adim={4} adimaGit={adimaGit}
+              deger={ozetDegerleri[3] ? formatPrice(Number(ozetDegerleri[3])) : ''} />
+            {ozetDegerleri[4] ? (
+              <OzetSatiri etiket="Liste fiyatı" adim={4} adimaGit={adimaGit} deger={formatPrice(Number(ozetDegerleri[4]))} />
+            ) : null}
+
+            {/* Gonderildi ile yayinlandi ayni sey degil; dugmeye basmadan
+                once bunu soylemek, onay beklerken "ilanim nerede" sorusunu
+                bastan cevapliyor. */}
+            {/* Metin TEK bir span icinde: kapsayici flex oldugu icin cumleyi
+                dogrudan koymak metni ve <strong>'u ayri flex ogelerine
+                bolup dar ekranda uc sutun haline getiriyordu. */}
+            <p style={{ fontSize: 12.5, color: 'var(--ink-3)', marginTop: 14, lineHeight: 1.6, display: 'flex', gap: 7, alignItems: 'flex-start' }}>
+              <Check size={14} style={{ color: 'var(--accent)', flexShrink: 0, marginTop: 2 }} />
+              <span>
+                Gönderdiğinde ilanın <strong style={{ color: 'var(--ink-2)', fontWeight: 600 }}>onay bekliyor</strong> durumuna
+                geçer. Ekip onayladıktan sonra yayına alınır ve sana haber veririz.
+              </span>
+            </p>
+          </div>
+        )}
+
         {/* Navigation */}
         <div style={{ display: 'flex', gap: 12, marginTop: 8 }}>
           {step > 1 && (
@@ -618,7 +838,7 @@ export default function CreateListingPage() {
               {(isSubmitting || createListing.isPending) ? (
                 <span style={{ width: 20, height: 20, border: '2px solid var(--accent-ink)', borderTopColor: 'transparent', borderRadius: '50%', animation: 'spin 0.7s linear infinite', display: 'inline-block' }} />
               ) : (
-                <><Zap size={20} fill="currentColor" strokeWidth={0} />İlanı Yayınla</>
+                <><Zap size={20} fill="currentColor" strokeWidth={0} />Onaya Gönder</>
               )}
             </button>
           )}

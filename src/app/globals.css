@@ -668,3 +668,29 @@ body.m-menu-acik .m-fixed-bottom-stack { display: none; }
 /* Çerez çubuğunun display'i satır içi stilde tanımlı; satır içi stil
  * stylesheet'i ezdiği için burada !important şart. */
 body.m-menu-acik .m-cerez-cubugu { display: none !important; }
+
+/* ── Gonderim ozeti satirlari ──────────────────────────────────────────
+   Genis ekranda etiket solda sabit sutunda duruyor, deger ortada,
+   "Düzenle" sagda. 400px altinda bu uclu duzen degere cok az yer
+   birakiyordu: 360px'te aciklama dokuz satira yayiliyordu. Dar ekranda
+   etiketi degerin ustune aliyoruz, deger tam genisligi kullaniyor. */
+.m-ozet-satir {
+  display: grid;
+  grid-template-columns: 104px 1fr auto;
+  align-items: start;
+  gap: 10px;
+  padding: 9px 0;
+  border-bottom: 1px solid var(--line);
+}
+
+@media (max-width: 400px) {
+  .m-ozet-satir {
+    grid-template-columns: 1fr auto;
+    gap: 2px 10px;
+  }
+  /* Etiket ustte, tam satir boyunca; "Düzenle" etiketle ayni hizada
+     kalsin ki dokunma hedefi satirin basinda olsun. */
+  .m-ozet-satir > .m-ozet-etiket { grid-column: 1; grid-row: 1; }
+  .m-ozet-satir > .m-ozet-deger  { grid-column: 1 / -1; grid-row: 2; }
+  .m-ozet-satir > .m-ozet-eylem  { grid-column: 2; grid-row: 1; }
+}
