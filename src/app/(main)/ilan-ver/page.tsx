@@ -15,6 +15,7 @@ import { IL_ILCE, ALL_CITIES } from '@/lib/il-ilce';
 import { analytics } from '@/lib/analytics';
 import { olc, olcumBosalt, rastgeleKimlik, fotoHataKodu } from '@/lib/olcum';
 import { olcuAlani, cinsiyetAlaniGosterilsinMi } from '@/lib/kategoriAlanlari';
+import { markalariGrupla } from '@/lib/markaGruplama';
 import { useAuthStore } from '@/store/auth';
 import { formatPrice } from '@/lib/utils';
 
@@ -254,10 +255,16 @@ export default function CreateListingPage() {
   };
 
   const { data: allCategories = [] } = useCategories();
+  // Marka listesi secilen kategoriye gore SIRALANIYOR, kisalmiyor: 154
+  // markanin tamami geliyor, o kategoride yaygin olanlar basa aliniyor.
+  // Kategori henuz secilmemisse duz alfabetik liste.
   const { data: brands } = useQuery({
-    queryKey: ['brands'],
-    queryFn: () => api.get('/listings/meta/brands').then(r => r.data),
+    queryKey: ['brands', selL2 || selL1 || ''],
+    queryFn: () => api
+      .get('/listings/meta/brands', { params: (selL2 || selL1) ? { categoryId: selL2 || selL1 } : {} })
+      .then(r => r.data),
   });
+  const markaGruplari = useMemo(() => markalariGrupla(brands), [brands]);
 
   const l1Cats = useMemo(() => allCategories.filter(c => !c.parentId), [allCategories]);
   const l2Cats = useMemo(() => allCategories.filter(c => c.parentId === selL1), [allCategories, selL1]);
@@ -629,9 +636,24 @@ export default function CreateListingPage() {
             <div className="m-form-card" style={card}>
               <p style={{ ...lbl, fontSize: 15, marginBottom: 14 }}>Marka</p>
               <div style={{ position: 'relative' }}>
+                {/* optgroup: mobil tarayicilarin kendi secicisi de basliklari
+                    gosteriyor, yani gruplama telefonda da calisiyor. Ozel bir
+                    acilir liste yazmiyoruz - yerel secici erisilebilirlik ve
+                    dokunma davranisi acisindan daha saglam. */}
                 <select {...register('brandId')} style={selectSt}>
                   <option value="">Seçin…</option>
-                  {brands?.map((b: any) => <option key={b.id} value={b.id}>{b.name}</option>)}
+                  {markaGruplari.oneCikan.length > 0 && (
+                    <optgroup label="Bu kategoride yaygın">
+                      {markaGruplari.oneCikan.map(b => <option key={b.id} value={b.id}>{b.name}</option>)}
+                    </optgroup>
+                  )}
+                  {markaGruplari.oneCikan.length > 0 ? (
+                    <optgroup label="Tüm markalar">
+                      {markaGruplari.digerleri.map(b => <option key={b.id} value={b.id}>{b.name}</option>)}
+                    </optgroup>
+                  ) : (
+                    markaGruplari.digerleri.map(b => <option key={b.id} value={b.id}>{b.name}</option>)
+                  )}
                 </select>
                 <ChevronDown size={15} style={{ position: 'absolute', right: 12, top: '50%', transform: 'translateY(-50%)', color: 'var(--ink-3)', pointerEvents: 'none' }} />
               </div>

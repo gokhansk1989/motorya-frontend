@@ -9,6 +9,7 @@ import { api } from '@/lib/api';
 import { useAuthStore } from '@/store/auth';
 import { analytics } from '@/lib/analytics';
 import { olc } from '@/lib/olcum';
+import { markalariGrupla } from '@/lib/markaGruplama';
 import Link from 'next/link';
 import { Search, SlidersHorizontal, X, BellPlus, Info } from 'lucide-react';
 import { AdSlot } from '@/components/ui/AdSlot';
@@ -124,9 +125,22 @@ function FilterFields({
           style={{ height: 38 }}
         >
           <option value="">Tümü</option>
-          {brands.map((b: any) => (
-            <option key={b.id} value={b.id}>{b.name}</option>
-          ))}
+          {(() => {
+            const g = markalariGrupla(brands);
+            if (g.oneCikan.length === 0) {
+              return g.digerleri.map((b) => <option key={b.id} value={b.id}>{b.name}</option>);
+            }
+            return (
+              <>
+                <optgroup label="Bu kategoride yaygın">
+                  {g.oneCikan.map((b) => <option key={b.id} value={b.id}>{b.name}</option>)}
+                </optgroup>
+                <optgroup label="Tüm markalar">
+                  {g.digerleri.map((b) => <option key={b.id} value={b.id}>{b.name}</option>)}
+                </optgroup>
+              </>
+            );
+          })()}
         </select>
       </div>
 
@@ -293,9 +307,13 @@ function SearchPageInner() {
     queryFn: () => api.get('/listings/meta/categories').then((r) => r.data),
   });
 
+  // Marka listesi secili kategoriye gore siralaniyor, kisalmiyor: filtreyi
+  // daraltmak kullanicinin aradigi markayi gizleyebilirdi.
   const { data: brands } = useQuery({
-    queryKey: ['brands'],
-    queryFn: () => api.get('/listings/meta/brands').then((r) => r.data),
+    queryKey: ['brands', categoryId],
+    queryFn: () => api
+      .get('/listings/meta/brands', { params: categoryId ? { categoryId } : {} })
+      .then((r) => r.data),
   });
 
   // Beden ve sehir secenekleri yayindaki ilanlardan gelir; secilen kategoriye gore daralir.
