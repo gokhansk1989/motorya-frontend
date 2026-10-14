@@ -632,7 +632,12 @@ export default function ListingDetailClient({ initialListing }: { initialListing
                   İlanı Düzenle
                 </Link>
                 {/* Story karti: 1080x1920 gorsel backend'de uretilir. Tam Story
-                    olcusunde ki Instagram'a yuklerken kirpma gerekmesin. */}
+                    olcusunde ki Instagram'a yuklerken kirpma gerekmesin.
+
+                    Test ilaninda dugme GOSTERILMIYOR: sunucu bu ilanlara kart
+                    uretmiyor, dugme dursa tiklayan satici sebepsiz bir hata
+                    alirdi. */}
+                {!listing.isTest && (
                 <button
                   onClick={async () => {
                     try {
@@ -655,6 +660,7 @@ export default function ListingDetailClient({ initialListing }: { initialListing
                   <ImageDown size={16} />
                   Story kartı indir
                 </button>
+                )}
 
                 {/* Instagram'a otomatik paylasim YAPMIYORUZ; gorsel kullanicinin
                     cihazina iniyor, paylasimi kendisi yapiyor. Baglanti da
