@@ -16,6 +16,7 @@ import { analytics } from '@/lib/analytics';
 import { olc, olcumBosalt, rastgeleKimlik, fotoHataKodu } from '@/lib/olcum';
 import { olcuAlani, cinsiyetAlaniGosterilsinMi } from '@/lib/kategoriAlanlari';
 import { markalariGrupla } from '@/lib/markaGruplama';
+import { taslagiGetir, taslagiKaydet, taslagiSil, taslakDoluMu, taslakZamani, type Taslak } from '@/lib/taslak';
 import { useAuthStore } from '@/store/auth';
 import { formatPrice } from '@/lib/utils';
 
@@ -180,6 +181,14 @@ export default function CreateListingPage() {
   // arada render beklemiyor.
   const gonderimDevamEdiyor = useRef(false);
 
+  // ── Taslak ────────────────────────────────────────────────────────
+  // Taslak sunucuda duruyor (lib/taslak.ts). Burada uc durum var:
+  //   null     -> henuz bakilmadi
+  //   Taslak   -> dolu bir taslak bulundu, kullaniciya soruluyor
+  //   'yok'    -> taslak yok ya da karar verildi, form normal acik
+  const [taslak, setTaslak] = useState<Taslak | null>(null);
+  const [taslakDurumu, setTaslakDurumu] = useState<'bakiliyor' | 'soruluyor' | 'hazir'>('bakiliyor');
+
   const [step, setStep] = useState(1);
   const [imageUrls, setImageUrls] = useState<string[]>([]);
   const [uploading, setUploading] = useState(false);
@@ -307,6 +316,79 @@ export default function CreateListingPage() {
     setValue('sizeLabel', '');
   }
 
+  // Taslagi bir kez oku. Oturum hazir olmadan okumak anlamsiz: taslak
+  // kullaniciya ait, jetonsuz istek bos doner.
+  useEffect(() => {
+    if (!authReady || !user || !me?.tcKimlikVar) return;
+    let iptal = false;
+    (async () => {
+      const t = await taslagiGetir();
+      if (iptal) return;
+      if (taslakDoluMu(t)) { setTaslak(t); setTaslakDurumu('soruluyor'); }
+      else setTaslakDurumu('hazir');
+    })();
+    return () => { iptal = true; };
+  }, [authReady, user, me?.tcKimlikVar]);
+
+  // Otomatik kaydetme: adim degisince ve yazmaya ara verilince.
+  //
+  // Her tusa basista kaydetmek sunucuyu gereksiz mesgul eder; hic
+  // kaydetmemek de sayfa yenilenince formu kaybettirir. 1,5 saniyelik
+  // bekleme ikisinin arasi.
+  const kaydetZamani = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const izlenen = watch();
+  useEffect(() => {
+    if (taslakDurumu !== 'hazir') return;          // karar verilmeden yazma
+    if (gonderimDevamEdiyor.current) return;       // gonderim sirasinda yazma
+    // Bos formu kaydetme. Formu acip hicbir sey yazmadan cikan herkes
+    // icin bir taslak satiri acmak hem gereksiz, hem de bir sonraki
+    // ziyarette "devam et" teklifi gosterilmese bile tabloyu sisirir.
+    const doluMu =
+      imageUrls.length > 0 ||
+      !!selL1 ||
+      Object.values(izlenen as Record<string, unknown>).some(
+        (v) => typeof v === 'string' && v.trim().length > 0 && v !== 'GOOD',
+      );
+    if (!doluMu) return;
+
+    if (kaydetZamani.current) clearTimeout(kaydetZamani.current);
+    kaydetZamani.current = setTimeout(() => {
+      void taslagiKaydet({
+        payload: {
+          ...izlenen,
+          categoryId: selL1 || '',
+          altKategoriId: selL2 || '',
+          gender: gender || '',
+        },
+        imageUrls,
+        step,
+      });
+    }, 1500);
+    return () => { if (kaydetZamani.current) clearTimeout(kaydetZamani.current); };
+  }, [taslakDurumu, izlenen, imageUrls, step, selL1, selL2, gender]);
+
+  /** "Taslagina devam et": kaydedilmis degerleri forma yaz. */
+  const taslagaDevamEt = () => {
+    if (!taslak) return;
+    const p = (taslak.payload ?? {}) as Record<string, string>;
+    if (p.categoryId) setSelL1(p.categoryId);
+    if (p.altKategoriId) setSelL2(p.altKategoriId);
+    if (p.gender) setGender(p.gender);
+    for (const alan of ['title', 'description', 'brandId', 'condition', 'sizeLabel', 'city', 'district', 'price', 'originalPrice'] as const) {
+      if (p[alan]) setValue(alan, p[alan]);
+    }
+    setImageUrls(taslak.imageUrls ?? []);
+    setStep(Math.min(Math.max(taslak.step ?? 1, 1), 4));
+    setTaslakDurumu('hazir');
+  };
+
+  /** "Yeni ilan baslat": taslagi sil, formu bos birak. */
+  const yeniIlanBaslat = async () => {
+    setTaslakDurumu('hazir');
+    setTaslak(null);
+    await taslagiSil();
+  };
+
   const handleNext = async () => {
     if (step === 1) {
       if (!selL1) {
@@ -378,6 +460,9 @@ export default function CreateListingPage() {
       // olayi uretmiyor; onun tamamlanmasi bu olayin kendisi.
       olc('ilan_gonderildi', { listingId: (olusan as any)?.id }, akisId.current);
       olcumBosalt();
+      // Ilan olustu; taslak artik gereksiz. BASARISIZ gonderimde
+      // silinmiyor (catch dalinda yok) - kullanici formu kaybetmesin.
+      void taslagiSil();
       analytics.listingCreated({ price: Number(data.price) || undefined });
       // "Yayinlandi" demiyoruz: ilan PENDING_REVIEW durumunda, moderasyondan
       // gecmeden kimse goremiyor. Gonderildi ile yayinlandi ayri.
@@ -445,6 +530,69 @@ export default function CreateListingPage() {
   // numarasi kayitli kullanicilar da bu kapiya dusuyordu.
   if (!me.tcKimlikVar) {
     return <TcKimlikAdimi />;
+  }
+
+  // Taslaga bakilirken formu acmiyoruz: acip sonra uzerine taslak yazmak,
+  // kullanicinin yazdigini silmek olurdu.
+  if (taslakDurumu === 'bakiliyor') {
+    return (
+      <div className="m-wrap" style={{ maxWidth: 720, paddingTop: 28, paddingBottom: 80 }}>
+        <div className="m-form-card" style={{ ...card, display: 'flex', alignItems: 'center', gap: 12 }} aria-busy="true">
+          <span style={{ width: 18, height: 18, border: '2px solid var(--accent)', borderTopColor: 'transparent', borderRadius: '50%', animation: 'spin 0.7s linear infinite', display: 'inline-block', flexShrink: 0 }} />
+          <span style={{ fontSize: 14, color: 'var(--ink-2)' }}>Kayıtlı taslağın kontrol ediliyor…</span>
+        </div>
+      </div>
+    );
+  }
+
+  if (taslakDurumu === 'soruluyor' && taslak) {
+    const p = (taslak.payload ?? {}) as Record<string, string>;
+    const ozet = [
+      allCategories.find(c => c.id === (p.altKategoriId || p.categoryId))?.name,
+      p.title,
+      taslak.imageUrls?.length ? `${taslak.imageUrls.length} fotoğraf` : null,
+    ].filter(Boolean);
+
+    return (
+      <div className="m-wrap" style={{ maxWidth: 560, paddingTop: 40, paddingBottom: 80 }}>
+        <div className="m-form-card" style={card}>
+          <h1 className="m-display" style={{ fontSize: 22, color: 'var(--ink)', marginBottom: 8 }}>
+            Yarım kalmış bir ilanın var
+          </h1>
+          <p style={{ fontSize: 14, color: 'var(--ink-3)', lineHeight: 1.6, marginBottom: 16 }}>
+            {taslakZamani(taslak.updatedAt)} kaydedildi. Kaldığın yerden devam edebilir
+            ya da sıfırdan başlayabilirsin.
+          </p>
+
+          {ozet.length > 0 && (
+            <div style={{ display: 'flex', gap: 10, alignItems: 'center', padding: '12px 14px', background: 'var(--bg-2)', borderRadius: 10, marginBottom: 20 }}>
+              {taslak.imageUrls?.[0] && (
+                <img src={taslak.imageUrls[0]} alt="" style={{ width: 44, height: 44, objectFit: 'cover', borderRadius: 8, flexShrink: 0 }} />
+              )}
+              <span style={{ fontSize: 13.5, color: 'var(--ink-2)', lineHeight: 1.5, minWidth: 0 }}>
+                {ozet.join(' · ')}
+              </span>
+            </div>
+          )}
+
+          <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
+            <button type="button" onClick={taslagaDevamEt} className="m-btn m-btn-primary"
+              style={{ flex: 1, minWidth: 170, height: 46, fontSize: 15, fontWeight: 700 }}>
+              Taslağına devam et
+            </button>
+            <button type="button" onClick={() => { void yeniIlanBaslat(); }} className="m-btn m-btn-ghost"
+              style={{ flex: 1, minWidth: 150, height: 46, fontSize: 15 }}>
+              Yeni ilan başlat
+            </button>
+          </div>
+          {/* "Yeni ilan baslat" taslagi siliyor; bunu soylemeden yapmak,
+              kullanicinin isini geri alinamaz sekilde silmek olurdu. */}
+          <p style={{ fontSize: 12, color: 'var(--ink-3)', marginTop: 12, lineHeight: 1.5 }}>
+            Yeni ilan başlatırsan kaydedilmiş taslak silinir.
+          </p>
+        </div>
+      </div>
+    );
   }
 
   return (

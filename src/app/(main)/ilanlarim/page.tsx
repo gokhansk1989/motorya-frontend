@@ -3,7 +3,7 @@ import { useState } from 'react';
 import Link from 'next/link';
 import { useMyListings } from '@/hooks/useListings';
 import { formatPrice } from '@/lib/utils';
-import { Plus, Trash2, Package, Pencil, PauseCircle, PlayCircle } from 'lucide-react';
+import { Plus, Trash2, Package, Pencil, PauseCircle, PlayCircle, Clock} from 'lucide-react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { api } from '@/lib/api';
 import toast from 'react-hot-toast';
@@ -164,9 +164,23 @@ export default function MyListingsPage() {
                     <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}>
                       <p style={{ fontWeight: 600, color: 'var(--ink)', fontSize: 15, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', flex: 1, minWidth: 0 }}>{l.title}</p>
                       <span style={{ flexShrink: 0, fontSize: 10.5, fontWeight: 700, fontFamily: 'var(--font-mono)', padding: '2px 7px', borderRadius: 20, background: st.bg, color: st.color }}>{st.label}</span>
+                      {/* Test ilani rozetini SAHIBI goruyor. Ilani neden
+                          hicbir listede bulamadigini bilmesi gerekiyor. */}
+                      {l.isTest && (
+                        <span style={{ flexShrink: 0, fontSize: 10.5, fontWeight: 700, fontFamily: 'var(--font-mono)', padding: '2px 7px', borderRadius: 20, background: 'var(--bg-3)', color: 'var(--ink-3)' }}>TEST</span>
+                      )}
                     </div>
                     <p style={{ color: 'var(--accent)', fontWeight: 700, fontSize: 15.5, fontFamily: 'var(--font-mono)' }}>{formatPrice(l.price)}</p>
                     <p style={{ fontSize: 12.5, color: 'var(--ink-2)', marginTop: 3 }}>{l.viewCount ?? 0} görüntülenme · {l.favoriteCount ?? 0} favori</p>
+                    {/* Hangi surumun yayinda oldugunu soylemek sart: satici
+                        degisikligi yapti, ilanda eski halini goruyor ve
+                        "kaydedilmedi mi" diye tekrar tekrar deniyor. */}
+                    {l.degisiklikIncelemede && (
+                      <p style={{ fontSize: 12, color: '#f59e0b', marginTop: 5, display: 'flex', alignItems: 'center', gap: 5, lineHeight: 1.45 }}>
+                        <Clock size={12} style={{ flexShrink: 0 }} />
+                        Değişikliklerin inceleniyor — şu an ilanın <strong style={{ fontWeight: 600 }}>önceki hali</strong> yayında
+                      </p>
+                    )}
                   </div>
                 </Link>
                 <div className="m-my-listing-actions">

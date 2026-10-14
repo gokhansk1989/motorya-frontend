@@ -66,6 +66,17 @@ export function useListingBySlug(slug: string, initialData?: unknown) {
     queryFn: () => api.get('/listings/by-slug', { params: { s: slug } }).then((r) => r.data),
     enabled: !!slug,
     initialData: initialData ?? undefined,
+    // SSR verisi OTURUMSUZ cekiliyor, dolayisiyla sahibe ozel alanlari
+    // (bekleyen duzenleme, favori durumu) tasimiyor. Global staleTime 30 sn
+    // oldugu icin istemci de yeniden cekmiyordu ve satici "degisikliklerin
+    // inceleniyor" uyarisini hic gormuyordu.
+    //
+    // initialDataUpdatedAt: 0 -> SSR verisi hemen bayat sayiliyor: sayfa
+    // yine aninda doluyor, arkasindan jetonlu istek gidiyor ve sahibe ozel
+    // alanlar yerine oturuyor. Sunucu bu alanlari zaten yalnizca sahibine
+    // donduruyor, yani onbelleklenebilir SSR yanitinda hicbir zaman yer
+    // almiyorlar.
+    initialDataUpdatedAt: initialData ? 0 : undefined,
   });
 }
 

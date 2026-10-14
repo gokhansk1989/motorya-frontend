@@ -8,7 +8,7 @@ import { useAuthStore } from '@/store/auth';
 import { api } from '@/lib/api';
 import { formatPrice, timeAgo } from '@/lib/utils';
 import { API_URL } from '@/lib/apiBase';
-import { MapPin, Eye, Heart, Star, ChevronLeft, ChevronRight, Shield, Truck, Users, Share2, ImageDown, Flag, MessageCircle, BellPlus } from 'lucide-react';
+import { MapPin, Eye, Heart, Star, ChevronLeft, ChevronRight, Shield, Truck, Users, Share2, ImageDown, Flag, MessageCircle, BellPlus, Clock, FlaskConical} from 'lucide-react';
 import { useStartConversation } from '@/hooks/useMessages';
 import { trackListingView, useRecentlyViewedIds } from '@/hooks/useRecentlyViewed';
 import { ListingCard } from '@/components/listings/ListingCard';
@@ -292,6 +292,49 @@ export default function ListingDetailClient({ initialListing }: { initialListing
         {listing.category && <ChevronRight size={13} style={{ opacity: 0.5 }} />}
         <span style={{ color: 'var(--ink-2)' }}>{listing.title}</span>
       </div>
+
+      {/* Saticiya hangi surumun yayinda oldugunu soyluyoruz.
+          Bu seride olculen asil sikinti su: satici degisikligi kaydediyor,
+          sayfada eski halini goruyor ve "kaydedilmedi mi" diye tekrar
+          tekrar deniyor. Sunucu bekleyen duzenlemeyi YALNIZCA sahibine
+          donduruyor; ziyaretci bu kutuyu hicbir kosulda gormuyor. */}
+      {isMine && listing.degisiklikIncelemede && (
+        <div style={{
+          display: 'flex', gap: 10, alignItems: 'flex-start', marginBottom: 16,
+          padding: '13px 15px', borderRadius: 12,
+          background: 'color-mix(in oklch, #f59e0b 9%, var(--bg-1))',
+          border: '1px solid color-mix(in oklch, #f59e0b 28%, transparent)',
+        }}>
+          <Clock size={16} style={{ color: '#f59e0b', flexShrink: 0, marginTop: 1 }} />
+          <div style={{ fontSize: 13.5, color: 'var(--ink-2)', lineHeight: 1.6 }}>
+            <strong style={{ color: 'var(--ink)', fontWeight: 600 }}>Değişikliklerin inceleniyor.</strong>{' '}
+            Bu sayfada ilanının <strong style={{ fontWeight: 600 }}>onaylanmış hali</strong> görünüyor —
+            alıcıların gördüğü de bu. Yeni halin onaylandığında otomatik olarak yayına geçecek,
+            sana haber vereceğiz.
+            {listing.bekleyenDuzenleme?.title && (
+              <div style={{ marginTop: 7, fontSize: 12.5, color: 'var(--ink-3)' }}>
+                İncelemedeki başlık: <span style={{ color: 'var(--ink-2)' }}>{listing.bekleyenDuzenleme.title}</span>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* Test ilani: sahibine neden hicbir listede gorunmedigini soyluyoruz. */}
+      {isMine && listing.isTest && (
+        <div style={{
+          display: 'flex', gap: 10, alignItems: 'flex-start', marginBottom: 16,
+          padding: '13px 15px', borderRadius: 12,
+          background: 'var(--bg-2)', border: '1px solid var(--line)',
+        }}>
+          <FlaskConical size={16} style={{ color: 'var(--ink-3)', flexShrink: 0, marginTop: 1 }} />
+          <div style={{ fontSize: 13.5, color: 'var(--ink-2)', lineHeight: 1.6 }}>
+            <strong style={{ color: 'var(--ink)', fontWeight: 600 }}>Bu ilan test olarak işaretli.</strong>{' '}
+            Aramada, kategori sayfalarında ve önerilerde görünmüyor; fiyat istatistiklerine de
+            katılmıyor. Bağlantısı olan herkes bu sayfayı açabilir.
+          </div>
+        </div>
+      )}
 
       <div className="m-detail-grid">
         {/* Mobilde baslik ve fiyat, aciklama ile teknik ozelliklerin ALTINDA
