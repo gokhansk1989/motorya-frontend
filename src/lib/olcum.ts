@@ -17,6 +17,7 @@
  */
 
 import { API_URL } from './apiBase';
+import { kampanyaAlanlari, kampanyayiYakala, bekleyenAcilisiAl, adresiTemizle } from './kampanya';
 
 /** Sozlukteki olay adlari. Backend'deki olay-sozlugu.ts ile ayni olmali. */
 export type OlayAdi =
@@ -29,7 +30,8 @@ export type OlayAdi =
   | 'arama_yapildi'
   | 'arama_sonuc_tiklandi'
   | 'ilan_detay_goruntulendi'
-  | 'mesaj_butonu_tiklandi';
+  | 'mesaj_butonu_tiklandi'
+  | 'kampanya_acilisi';
 
 type Props = Record<string, string | number | boolean | string[] | undefined>;
 
@@ -129,7 +131,15 @@ export function olcumBosalt(kapanis = false) {
 export function olc(name: OlayAdi, props?: Props, flowId?: string) {
   if (typeof window === 'undefined') return;
   try {
-    kuyruk.push({ eventId: rastgeleKimlik(), name, flowId, props });
+    // Kampanya alanlari HER olaya kendiliginden ekleniyor: cagiran yerin
+    // bunu bilmesi gerekmiyor, ve bir olay eklenirken unutulmasi mumkun
+    // olmuyor. Kampanya yoksa bos nesne, yani hicbir alan eklenmiyor.
+    kuyruk.push({
+      eventId: rastgeleKimlik(),
+      name,
+      flowId,
+      props: { ...kampanyaAlanlari(), ...props },
+    });
     if (kuyruk.length >= EN_FAZLA) {
       olcumBosalt();
       return;
@@ -161,4 +171,34 @@ export function fotoHataKodu(err: unknown): string {
   if (s && s >= 500) return 'sunucu';
   if (s && s >= 400) return 'istek';
   return 'bilinmiyor';
+}
+
+/**
+ * Sayfa acilisinda kampanyayi yakalar ve acilis olayini uretir.
+ *
+ * Uygulama kabugundan BIR KEZ cagriliyor. Istemci tarafi gezinmede
+ * yeniden cagrilmasi gerekmiyor: kampanya modul degiskeninde yasiyor ve
+ * sonraki olaylara kendiliginden ekleniyor.
+ */
+export function kampanyayiKur() {
+  if (typeof window === 'undefined') return;
+  try {
+    kampanyayiYakala();
+  } catch {
+    // Olcum arizasi sayfayi bolmemeli.
+  }
+}
+
+/** Bekleyen acilis olayini gonderir. Effect icinden cagriliyor. */
+export function kampanyaAcilisiniOlc() {
+  if (typeof window === 'undefined') return;
+  try {
+    const alanlar = bekleyenAcilisiAl();
+    if (alanlar) olc('kampanya_acilisi', alanlar);
+    // Adres temizligi hydration'dan SONRA: daha erken yapildiginda Next
+    // adresi geri yaziyor ve yenileme acilisi ikinci kez saydiriyor.
+    adresiTemizle();
+  } catch {
+    // Olcum arizasi sayfayi bolmemeli.
+  }
 }

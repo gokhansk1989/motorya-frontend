@@ -3,6 +3,7 @@ import type { Metadata, Viewport } from 'next';
 import Script from 'next/script';
 import './globals.css';
 import { Providers } from './providers';
+import { KampanyaYakalayici } from '@/components/analytics/KampanyaYakalayici';
 import { jsonLdHtml } from '@/lib/jsonLd';
 
 export const viewport: Viewport = {
@@ -119,6 +120,11 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
             data'yı body içinde de geçerli sayıyor. */}
         <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: jsonLdHtml(WEBSITE_SCHEMA) }} />
         <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: jsonLdHtml(ORGANIZATION_SCHEMA) }} />
+        {/* Kampanya kaynagi KOK layout'ta yakalaniyor: kayit sayfasi ayri
+            bir layout grubunda ve dogrudan /kayit?utm_source=... ile de
+            girilebiliyor. Icerikten once duruyor cunku React'te ustun
+            render'i cocuklardan once calisiyor. */}
+        <KampanyaYakalayici />
         <Providers>{children}</Providers>
         {/* Consent Mode varsayılanları GA'dan ÖNCE yüklenmeli: aksi halde
             onay sorulmadan çerez yazılır (KVKK). 'denied' modda GA çerezsiz

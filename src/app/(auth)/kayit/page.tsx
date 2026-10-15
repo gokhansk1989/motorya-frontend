@@ -10,6 +10,7 @@ import { Zap, Eye, EyeOff, User, Mail, Lock } from 'lucide-react';
 import { useState, useCallback } from 'react';
 import { Turnstile } from '@/components/Turnstile';
 import { analytics } from '@/lib/analytics';
+import { kayitKampanyasi } from '@/lib/kampanya';
 import { MarkaLogo } from '@/components/ui/MarkaLogo';
 
 const schema = z.object({
@@ -78,6 +79,9 @@ export default function RegisterPage() {
         acceptedTerms: data.acceptedTerms,
         acceptedKvkk: data.acceptedKvkk,
         acceptedMarketing: !!data.acceptedMarketing,
+        // Hesabi getiren kampanya. Sunucu normalize edip bir KEZ
+        // damgaliyor (ilk temas); sonraki ziyaretlerde degismiyor.
+        kampanya: kayitKampanyasi(),
       });
       analytics.signUp('email');
       router.push(`/email-gonderildi?email=${encodeURIComponent(data.email)}`);
