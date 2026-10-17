@@ -32,6 +32,7 @@ export function ListingCard({ listing }: { listing: Listing }) {
   const isFav = favIds.has(listing.id) || !!listing.isFavorited;
   const thumb = listing.images?.[0]?.url;
   const views = (listing as any).viewCount ?? 0;
+  const sizeLabel = ((listing as any).sizeLabel ?? '').toString().trim();
   const discountPct = listing.originalPrice
     ? Math.round((1 - Number(listing.price) / Number(listing.originalPrice)) * 100)
     : null;
@@ -94,6 +95,27 @@ export function ListingCard({ listing }: { listing: Listing }) {
         <Link href={`/ilan/${listing.slug ?? listing.id}`} style={{ textDecoration: 'none' }}>
           <h3 className="m-card-title">{listing.title}</h3>
         </Link>
+        {/* Beden/olcu.
+            Veride `sizeLabel` olarak duruyordu ama kartta HIC
+            gosterilmiyordu; kullanici bedeni ancak baslikta geciyorsa
+            gorebiliyordu - cogu ilanda gecmiyor. Giyimde beden, botta
+            numara ayni alanda tutuluyor, bu yuzden tek bir rozet yetiyor.
+            Alan bossa rozet hic basilmiyor: bos bir etiket gostermek ya
+            da "—" yazmak, bilgi varmis izlenimi verirdi. */}
+        {sizeLabel && (
+          <div style={{ marginTop: 2, marginBottom: 2 }}>
+            <span
+              style={{
+                display: 'inline-block', fontSize: 11.5, fontWeight: 600,
+                padding: '2px 7px', borderRadius: 5,
+                background: 'var(--bg-2)', color: 'var(--ink-2)',
+                fontFamily: 'var(--font-mono)', letterSpacing: '0.02em',
+              }}
+            >
+              Beden {sizeLabel}
+            </span>
+          </div>
+        )}
         <div style={{ display: 'flex', alignItems: 'baseline', gap: 8, flexWrap: 'wrap' }}>
           <span className="m-price">
             {formatPrice(listing.price)}
@@ -102,8 +124,14 @@ export function ListingCard({ listing }: { listing: Listing }) {
             <span className="m-price-old">{formatPrice(listing.originalPrice)}</span>
           )}
           {discountPct && discountPct > 0 && (
-            <span style={{ fontSize: 11, fontWeight: 700, padding: '2px 6px', borderRadius: 4, background: '#ffe5d3', color: '#c04a12', lineHeight: 1.4 }}>
-              %{discountPct}
+            // Bu oran SATICININ girdigi liste fiyatina gore hesaplaniyor;
+            // dogrulanmis bir magaza indirimi degil. Baslik metni bunu
+            // soyluyor ki rozet bir garanti gibi okunmasin.
+            <span
+              title="Satıcının belirttiği liste fiyatına göre"
+              style={{ fontSize: 11, fontWeight: 700, padding: '2px 6px', borderRadius: 4, background: '#ffe5d3', color: '#c04a12', lineHeight: 1.4 }}
+            >
+              %{discountPct} <span style={{ fontWeight: 500 }}>satıcı indirimi</span>
             </span>
           )}
         </div>
