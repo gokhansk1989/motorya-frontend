@@ -64,9 +64,17 @@ function kaynagiNormalle(deger: string | null): string | null {
 }
 
 function yerlesimCikar(icerik: string, kampanya: string): string {
-  const h = `${icerik} ${kampanya}`;
-  if (/\bstory/.test(h)) return 'story';
-  if (/\bgonderi|\bpost\b/.test(h)) return 'gonderi';
+  // `\b` alt tire ONCESINDE eslesmiyor (alt tire JS'te kelime karakteri):
+  // "instagram_stories" eski desende story sayilmiyor, "diger" oluyordu.
+  // Meta'nin yerlesim adlari da taninmiyordu: reels, akis/feed, kesfet.
+  // Ayiricilari bosluga cevirip tanidik adlari ekliyoruz.
+  //
+  // NOT: bu siniflandirma olay YAZILIRKEN yapiliyor, raporda degil. Yani
+  // gecmis kayitlar yeniden etiketlenmiyor - eski olaylar 'diger' olarak
+  // kalmaya devam ediyor, tahminle duzeltilmiyorlar.
+  const h = `${icerik} ${kampanya}`.replace(/[_-]/g, ' ');
+  if (/\bstor(y|ies)/.test(h)) return 'story';
+  if (/\breels?\b|\bakis\b|\bfeed\b|\bgonderi|\bpost\b|\bexplore\b|\bkesfet\b/.test(h)) return 'gonderi';
   if (/\bbio\b|\bprofil|\bsayfa\b/.test(h)) return 'profil';
   return 'diger';
 }
