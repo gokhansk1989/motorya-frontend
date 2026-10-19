@@ -2,6 +2,7 @@
 import { useEffect, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useAuthStore } from '@/store/auth';
+import { api } from '@/lib/api';
 import { analytics } from '@/lib/analytics';
 import { Zap } from 'lucide-react';
 import { MarkaLogo } from '@/components/ui/MarkaLogo';
@@ -13,38 +14,51 @@ function CallbackHandler() {
   const { setAuth } = useAuthStore();
 
   useEffect(() => {
-    const token = params.get('token');
-    const refreshToken = params.get('refreshToken') ?? undefined;
-    const deviceId = params.get('deviceId') ?? undefined;
-    const userParam = params.get('user');
-    const needsConsent = params.get('needsConsent') === 'true';
-    if (token && userParam) {
+    /**
+     * Google turunun donusu.
+     *
+     * Sunucu artik jetonlari ADRESTE gondermiyor; tek kullanimlik,
+     * 60 saniyelik bir kod birakiyor. Onu POST ile takas edip
+     * jetonlari yanit GOVDESINDE aliyoruz.
+     *
+     * Eski bicim (?token=...) bilerek desteklenmiyor: amac zaten
+     * jetonu adresten cikarmakti, geriye donuk kabul etmek acigi
+     * acik birakirdi. Dagitim sirasinda eski istemciyle yeni sunucu
+     * karsilasirsa kullanici "giris tamamlanamadi" gorup tekrar
+     * dener - jeton sizmaktansa bir kez daha giris yapmak iyidir.
+     */
+    const code = params.get('code');
+    if (!code) { router.replace('/giris'); return; }
+
+    // Kod adres cubugundan HEMEN siliniyor: takas edildikten sonra
+    // olu ama tarayici gecmisinde durmasinin da gereği yok.
+    try {
+      window.history.replaceState(null, '', '/callback');
+    } catch {}
+
+    let iptal = false;
+    (async () => {
       try {
-        const user = JSON.parse(decodeURIComponent(userParam));
-        setAuth(user, token, refreshToken, deviceId);
+        const { data } = await api.post('/auth/google/exchange', { code });
+        if (iptal) return;
+        const { accessToken, refreshToken, deviceId, user, needsConsent } = data;
+        if (!accessToken || !user) { router.replace('/giris'); return; }
+        setAuth(user, accessToken, refreshToken, deviceId);
         // needsConsent yalnızca sözleşmeleri henüz onaylamamış, yani ilk kez
         // giren Google kullanıcıları için true dönüyor — kayıt sinyali olarak
         // güvenilir.
         if (needsConsent) analytics.signUp('google');
         /**
-         * Google turunden donus hedefi.
-         *
          * Onay gerekiyorsa once /onaylar'a gidiliyor ve hedef SAKLI
          * KALIYOR; onay ekrani isini bitirince ayni hedefe goturuyor.
-         * Boylece "ilan vermek icin Google ile giris" akisi onay adimini
-         * gecip forma donebiliyor.
          */
-        if (needsConsent) {
-          router.replace('/onaylar');
-        } else {
-          router.replace(donusAlVeTemizle() ?? '/');
-        }
+        if (needsConsent) router.replace('/onaylar');
+        else router.replace(donusAlVeTemizle() ?? '/');
       } catch {
-        router.replace('/giris');
+        if (!iptal) router.replace('/giris?hata=google');
       }
-    } else {
-      router.replace('/giris');
-    }
+    })();
+    return () => { iptal = true; };
   }, []);
 
   return (

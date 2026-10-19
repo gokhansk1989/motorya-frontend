@@ -35,6 +35,10 @@ function LoginPage() {
   // görünürken bütün istekler sessizce boş dönüyordu.
   const oturumDoldu = params.get('oturum') === 'doldu';
   const sifreDegisti = params.get('sifre') === 'degisti';
+  // Google turu tamamlanamadi (devir kodu gecersiz ya da suresi dolmus).
+  // Sebebi SOYLEMIYORUZ: "kod suresi doldu mu yoksa hic var miydi"
+  // ayrimi kullaniciya bir sey katmaz, saldirgana katar.
+  const googleHatasi = params.get('hata') === 'google';
 
   /**
    * Nereden geldiyse oraya dondur.
@@ -210,7 +214,24 @@ function LoginPage() {
           </div>
         )}
 
-        {oturumDoldu && !sifreDegisti && (
+        {googleHatasi && (
+          <div style={{
+            display: 'flex', alignItems: 'flex-start', gap: 10, marginTop: 18,
+            padding: '12px 14px', borderRadius: 10, textAlign: 'left',
+            background: 'color-mix(in oklch, var(--warn) 10%, transparent)',
+            border: '1px solid color-mix(in oklch, var(--warn) 30%, transparent)',
+          }}>
+            <Clock size={17} style={{ color: 'var(--warn)', flexShrink: 0, marginTop: 1 }} />
+            <div>
+              <p style={{ margin: 0, fontSize: 13.5, fontWeight: 600, color: 'var(--ink)' }}>Google ile giriş tamamlanamadı</p>
+              <p style={{ margin: '3px 0 0', fontSize: 13, color: 'var(--ink-2)', lineHeight: 1.5 }}>
+                Bağlantı zaman aşımına uğramış olabilir. Tekrar denemen yeterli.
+              </p>
+            </div>
+          </div>
+        )}
+
+        {oturumDoldu && !sifreDegisti && !googleHatasi && (
           <div style={{
             display: 'flex', alignItems: 'flex-start', gap: 10, marginTop: 18,
             padding: '12px 14px', borderRadius: 10, textAlign: 'left',
