@@ -227,9 +227,15 @@ input, textarea, select { font-family: inherit; color: var(--ink); }
        --accent güncellenince alt navigasyondaki "İlan Ver" düğmesi tek
        başına eski turuncuda kaldı. */
     background: var(--accent); color: var(--accent-ink); border: none; cursor: pointer;
-    display: grid; place-items: center;
+    /* Simge + kisa etiket alt alta. Dugme yuksekligi ayni kaliyor;
+       yalnizca icerigi iki satira boluyoruz ki "+" tek basina kalmasin. */
+    display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 1px;
     transition: transform .12s;
     -webkit-tap-highlight-color: transparent;
+  }
+  .m-bottom-nav__fab-label {
+    font-size: 9.5px; font-weight: 700; line-height: 1;
+    letter-spacing: 0.01em;
   }
   .m-bottom-nav__fab:active { transform: scale(.91); }
 

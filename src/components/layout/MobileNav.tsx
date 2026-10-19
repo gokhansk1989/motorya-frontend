@@ -1,6 +1,7 @@
 'use client';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
+import { girisAdresi } from '@/lib/donus';
 import { Home, Search, Plus, MessageCircle, User, LayoutGrid } from 'lucide-react';
 import { useAuthStore } from '@/store/auth';
 import { useNotifications, useOzet } from '@/hooks/useNotifications';
@@ -53,7 +54,7 @@ export function MobileNav() {
       ];
 
   const handleIlanVer = () => {
-    router.push(user ? '/ilan-ver' : '/giris?next=/ilan-ver');
+    router.push(user ? '/ilan-ver' : girisAdresi({ hedef: '/ilan-ver', niyet: 'ilan-ver' }));
   };
 
   return (
@@ -73,9 +74,19 @@ export function MobileNav() {
           </Link>
         ))}
 
-        {/* Merkez FAB — İlan Ver (barın kendi içinde, normal flex akışında) */}
-        <button onClick={handleIlanVer} className="m-bottom-nav__fab" aria-label="İlan Ver">
-          <Plus size={26} strokeWidth={2.5} />
+        {/* Merkez FAB — Ilan Ver.
+            Erisilebilir adi "Ucretsiz ilan ver": yalnizca "+" simgesini
+            goren biri bunun ne yaptigini bilemiyordu, ekran okuyucuda da
+            "Ilan Ver" baglamsizdi. Simgenin ALTINA kisa gorunur bir
+            etiket de ekliyoruz - diger sekmelerde zaten etiket var,
+            yalnizca bu dugme etiketsizdi. */}
+        <button
+          onClick={handleIlanVer}
+          className="m-bottom-nav__fab"
+          aria-label="Ücretsiz ilan ver"
+        >
+          <Plus size={24} strokeWidth={2.5} aria-hidden="true" />
+          <span className="m-bottom-nav__fab-label">İlan ver</span>
         </button>
 
         {/* Sağ 2 tab */}

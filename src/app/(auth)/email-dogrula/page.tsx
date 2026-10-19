@@ -5,6 +5,7 @@ import { api } from '@/lib/api';
 import { useAuthStore } from '@/store/auth';
 import { CheckCircle, XCircle, Loader2 } from 'lucide-react';
 import Link from 'next/link';
+import { donusAlVeTemizle } from '@/lib/donus';
 
 function EmailDogrulaContent() {
   const searchParams = useSearchParams();
@@ -21,7 +22,11 @@ function EmailDogrulaContent() {
       .then(res => {
         setAuth(res.data.user, res.data.accessToken, res.data.refreshToken, res.data.deviceId);
         setStatus('success');
-        setTimeout(() => router.push('/'), 2000);
+        // Ayni sekmede baslatilan kayit akisinin hedefi varsa oraya
+        // don; yoksa ana sayfa. Farkli cihazda acilan baglanti icin
+        // hedef bulunmaz, bu bilinen ve kabul edilmis sinir.
+        const hedef = donusAlVeTemizle() ?? '/';
+        setTimeout(() => router.push(hedef), 2000);
       })
       .catch(err => {
         setStatus('error');

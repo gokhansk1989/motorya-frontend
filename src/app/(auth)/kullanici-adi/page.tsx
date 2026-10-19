@@ -1,4 +1,5 @@
 'use client';
+import { donusAlVeTemizle } from '@/lib/donus';
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
@@ -46,7 +47,10 @@ export default function KullaniciAdiPage() {
       const res = await api.patch('/users/me/username', { username: ad });
       if (user) setUser({ ...user, displayName: res.data.displayName ?? ad });
       toast.success('Kullanıcı adın belirlendi');
-      router.push('/');
+      // Zincirin son halkasi: saklanmis dönüs hedefi varsa oraya,
+      // yoksa ana sayfaya. Onay ve kullanici adi adimlari araya girdigi
+      // icin hedefin burada da okunmasi gerekiyor.
+      router.push(donusAlVeTemizle() ?? '/');
     } catch (e: any) {
       toast.error(e.response?.data?.message || 'Kullanıcı adı kaydedilemedi');
     } finally {

@@ -6,6 +6,9 @@ import { api } from '@/lib/api';
 import { useAuthStore } from '@/store/auth';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
+import { useQuery } from '@tanstack/react-query';
+import { donusOku, niyetOku, donusSakla, type Niyet } from '@/lib/donus';
+import { formatPrice } from '@/lib/utils';
 import toast from 'react-hot-toast';
 import { Zap, Eye, EyeOff, Mail, Lock, Clock } from 'lucide-react';
 import { useState, useCallback, Suspense } from 'react';
@@ -33,10 +36,59 @@ function LoginPage() {
   const oturumDoldu = params.get('oturum') === 'doldu';
   const sifreDegisti = params.get('sifre') === 'degisti';
 
-  // Nereden geldiyse oraya döndür. Açık yönlendirme olmaması için yalnızca
-  // kendi sitemizdeki bir yol kabul ediliyor.
-  const devamHam = params.get('devam') ?? '';
-  const devam = devamHam.startsWith('/') && !devamHam.startsWith('//') ? devamHam : null;
+  /**
+   * Nereden geldiyse oraya dondur.
+   *
+   * Dogrulama `guvenliYol` icinde tek merkezde: protokol goreli adres,
+   * ters bolu hilesi, kodlanmis dis adres ve kendi icine donen dongu
+   * burada degil orada eleniyor. Eski `next` parametresi de okunuyor
+   * cunku "Ilan Ver" dugmeleri uzun sure onu uretti ve bu sayfa onu
+   * SESSIZCE yok sayiyordu - ilan vermek icin giris yapan kullanici
+   * forma degil ana sayfaya dusuyordu.
+   */
+  const devam = donusOku(params);
+  const niyet = niyetOku(params.get('niyet'));
+  const ilanSlug = params.get('ilan');
+
+  // Baglam ozeti yalnizca HERKESE ACIK alanlari gosteriyor; ilan
+  // erisilemezse (silinmis, satilmis, reddedilmis) sorgu bos doner ve
+  // ozet hic cizilmez - giris ekrani calismaya devam eder.
+  const { data: baglamIlan } = useQuery({
+    queryKey: ['giris-baglam-ilan', ilanSlug],
+    // Slug ile ilan: /listings/by-slug?s=<slug>. Hata YUTULUYOR - ilan
+    // silinmis, satilmis ya da erisilemez olabilir; o durumda ozet hic
+    // cizilmez ve giris ekrani normal haliyle calismaya devam eder.
+    queryFn: () => api.get('/listings/by-slug', { params: { s: ilanSlug } }).then(r => r.data).catch(() => null),
+    enabled: !!ilanSlug && niyet === 'mesaj',
+    staleTime: 60_000,
+    retry: false,
+  });
+  // Kayit ekranina gecerken hedefi ve niyeti aynen tasi.
+  const kayitAdresi = (() => {
+    const p = new URLSearchParams();
+    if (devam) p.set('devam', devam);
+    if (niyet) p.set('niyet', niyet);
+    if (ilanSlug) p.set('ilan', ilanSlug);
+    const qs = p.toString();
+    return qs ? `/kayit?${qs}` : '/kayit';
+  })();
+
+  /**
+   * Baglama gore ust metin.
+   *
+   * Mesaj gondermek ya da ilan vermek icin gelen kullanici genel
+   * "Hesabina giris yap" ekranini goruyordu; neden giris yapmasi
+   * gerektigi hicbir yerde yazmiyordu. Baglam yoksa eski metin aynen
+   * kaliyor.
+   */
+  const BAGLAM_METNI: Record<Niyet, string> = {
+    mesaj: 'Satıcıya mesaj göndermek için giriş yap',
+    teklif: 'Teklif vermek için giriş yap',
+    favori: 'İlanı favorilerine eklemek için giriş yap',
+    'ilan-ver': 'Ücretsiz ilanını oluşturmak için giriş yap veya kayıt ol',
+  };
+  const ustMetin = niyet ? BAGLAM_METNI[niyet] : 'Hesabına giriş yap';
+
   const [showPwd, setShowPwd] = useState(false);
   const [captchaRequired, setCaptchaRequired] = useState(false);
   const [turnstileToken, setTurnstileToken] = useState('');
@@ -58,9 +110,24 @@ function LoginPage() {
       // kaydi yok - yani onlara yasal olarak ticari e-posta gonderilemez.
       // Sirayla: once sozlesme/KVKK onayi, sonra kullanici adi.
       // Kullanici adi olmayanlarin gercek adi ilan ve mesajlarda gorunuyor.
-      if (res.data.needsConsent) router.push('/onaylar');
-      else if (res.data.needsUsername) router.push('/kullanici-adi');
-      else router.push(devam ?? '/');
+      /**
+       * Hedef, ARAYA GIREN adimlarda da korunmali.
+       *
+       * Onay ve kullanici adi ekranlari bu akisin ortasina giriyor;
+       * hedefi adres parametresiyle tasimak yerine sekme omurlu
+       * saklamaya birakiyoruz, o ekranlar isi bitince oradan okuyor.
+       * Testte tam burada kopuyordu: mesaj gondermek icin giris yapan
+       * kullanici onay ekranina dusuyor ve oradan ana sayfaya gidiyordu.
+       */
+      if (res.data.needsConsent) {
+        donusSakla(devam);
+        router.push('/onaylar');
+      } else if (res.data.needsUsername) {
+        donusSakla(devam);
+        router.push('/kullanici-adi');
+      } else {
+        router.push(devam ?? '/');
+      }
     } catch (e: any) {
       const body = e.response?.data;
       if (body?.captchaRequired) setCaptchaRequired(true);
@@ -91,7 +158,40 @@ function LoginPage() {
           {/* Burada logo yerine jenerik bir şimşek ikonu ve elle yazılmış
               "MOTORYA" metni duruyordu; marka değişince geride kaldı. */}
           <MarkaLogo yukseklik={40} />
-          <p style={{ marginTop: 10, color: 'var(--ink-3)', fontSize: 14 }}>Hesabına giriş yap</p>
+          <p style={{ marginTop: 10, color: 'var(--ink-3)', fontSize: 14 }}>{ustMetin}</p>
+
+          {/* Ilan ozeti: yalnizca herkese acik alanlar (foto, baslik,
+              fiyat). Ilan erisilemezse sorgu bos doner ve bu blok hic
+              cizilmez - giris ekrani calismaya devam eder. */}
+          {baglamIlan && (
+            <div style={{
+              display: 'flex', alignItems: 'center', gap: 12, marginTop: 16,
+              padding: 10, borderRadius: 12, textAlign: 'left',
+              background: 'var(--bg-1)', border: '1px solid var(--line-soft)',
+            }}>
+              <div style={{ width: 48, height: 48, borderRadius: 8, overflow: 'hidden', background: 'var(--bg-2)', flexShrink: 0 }}>
+                {baglamIlan.images?.[0]?.url && (
+                  <img src={baglamIlan.images[0].url} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                )}
+              </div>
+              <div style={{ minWidth: 0, flex: 1 }}>
+                <p style={{ fontSize: 13, color: 'var(--ink)', fontWeight: 600, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                  {baglamIlan.title}
+                </p>
+                <p style={{ fontSize: 13, color: 'var(--accent)', fontWeight: 600, marginTop: 2 }}>
+                  {formatPrice(baglamIlan.price)}
+                </p>
+              </div>
+            </div>
+          )}
+
+          {/* Kullanici vazgecebilmeli: giris ekrani cikmazi olmamali. */}
+          <div style={{ marginTop: 14, display: 'flex', gap: 14, justifyContent: 'center', fontSize: 13 }}>
+            {devam && (
+              <Link href={devam} style={{ color: 'var(--ink-3)', textDecoration: 'none' }}>← Geri dön</Link>
+            )}
+            <Link href="/ara" style={{ color: 'var(--ink-3)', textDecoration: 'none' }}>İlanları keşfet</Link>
+          </div>
 
         {sifreDegisti && (
           <div style={{
@@ -169,7 +269,7 @@ function LoginPage() {
               </div>
               {errors.password && <p style={{ marginTop: 6, fontSize: 12, color: 'var(--bad)', fontFamily: 'var(--font-mono)' }}>{errors.password.message}</p>}
               <div style={{ textAlign: 'right', marginTop: 6 }}>
-                <Link href="/sifremi-unuttum" style={{ fontSize: 13, color: 'var(--accent)', textDecoration: 'none' }}>Şifremi unuttum</Link>
+                <Link href={devam ? `/sifremi-unuttum?devam=${encodeURIComponent(devam)}` : '/sifremi-unuttum'} style={{ fontSize: 13, color: 'var(--accent)', textDecoration: 'none' }}>Şifremi unuttum</Link>
               </div>
             </div>
 
@@ -200,6 +300,11 @@ function LoginPage() {
 
           <a
             href={`${process.env.NEXT_PUBLIC_API_URL}/auth/google`}
+            // Google turunde siteden ayrilip geri donuyoruz; adres
+            // parametresi bizde kalmiyor. Hedefi ayni sekmede yasayan
+            // sessionStorage'a birakiyoruz, /callback onu okuyup
+            // temizliyor. Ayrintisi ve sinirlari lib/donus.ts'te.
+            onClick={() => donusSakla(devam)}
             style={{
               display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10,
               height: 48, borderRadius: 10, border: '1px solid var(--line)',
@@ -221,7 +326,10 @@ function LoginPage() {
           <div style={{ marginTop: 16, paddingTop: 16, borderTop: '1px solid var(--line-soft)', textAlign: 'center' }}>
             <p style={{ fontSize: 14, color: 'var(--ink-3)' }}>
               Hesabın yok mu?{' '}
-              <Link href="/kayit" style={{ color: 'var(--accent)', fontWeight: 600, textDecoration: 'none' }}>
+              {/* Hedef kayit ekranina da tasiniyor; oncesinde duz /kayit
+                  idi ve kullanicinin nereye donecegi bu adimda tamamen
+                  kayboluyordu. */}
+              <Link href={kayitAdresi} style={{ color: 'var(--accent)', fontWeight: 600, textDecoration: 'none' }}>
                 Kayıt Ol
               </Link>
             </p>

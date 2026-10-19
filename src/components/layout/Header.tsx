@@ -4,6 +4,7 @@ import { useRouter, usePathname } from 'next/navigation';
 import { useState, useEffect, useRef } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { useAuthStore } from '@/store/auth';
+import { useCikis } from '@/hooks/useCikis';
 import { api } from '@/lib/api';
 import { Search, Bell, MessageSquare, User, Plus, Zap, LogOut, Menu, X, Home, Tag, Newspaper, Heart, ListPlus, BellPlus, ChevronDown, LayoutGrid } from 'lucide-react';
 import { useNotifications, useOzet } from '@/hooks/useNotifications';
@@ -19,7 +20,9 @@ export function Logo() {
 export function Header() {
   const router = useRouter();
   const pathname = usePathname();
-  const { user, logout: clearAuth } = useAuthStore();
+  const { user } = useAuthStore();
+  // Cikis onbellegi de temizliyor; ayrintisi useCikis icinde.
+  const cikisYap = useCikis();
   const [searchVal, setSearchVal] = useState('');
   const [menuOpen, setMenuOpen] = useState(false);
   const [katMenu, setKatMenu] = useState(false);
@@ -300,7 +303,7 @@ export function Header() {
                       ))}
                       <div style={{ height: 1, background: 'var(--line-soft)', margin: '4px 0' }} />
                       <button
-                        onClick={() => { clearAuth(); router.push('/'); }}
+                        onClick={async () => { await cikisYap(); router.push('/'); }}
                         style={{
                           display: 'flex', alignItems: 'center', gap: 10, width: '100%',
                           padding: '11px 16px', color: 'var(--error, #e53e3e)', fontSize: 13.5,
@@ -407,7 +410,7 @@ export function Header() {
               <Plus size={20} strokeWidth={2.5} />İlan Ver
             </Link>
             {user ? (
-              <button onClick={() => { clearAuth(); setMenuOpen(false); router.push('/'); }} className="m-btn m-btn-ghost" style={{ height: 48, fontSize: 15, display: 'flex', justifyContent: 'center', alignItems: 'center', gap: 8, width: '100%' }}>
+              <button onClick={async () => { await cikisYap(); setMenuOpen(false); router.push('/'); }} className="m-btn m-btn-ghost" style={{ height: 48, fontSize: 15, display: 'flex', justifyContent: 'center', alignItems: 'center', gap: 8, width: '100%' }}>
                 <LogOut size={18} />Çıkış Yap
               </button>
             ) : (

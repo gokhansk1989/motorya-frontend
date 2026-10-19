@@ -1,5 +1,6 @@
 'use client';
 import { useRouter } from 'next/navigation';
+import { girisAdresi } from '@/lib/donus';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -153,7 +154,7 @@ export default function CreateListingPage() {
   useEffect(() => {
     const check = () => {
       setAuthReady(true);
-      if (!useAuthStore.getState().user) router.replace('/giris?next=/ilan-ver');
+      if (!useAuthStore.getState().user) router.replace(girisAdresi({ hedef: '/ilan-ver', niyet: 'ilan-ver' }));
     };
     if (useAuthStore.persist.hasHydrated()) check();
     else return useAuthStore.persist.onFinishHydration(check);

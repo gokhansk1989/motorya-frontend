@@ -1,4 +1,5 @@
 'use client';
+import { donusAlVeTemizle } from '@/lib/donus';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -33,7 +34,10 @@ export default function ConsentsPage() {
   const onSubmit = async (data: FormData) => {
     try {
       await api.post('/auth/consents', data);
-      router.push('/');
+      // Zincirin son halkasi: saklanmis dönüs hedefi varsa oraya,
+      // yoksa ana sayfaya. Onay ve kullanici adi adimlari araya girdigi
+      // icin hedefin burada da okunmasi gerekiyor.
+      router.push(donusAlVeTemizle() ?? '/');
     } catch (e: any) {
       const msg = e.response?.data?.message;
       if (Array.isArray(msg)) toast.error(msg[0]);

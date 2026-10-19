@@ -1,5 +1,6 @@
 'use client';
 import { usePathname, useRouter } from 'next/navigation';
+import { girisAdresi } from '@/lib/donus';
 import { Plus } from 'lucide-react';
 import { useAuthStore } from '@/store/auth';
 
@@ -16,7 +17,7 @@ export function IlanVerFAB() {
   if (hidden) return null;
 
   const handleClick = () => {
-    router.push(user ? '/ilan-ver' : '/giris?next=/ilan-ver');
+    router.push(user ? '/ilan-ver' : girisAdresi({ hedef: '/ilan-ver', niyet: 'ilan-ver' }));
   };
 
   return (

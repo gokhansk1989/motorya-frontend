@@ -18,6 +18,7 @@ import { analytics } from '@/lib/analytics';
 import { olc } from '@/lib/olcum';
 import toast from 'react-hot-toast';
 import Link from 'next/link';
+import { girisAdresi, suAnkiYol } from '@/lib/donus';
 import { oneCikanGecerliMi } from '@/lib/oneCikan';
 import { TamEkranGaleri } from '@/components/ui/TamEkranGaleri';
 
@@ -148,8 +149,22 @@ export default function ListingDetailClient({ initialListing }: { initialListing
     </div>
   );
   if (!listing) return (
-    <div style={{ textAlign: 'center', padding: '96px 0', color: 'var(--ink-3)' }}>
+    /* Ilan kaldirilmis, satilmis ya da pasife alinmis olabilir; hangisi
+       oldugunu SOYLEMIYORUZ cunku sunucu da ayirmiyor (var olmayan ilanla
+       erisilemeyen ilan ayni 404'u doner - bu bilerek boyle, yoksa bir
+       ilanin var olup olmadigi disaridan yoklanabilirdi).
+       Eskiden burada tek bir satir vardi ve kullanici cikmaza giriyordu;
+       artik iki alternatif gezinme yolu sunuluyor. */
+    <div style={{ textAlign: 'center', padding: '80px 16px', color: 'var(--ink-3)' }}>
       <p className="m-display" style={{ fontSize: 20 }}>İlan bulunamadı</p>
+      <p style={{ fontSize: 14, marginTop: 10, lineHeight: 1.6, maxWidth: 420, marginInline: 'auto' }}>
+        Bu ilan kaldırılmış, satılmış ya da yayından alınmış olabilir.
+        Benzer ilanlara göz atabilirsin.
+      </p>
+      <div style={{ display: 'flex', gap: 12, justifyContent: 'center', marginTop: 20, flexWrap: 'wrap' }}>
+        <Link href="/ara" className="m-btn m-btn-primary">İlanlara göz at</Link>
+        <Link href="/" className="m-btn">Ana sayfa</Link>
+      </div>
     </div>
   );
 
@@ -230,7 +245,7 @@ export default function ListingDetailClient({ initialListing }: { initialListing
   };
 
   const handleOffer = async () => {
-    if (!user) { toast.error('Teklif vermek için giriş yapmalısın'); router.push('/giris'); return; }
+    if (!user) { router.push(girisAdresi({ hedef: suAnkiYol(), niyet: 'teklif', ilan: listing.slug ?? listing.id })); return; }
     try {
       await createOffer.mutateAsync({ listingId: listing.id, amount: parseFloat(offerAmount) });
       analytics.offerMade({ listingId: listing.id, amount: parseFloat(offerAmount) });
@@ -521,7 +536,7 @@ export default function ListingDetailClient({ initialListing }: { initialListing
                   <button
                     aria-label={favd ? 'Favorilerden çıkar' : 'Favorile'}
                     onClick={() => {
-                      if (!user) { toast.error('Favorilemek için giriş yapmalısın'); router.push('/giris'); return; }
+                      if (!user) { router.push(girisAdresi({ hedef: suAnkiYol(), niyet: 'favori', ilan: listing.slug ?? listing.id })); return; }
                       toggleFavorite.mutate(id);
                     }}
                     style={{ width: 44, height: 44, flexShrink: 0, borderRadius: 8, background: 'var(--bg-1)', border: '1px solid var(--line)', display: 'grid', placeItems: 'center', color: favd ? 'var(--accent)' : 'var(--ink-2)', cursor: 'pointer' }}
@@ -532,7 +547,7 @@ export default function ListingDetailClient({ initialListing }: { initialListing
                     className="m-btn m-btn-soft-accent"
                     style={{ flex: 1 }}
                     onClick={() => {
-                      if (!user) { toast.error('Teklif vermek için giriş yapmalısın'); router.push('/giris'); return; }
+                      if (!user) { router.push(girisAdresi({ hedef: suAnkiYol(), niyet: 'teklif', ilan: listing.slug ?? listing.id })); return; }
                       setShowOfferModal(true);
                     }}
                   >
@@ -550,7 +565,16 @@ export default function ListingDetailClient({ initialListing }: { initialListing
                         listingId: listing.id,
                         kendiIlani: !!user && user.id === listing.seller?.id,
                       });
-                      if (!user) { toast.error('Mesaj göndermek için giriş yapmalısın'); router.push('/giris'); return; }
+                      if (!user) {
+                        // Ilan ve niyet giris/kayit boyunca korunuyor;
+                        // giristen sonra kullanici BU ilana donuyor.
+                        // Parametreler yalnizca gezinme bilgisi - mesaj
+                        // gonderme yetkisi her zaman sunucuda, oturumdan
+                        // dogrulaniyor. Mesaj otomatik gonderilmiyor;
+                        // kullanici dondugunde kendisi yaziyor.
+                        router.push(girisAdresi({ hedef: suAnkiYol(), niyet: 'mesaj', ilan: listing.slug ?? listing.id }));
+                        return;
+                      }
                       try {
                         const conv = await startConversation.mutateAsync({ otherUserId: listing.seller.id, listingId: listing.id });
                         analytics.conversationStarted({ listingId: listing.id, price: Number(listing.price) });
@@ -565,7 +589,7 @@ export default function ListingDetailClient({ initialListing }: { initialListing
                 {!user && (
                   <p style={{ fontSize: 12, textAlign: 'center', color: 'var(--ink-3)' }}>
                     Satıcıyla iletişim kurmak için{' '}
-                    <Link href="/giris" style={{ color: 'var(--accent)', fontWeight: 600 }}>giriş yap</Link>
+                    <Link href={girisAdresi({ hedef: suAnkiYol(), niyet: 'mesaj', ilan: listing.slug ?? listing.id })} style={{ color: 'var(--accent)', fontWeight: 600 }}>giriş yap</Link>
                     {' '}veya{' '}
                     <Link href="/kayit" style={{ color: 'var(--accent)', fontWeight: 600 }}>üye ol</Link>
                   </p>

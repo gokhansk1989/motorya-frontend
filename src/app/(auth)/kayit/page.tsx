@@ -3,11 +3,12 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { api } from '@/lib/api';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
+import { donusOku, donusSakla } from '@/lib/donus';
 import toast from 'react-hot-toast';
 import { Zap, Eye, EyeOff, User, Mail, Lock } from 'lucide-react';
-import { useState, useCallback } from 'react';
+import { useState, useCallback, Suspense } from 'react';
 import { Turnstile } from '@/components/Turnstile';
 import { analytics } from '@/lib/analytics';
 import { kayitKampanyasi } from '@/lib/kampanya';
@@ -56,8 +57,19 @@ function FieldWrapper({ label, icon, error, hint, children }: { label: string; i
   );
 }
 
-export default function RegisterPage() {
+function RegisterPageInner() {
   const router = useRouter();
+  const params = useSearchParams();
+  // Giris ekraniyla AYNI kural: `devam` esas, `next` geriye donuk kabul.
+  const devam = donusOku(params);
+  const girisGeri = (() => {
+    const p = new URLSearchParams();
+    if (devam) p.set('devam', devam);
+    const n = params.get('niyet'); if (n) p.set('niyet', n);
+    const i = params.get('ilan');  if (i) p.set('ilan', i);
+    const qs = p.toString();
+    return qs ? `/giris?${qs}` : '/giris';
+  })();
   const [showPwd, setShowPwd] = useState(false);
   const [showPwd2, setShowPwd2] = useState(false);
   const [turnstileToken, setTurnstileToken] = useState('');
@@ -84,7 +96,13 @@ export default function RegisterPage() {
         kampanya: kayitKampanyasi(),
       });
       analytics.signUp('email');
-      router.push(`/email-gonderildi?email=${encodeURIComponent(data.email)}`);
+      // Hedef dogrulama ekranina da tasiniyor: kayittan sonra kullanici
+      // e-postasini dogrulayip geldiginde ilan formuna donebilsin.
+      // E-posta adresi disinda hicbir kisisel veri adrese girmiyor.
+      router.push(
+        `/email-gonderildi?email=${encodeURIComponent(data.email)}` +
+        (devam ? `&devam=${encodeURIComponent(devam)}` : '')
+      );
     } catch (e: any) {
       const msg = e.response?.data?.message;
       if (Array.isArray(msg)) toast.error(msg[0]);
@@ -144,6 +162,9 @@ export default function RegisterPage() {
             }}
             onMouseEnter={e => (e.currentTarget.style.background = 'var(--bg-2)')}
             onMouseLeave={e => (e.currentTarget.style.background = 'var(--bg-0)')}
+            // Google turu siteden cikip donuyor; hedefi sekme omurlu
+            // saklamaya birakiyoruz (bkz. lib/donus.ts).
+            onClick={() => donusSakla(devam)}
           >
             <svg width="18" height="18" viewBox="0 0 18 18">
               <path fill="#4285F4" d="M17.64 9.2c0-.637-.057-1.251-.164-1.84H9v3.481h4.844a4.14 4.14 0 0 1-1.796 2.717v2.258h2.908c1.702-1.567 2.684-3.875 2.684-6.615z"/>
@@ -262,7 +283,7 @@ export default function RegisterPage() {
           <div style={{ marginTop: 20, paddingTop: 20, borderTop: '1px solid var(--line-soft)', textAlign: 'center' }}>
             <p style={{ fontSize: 14, color: 'var(--ink-3)' }}>
               Zaten hesabın var mı?{' '}
-              <Link href="/giris" style={{ color: 'var(--accent)', fontWeight: 600, textDecoration: 'none' }}>
+              <Link href={girisGeri} style={{ color: 'var(--accent)', fontWeight: 600, textDecoration: 'none' }}>
                 Giriş Yap
               </Link>
             </p>
@@ -272,5 +293,18 @@ export default function RegisterPage() {
 
       <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
     </div>
+  );
+}
+
+/**
+ * useSearchParams istemci tarafinda cozuluyor; Next bu sayfayi statik
+ * uretmeye calisirken Suspense siniri bekliyor. Kayit formu zaten
+ * istemci bileseni, sinir yalnizca onuretim icin gerekiyor.
+ */
+export default function RegisterPage() {
+  return (
+    <Suspense fallback={null}>
+      <RegisterPageInner />
+    </Suspense>
   );
 }

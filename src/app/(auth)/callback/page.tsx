@@ -5,6 +5,7 @@ import { useAuthStore } from '@/store/auth';
 import { analytics } from '@/lib/analytics';
 import { Zap } from 'lucide-react';
 import { MarkaLogo } from '@/components/ui/MarkaLogo';
+import { donusAlVeTemizle } from '@/lib/donus';
 
 function CallbackHandler() {
   const router = useRouter();
@@ -25,7 +26,19 @@ function CallbackHandler() {
         // giren Google kullanıcıları için true dönüyor — kayıt sinyali olarak
         // güvenilir.
         if (needsConsent) analytics.signUp('google');
-        router.replace(needsConsent ? '/onaylar' : '/');
+        /**
+         * Google turunden donus hedefi.
+         *
+         * Onay gerekiyorsa once /onaylar'a gidiliyor ve hedef SAKLI
+         * KALIYOR; onay ekrani isini bitirince ayni hedefe goturuyor.
+         * Boylece "ilan vermek icin Google ile giris" akisi onay adimini
+         * gecip forma donebiliyor.
+         */
+        if (needsConsent) {
+          router.replace('/onaylar');
+        } else {
+          router.replace(donusAlVeTemizle() ?? '/');
+        }
       } catch {
         router.replace('/giris');
       }

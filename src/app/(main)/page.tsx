@@ -7,7 +7,7 @@ import { useListings, usePriceDrops } from '@/hooks/useListings';
 import { ListingCard } from '@/components/listings/ListingCard';
 import { api } from '@/lib/api';
 import { useAuthStore } from '@/store/auth';
-import { Search, ChevronRight, ChevronDown, Star, TrendingDown, Clock } from 'lucide-react';
+import { Search, ChevronRight, ChevronDown, Star, TrendingDown, Clock, Plus } from 'lucide-react';
 import Link from 'next/link';
 import { CategoryIcon } from '@/components/icons/CategoryIcons';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -130,6 +130,27 @@ function HeroSection({ onSearch, categories, brands }: { onSearch: (q: string) =
             </div>
             {focused && <CategorySuggestionsDropdown query={val} matches={matches} brandMatches={brandMatches} anchorRef={searchBoxRef} onSearchQuery={onSearch} />}
           </form>
+
+          {/* SATICI CAGRISI.
+              Ilk ekranda yalnizca arama vardi; ilan vermeyi anlatan
+              yazili bir eylem yoktu ve mobilde tek isaret alt
+              gezinmedeki `+` idi - ne oldugunu bilmeyen biri icin bu
+              bir cagri degil. Arama ANA eylem olarak kaliyor (daha
+              buyuk ve ustte); bu ikincil, metinli bir yol.
+              Ayni agirlikta ikinci bir buton koymuyoruz ki ilk ekranda
+              iki esit cagri yarismasin. */}
+          <div style={{ marginTop: 14, display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
+            <Link
+              href="/ilan-ver"
+              className="m-btn"
+              style={{ height: 42, fontSize: 14, fontWeight: 600, gap: 8 }}
+            >
+              <Plus size={16} aria-hidden="true" /> Ücretsiz ilan ver
+            </Link>
+            <span style={{ fontSize: 13, color: 'var(--ink-3)' }}>
+              Üye olmadan ilanlara göz atabilirsin.
+            </span>
+          </div>
         </div>
         <SonIlanlarPaneli />
       </div>

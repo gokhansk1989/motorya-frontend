@@ -1,5 +1,6 @@
 'use client';
 import { useSearchParams } from 'next/navigation';
+import { donusSakla, donusOku } from '@/lib/donus';
 import { useState, useEffect, Suspense } from 'react';
 import { api } from '@/lib/api';
 import { Mail } from 'lucide-react';
@@ -8,6 +9,20 @@ import toast from 'react-hot-toast';
 
 function EmailGonderildiContent() {
   const searchParams = useSearchParams();
+  /**
+   * Dönüs hedefini bu sekmede sakla.
+   *
+   * E-posta dogrulama baglantisi POSTA KUTUSUNDAN aciliyor; adres
+   * parametresini oraya tasiyamayiz (ve tasimamaliyiz - baglanti
+   * baskasina iletilebilir). Hedefi burada birakiyoruz: kullanici AYNI
+   * sekmede/tarayicida dogrulamayi tamamlarsa dogru yere donuyor.
+   *
+   * SINIR: baglanti BASKA bir cihazda ya da tarayicida acilirsa hedef
+   * orada yoktur ve kullanici ana sayfaya duser. Bu kabul edilmis bir
+   * sinir; alternatifi hedefi dogrulama jetonuna gomup e-postayla
+   * tasimak olurdu ve bu baglantiyi iletilmeye daha duyarli yapardi.
+   */
+  useEffect(() => { donusSakla(donusOku(searchParams)); }, [searchParams]);
   const email = searchParams.get('email') || '';
   const [resending, setResending] = useState(false);
   // Bekleme sayaci. Sunucu tarafinda hem IP hem hesap basina sinir var;

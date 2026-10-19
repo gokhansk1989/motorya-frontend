@@ -1,6 +1,7 @@
 import axios, { AxiosError, AxiosRequestConfig } from 'axios';
 
 import { API_URL } from './apiBase';
+import { guvenliYol } from './donus';
 
 export { API_URL };
 
@@ -56,29 +57,52 @@ api.interceptors.response.use(
         original.headers = { ...(original.headers as any), Authorization: `Bearer ${newToken}` };
         return api.request(original);
       }
-      // Refresh başarısız — oturumu temizle ve login'e yönlendir.
-      //
-      // 'motorya-auth' da siliniyor: kullanıcı bilgisi zustand persist ile
-      // ORADA duruyor. Yalnızca access_token silindiğinde store'daki user
-      // yerinde kalıyor, isAuthenticated() true dönmeye devam ediyor ve
-      // arayüz giriş yapılmış gibi davranıyordu - "Mesaj Gönder" butonu
-      // görünüyor, mesaj listesi "henüz mesajın yok" diyor, ama her istek
-      // sessizce 401 alıyordu. Kullanıcının bunu anlamasının hiçbir yolu
-      // yoktu; tek belirti her şeyin boş görünmesiydi.
+      /**
+       * Refresh basarisiz. Simdi iki soruyu AYIRMAK zorundayiz:
+       * "gercekten bir oturum var miydi" ve "bu istek oturum gerektiriyor
+       * muydu".
+       *
+       * ── BULUNAN HATA ────────────────────────────────────────────────
+       * Eski kontrol soyleydi:
+       *
+       *   oturumVardi = access_token VAR MI || 'motorya-auth' VAR MI
+       *
+       * 'motorya-auth' zustand persist'in anahtari. `logout()` state'i
+       * null'liyor ama persist anahtari SILMIYOR, uzerine
+       * {"state":{"user":null,...}} yaziyor - yani anahtar cikis
+       * yaptiktan sonra da localStorage'da DURUYOR ve truthy.
+       *
+       * Sonuc: cikis yapmis bir ziyaretci herkese acik bir ilan sayfasini
+       * actiginda, kullaniciya ozel herhangi bir istek (favori listesi
+       * gibi) 401 alinca `oturumVardi` true cikiyor ve ziyaretci
+       * "Oturumun sona erdi" ekranina atiliyordu. Ayni ilani ikinci kez
+       * acinca sorun kayboluyordu, cunku ilk seferde bu kod
+       * 'motorya-auth' anahtarini silmis oluyordu. Inceleme raporundaki
+       * "ikinci acilista misafir olarak erisilebilir kaldi" gozlemi tam
+       * olarak bu.
+       *
+       * Artik yalnizca GERCEK kimlik bilgisinin varligina bakiliyor.
+       */
       const oturumVardi =
-        !!localStorage.getItem('access_token') || !!localStorage.getItem('motorya-auth');
+        !!localStorage.getItem('access_token') || !!localStorage.getItem('refresh_token');
+
       localStorage.removeItem('access_token');
       localStorage.removeItem('refresh_token');
       localStorage.removeItem('device_id');
       localStorage.removeItem('motorya-auth');
 
-      if (oturumVardi) {
+      /**
+       * Istegi yapan taraf "bu istek misafirde de 401 donebilir, beni
+       * giris sayfasina atma" diyebiliyor. Herkese acik sayfalardaki
+       * istege bagli kullanici verisi (favori durumu, kendi teklifim)
+       * boyle isaretleniyor.
+       */
+      const sessiz = (original as any)?.misafirdeSessiz === true;
+
+      if (oturumVardi && !sessiz) {
         // Nereden atıldığını taşı ki giriş sonrası kullanıcı aynı yere dönsün.
-        // Yalnızca kendi sitemizdeki bir yola izin veriliyor: '//baska.site'
-        // gibi bir değer açık yönlendirme (open redirect) açığı olurdu.
-        const suAn = window.location.pathname + window.location.search;
-        const guvenli = suAn.startsWith('/') && !suAn.startsWith('//') ? suAn : '/';
-        const hedef = guvenli === '/giris' ? '/giris?oturum=doldu' : `/giris?oturum=doldu&devam=${encodeURIComponent(guvenli)}`;
+        const guvenli = guvenliYol(window.location.pathname + window.location.search) ?? '/';
+        const hedef = `/giris?oturum=doldu&devam=${encodeURIComponent(guvenli)}`;
         window.location.href = hedef;
       }
     }
