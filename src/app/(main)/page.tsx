@@ -139,7 +139,21 @@ function HeroSection({ onSearch, categories, brands }: { onSearch: (q: string) =
               buyuk ve ustte); bu ikincil, metinli bir yol.
               Ayni agirlikta ikinci bir buton koymuyoruz ki ilk ekranda
               iki esit cagri yarismasin. */}
-          <div style={{ marginTop: 14, display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
+          {/* YALNIZCA MOBIL.
+              Header'daki "İlan Ver" butonu `.desktop-actions` icinde ve
+              768px altinda gizleniyor - yani masaustunde zaten gorunur
+              durumda. Burada bir tane daha koymak ayni ekranda iki ozdes
+              eylem demekti. Mobilde ise header hamburgerin icine
+              giriyor ve geriye tek isaret olarak alt bardaki `+` ikonu
+              kaliyor; ne oldugunu bilmeyen biri icin bu bir cagri degil.
+              `m-hide-desktop` tam bu esikte calisiyor (768px altinda
+              gorunur, ustunde gizli) - header'in kendi kirilim noktasiyla
+              ayni, boylece ikisi arasinda hicbir genislikte ne bosluk ne
+              de tekrar olusuyor.
+
+              Yardimci cumle de butonla birlikte gizleniyor: butonsuz tek
+              basina kalan bir alt yazi ortada duran yetim bir metin olurdu. */}
+          <div className="m-hide-desktop" style={{ marginTop: 14, alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
             <Link
               href="/ilan-ver"
               className="m-btn"
