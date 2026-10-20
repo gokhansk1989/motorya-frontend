@@ -6,9 +6,10 @@ import { api } from '@/lib/api';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { donusOku, donusSakla } from '@/lib/donus';
+import { olc, kayitGirisimiBaslat, kayitGirisimiAl } from '@/lib/olcum';
 import toast from 'react-hot-toast';
 import { Zap, Eye, EyeOff, User, Mail, Lock } from 'lucide-react';
-import { useState, useCallback, Suspense } from 'react';
+import { useState, useCallback, useEffect, useRef, Suspense } from 'react';
 import { Turnstile } from '@/components/Turnstile';
 import { analytics } from '@/lib/analytics';
 import { kayitKampanyasi } from '@/lib/kampanya';
@@ -60,6 +61,42 @@ function FieldWrapper({ label, icon, error, hint, children }: { label: string; i
 function RegisterPageInner() {
   const router = useRouter();
   const params = useSearchParams();
+
+  /**
+   * A) Kayit ekrani goruntulendi + girisim kimligi uretildi.
+   *
+   * CIFT SAYIM KORUMASI iki katmanli:
+   *   - `useRef` kapisi React StrictMode'un efekti iki kez calistirmasini
+   *     yutuyor (dev'de olur, uretimde olmaz ama ikisinde de ayni
+   *     davranmali).
+   *   - Olay sunucuya benzersiz bir eventId ile gidiyor; ag tekrarinda
+   *     ikinci kayit dusuyor.
+   *
+   * "Gercek acilis" = yeni bir girisim kimliginin uretilmesi. Sayfa
+   * yenilemesi yeni girisim sayiliyor: kullanici bastan basliyor ve
+   * eskisinin devami oldugunu soyleyecek bir isaretimiz yok.
+   */
+  const ekranOlculdu = useRef(false);
+  useEffect(() => {
+    if (ekranOlculdu.current) return;
+    ekranOlculdu.current = true;
+    const gid = kayitGirisimiBaslat();
+    olc('uyelik_ekran_goruntulendi', {}, gid);
+  }, []);
+
+  /**
+   * B) Kayit basladi — ILK ANLAMLI etkilesim.
+   *
+   * Odaklanmak YETMIYOR: kullanicinin gercekten bir deger girmis olmasi
+   * gerekiyor. Girilen degerin KENDISI hicbir kosulda gonderilmiyor,
+   * yalnizca "basladi" bilgisi. Girisim basina bir kez.
+   */
+  const baslangicOlculdu = useRef(false);
+  const kayitBasladi = useCallback((yontem: 'form' | 'google') => {
+    if (baslangicOlculdu.current) return;
+    baslangicOlculdu.current = true;
+    olc('uyelik_basladi', { yontem }, kayitGirisimiAl());
+  }, []);
   // Giris ekraniyla AYNI kural: `devam` esas, `next` geriye donuk kabul.
   const devam = donusOku(params);
   const girisGeri = (() => {
@@ -81,8 +118,14 @@ function RegisterPageInner() {
 
 
   const onSubmit = async (data: FormData) => {
+    // C) Gecerli form sunucuya gonderildi. HESAP OLUSTU DEMEK DEGIL.
+    // Tekrarlanan tiklama ayni girisim kimligiyle gidiyor; sunucu
+    // tarafinda hesap olusturma olayi hesabin kimligine bagli oldugu
+    // icin cift sayilamiyor.
+    olc('uyelik_gonderildi', {}, kayitGirisimiAl());
     try {
       await api.post('/auth/register', {
+        girisimId: kayitGirisimiAl(),
         turnstileToken: turnstileToken || undefined,
         displayName: data.username.trim().toLowerCase(),
         realName: `${data.firstName.trim()} ${data.lastName.trim()}`,
@@ -105,6 +148,23 @@ function RegisterPageInner() {
       );
     } catch (e: any) {
       const msg = e.response?.data?.message;
+      /**
+       * Hata YALNIZCA sabit bir koda cevriliyor.
+       *
+       * Sunucunun ham mesaji gonderilmiyor: icinde e-posta, telefon ya
+       * da kimlik numarasi gecebilir ("Bu e-posta adresi zaten kayitli"
+       * gibi mesajlar bile hangi alanin cakistigini soyluyor, metni
+       * oldugu gibi saklamak gereksiz risk).
+       */
+      const durum = e?.response?.status;
+      const kod =
+        durum === 409 ? 'cakisma'
+        : durum === 429 ? 'hiz_siniri'
+        : durum === 400 ? 'dogrulama'
+        : durum >= 500 ? 'sunucu'
+        : durum ? 'istemci'
+        : 'ag';
+      olc('uyelik_hatasi', { kod, adim: 'gonderim' }, kayitGirisimiAl());
       if (Array.isArray(msg)) toast.error(msg[0]);
       else toast.error(msg || 'Kayıt yapılamadı');
     }
@@ -164,7 +224,11 @@ function RegisterPageInner() {
             onMouseLeave={e => (e.currentTarget.style.background = 'var(--bg-0)')}
             // Google turu siteden cikip donuyor; hedefi sekme omurlu
             // saklamaya birakiyoruz (bkz. lib/donus.ts).
-            onClick={() => donusSakla(devam)}
+            onClick={() => {
+              // Google ile kayit AYRI bir yontem olarak olculuyor.
+              kayitBasladi('google');
+              donusSakla(devam);
+            }}
           >
             <svg width="18" height="18" viewBox="0 0 18 18">
               <path fill="#4285F4" d="M17.64 9.2c0-.637-.057-1.251-.164-1.84H9v3.481h4.844a4.14 4.14 0 0 1-1.796 2.717v2.258h2.908c1.702-1.567 2.684-3.875 2.684-6.615z"/>
@@ -181,7 +245,15 @@ function RegisterPageInner() {
             <div style={{ flex: 1, height: 1, background: 'var(--line-soft)' }} />
           </div>
 
-          <form onSubmit={handleSubmit(onSubmit)} style={{ display: 'flex', flexDirection: 'column', gap: 18 }}>
+          {/* Baslangic olayi FORM seviyesinde yakalaniyor: her alana tek
+              tek kanca takmak yerine ilk gercek degisiklik yetiyor.
+              `onChange` yalnizca deger degistiginde atesleniyor - salt
+              odaklanma baslangic saymiyor. */}
+          <form
+            onSubmit={handleSubmit(onSubmit)}
+            onChange={() => kayitBasladi('form')}
+            style={{ display: 'flex', flexDirection: 'column', gap: 18 }}
+          >
 
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14 }}>
               <FieldWrapper label="Kullanıcı adı" icon={<User size={16} />} error={errors.username?.message}>

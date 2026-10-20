@@ -38,7 +38,12 @@ export type OlayAdi =
   | 'mesaj_girisden_donuldu'
   | 'mesaj_gonderim_denendi'
   | 'mesaj_gonderim_hatasi'
-  | 'kampanya_acilisi';
+  | 'kampanya_acilisi'
+  // Uyelik hunisi. Sunucudaki olay sozluguyle AYNI olmak zorunda.
+  | 'uyelik_ekran_goruntulendi'
+  | 'uyelik_basladi'
+  | 'uyelik_gonderildi'
+  | 'uyelik_hatasi';
 
 type Props = Record<string, string | number | boolean | string[] | undefined>;
 
@@ -208,4 +213,35 @@ export function kampanyaAcilisiniOlc() {
   } catch {
     // Olcum arizasi sayfayi bolmemeli.
   }
+}
+
+/**
+ * KAYIT GIRISIMI KIMLIGI.
+ *
+ * Kayit ekrani her GERCEK acilisinda yeni bir kimlik uretiliyor ve akis
+ * boyunca ayni kaliyor. Amac tek: ekran goruntuleme, baslangic, gonderim
+ * ve sunucudaki hesap olusturma olaylarinin AYNI girisime ait oldugunu
+ * bilmek.
+ *
+ * NE DEGIL: yetki, oturum ya da kimlik dogrulama araci degil. Kalici ya
+ * da cihazlar arasi bir takip kimligi degil - modul degiskeninde
+ * yasiyor, sekme kapaninca ya da sayfa yenilenince gidiyor. Hicbir
+ * yerde saklanmiyor.
+ *
+ * Sayfa yenilemesi YENI girisim sayiliyor: kullanici gercekten bastan
+ * basliyor ve eski girisimin devami oldugunu soyleyebilecek bir
+ * isaretimiz yok - uydurmaktansa yeni saymak durust.
+ */
+let kayitGirisimi: string | null = null;
+
+export function kayitGirisimiBaslat(): string {
+  kayitGirisimi =
+    typeof crypto !== 'undefined' && 'randomUUID' in crypto
+      ? crypto.randomUUID()
+      : `g-${Date.now()}-${Math.random().toString(36).slice(2, 10)}`;
+  return kayitGirisimi;
+}
+
+export function kayitGirisimiAl(): string | undefined {
+  return kayitGirisimi ?? undefined;
 }
