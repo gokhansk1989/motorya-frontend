@@ -21,6 +21,14 @@ import { kampanyaAlanlari, kampanyayiYakala, bekleyenAcilisiAl, adresiTemizle } 
 
 /** Sozlukteki olay adlari. Backend'deki olay-sozlugu.ts ile ayni olmali. */
 export type OlayAdi =
+  | 'ilan_sayfasi_acildi'
+  | 'ilan_giris_gerekti'
+  | 'ilan_girisden_donuldu'
+  | 'ilan_kimlik_gerekti'
+  | 'ilan_kimlik_tamamlandi'
+  | 'ilan_kimlik_hatasi'
+  | 'ilan_taslak_soruldu'
+  | 'ilan_form_acildi'
   | 'ilan_akis_basladi'
   | 'ilan_adim_tamamlandi'
   | 'ilan_foto_yuklendi'

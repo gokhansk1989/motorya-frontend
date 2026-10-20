@@ -154,7 +154,34 @@ export default function CreateListingPage() {
   useEffect(() => {
     const check = () => {
       setAuthReady(true);
-      if (!useAuthStore.getState().user) router.replace(girisAdresi({ hedef: '/ilan-ver', niyet: 'ilan-ver' }));
+      const uyeMi = !!useAuthStore.getState().user;
+
+      // Varis olculuyor, tiklama degil. Siteye yayilmis sekiz ayri "ilan
+      // ver" dugmesini tek tek isaretlemek yerine hepsinin dustugu yeri
+      // olcuyoruz: hem eksiksiz, hem yeni bir dugme eklendiginde
+      // kendiliginden kapsiyor. Misafir de sayiliyor - onun onunde giris
+      // duvari var ve huninin asil sorusu zaten o duvarda kac kisinin
+      // kaldigi.
+      olc('ilan_sayfasi_acildi', { uyeMi }, akisId.current);
+
+      // Giris/kayit turundan geri donus. Isaret yalnizca olcum icin;
+      // okunur okunmaz adresten siliniyor ki yenilemede tekrar sayilmasin.
+      try {
+        const sp = new URLSearchParams(window.location.search);
+        if (sp.get('donus') === 'ilan-ver') {
+          olc('ilan_girisden_donuldu', undefined, akisId.current);
+          sp.delete('donus');
+          const qs = sp.toString();
+          window.history.replaceState(null, '', window.location.pathname + (qs ? '?' + qs : ''));
+        }
+      } catch {
+        // Adres okunamadiysa olcum sessizce atlanir.
+      }
+
+      if (!uyeMi) {
+        olc('ilan_giris_gerekti', undefined, akisId.current);
+        router.replace(girisAdresi({ hedef: '/ilan-ver', niyet: 'ilan-ver' }));
+      }
     };
     if (useAuthStore.persist.hasHydrated()) check();
     else return useAuthStore.persist.onFinishHydration(check);
@@ -325,8 +352,14 @@ export default function CreateListingPage() {
     (async () => {
       const t = await taslagiGetir();
       if (iptal) return;
-      if (taslakDoluMu(t)) { setTaslak(t); setTaslakDurumu('soruluyor'); }
-      else setTaslakDurumu('hazir');
+      if (taslakDoluMu(t)) {
+        setTaslak(t);
+        setTaslakDurumu('soruluyor');
+        olc('ilan_taslak_soruldu', undefined, akisId.current);
+      } else {
+        setTaslakDurumu('hazir');
+        olc('ilan_form_acildi', { kaynak: 'taslaksiz' }, akisId.current);
+      }
     })();
     return () => { iptal = true; };
   }, [authReady, user, me?.tcKimlikVar]);
@@ -381,12 +414,14 @@ export default function CreateListingPage() {
     setImageUrls(taslak.imageUrls ?? []);
     setStep(Math.min(Math.max(taslak.step ?? 1, 1), 4));
     setTaslakDurumu('hazir');
+    olc('ilan_form_acildi', { kaynak: 'taslak' }, akisId.current);
   };
 
   /** "Yeni ilan baslat": taslagi sil, formu bos birak. */
   const yeniIlanBaslat = async () => {
     setTaslakDurumu('hazir');
     setTaslak(null);
+    olc('ilan_form_acildi', { kaynak: 'yeni' }, akisId.current);
     await taslagiSil();
   };
 
@@ -530,7 +565,7 @@ export default function CreateListingPage() {
   // yalnizca tcKimlikVar bayragi geliyor. Eski alan adi okundugu surece
   // numarasi kayitli kullanicilar da bu kapiya dusuyordu.
   if (!me.tcKimlikVar) {
-    return <TcKimlikAdimi />;
+    return <TcKimlikAdimi akisId={akisId.current} />;
   }
 
   // Taslaga bakilirken formu acmiyoruz: acip sonra uzerine taslak yazmak,
@@ -1030,22 +1065,37 @@ export default function CreateListingPage() {
 }
 
 // Ilan vermeden once bir kez istenen T.C. kimlik adimi.
-function TcKimlikAdimi() {
+function TcKimlikAdimi({ akisId }: { akisId: string }) {
   const qc = useQueryClient();
   const [deger, setDeger] = useState('');
   const [kaydediliyor, setKaydediliyor] = useState(false);
   const bicimTamam = deger.length === 11 && gecerliTcKimlik(deger);
 
+  // Kapinin GOSTERILDIGI an olculuyor. Burada kac kisinin durdugunu
+  // bilmeden "ilan vermeye baslayip birakanlar" diye tek bir yigin
+  // kaliyordu; oysa bu kapi ile form terki bambaska iki sorun.
+  useEffect(() => {
+    olc('ilan_kimlik_gerekti', undefined, akisId);
+  }, [akisId]);
+
   const kaydet = async () => {
-    if (!bicimTamam) { toast.error('Geçerli bir T.C. Kimlik numarası gir'); return; }
+    if (!bicimTamam) {
+      olc('ilan_kimlik_hatasi', { kod: 'bicim' }, akisId);
+      toast.error('Geçerli bir T.C. Kimlik numarası gir');
+      return;
+    }
     setKaydediliyor(true);
     try {
       await api.patch('/users/me', { tcKimlik: deger });
       // Sorguyu tazeleyince bu ekran kapaniyor ve kullanici dogrudan
       // ilan formuna dusuyor; sayfa degistirmeye gerek kalmiyor.
       await qc.invalidateQueries({ queryKey: ['me-tc-check'] });
+      // Numaranin kendisi hicbir zaman olcume girmiyor; yalnizca kapinin
+      // gecildigi bilgisi.
+      olc('ilan_kimlik_tamamlandi', undefined, akisId);
       toast.success('Kaydedildi, ilanını verebilirsin');
     } catch (e: any) {
+      olc('ilan_kimlik_hatasi', { kod: e?.response ? 'sunucu' : 'ag' }, akisId);
       toast.error(e?.response?.data?.message ?? 'Kaydedilemedi');
     } finally {
       setKaydediliyor(false);

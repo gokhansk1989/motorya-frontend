@@ -108,10 +108,13 @@ export function girisAdresi(opts: { hedef?: string; niyet?: Niyet; ilan?: string
    * bilgisi; hicbir yetki karari ona bakmiyor.
    */
   let hedef = guvenliYol(opts.hedef);
-  if (hedef && opts.niyet === 'mesaj') {
+  // Isaret yalnizca donusu OLCEBILMEK icin; mesaj ve ilan verme
+  // akislarinin ikisinde de ayni ise yariyor.
+  const ISARETLI: Niyet[] = ['mesaj', 'ilan-ver'];
+  if (hedef && opts.niyet && ISARETLI.includes(opts.niyet)) {
     const [yol, parca] = hedef.split('#');
     const ayirac = yol.includes('?') ? '&' : '?';
-    hedef = `${yol}${ayirac}donus=mesaj${parca ? '#' + parca : ''}`;
+    hedef = `${yol}${ayirac}donus=${opts.niyet}${parca ? '#' + parca : ''}`;
   }
   if (hedef) p.set('devam', hedef);
   if (opts.niyet) p.set('niyet', opts.niyet);
