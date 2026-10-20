@@ -98,7 +98,21 @@ export const niyetOku = (ham: unknown): Niyet | null =>
  */
 export function girisAdresi(opts: { hedef?: string; niyet?: Niyet; ilan?: string } = {}): string {
   const p = new URLSearchParams();
-  const hedef = guvenliYol(opts.hedef);
+  /**
+   * Mesaj niyetiyle gelindiyse dönüs hedefine `donus=mesaj` isareti
+   * ekleniyor. Ilan sayfasi bu isareti gorunce "kimlik dogrulamasindan
+   * sonra geri donuldu" olayini uretiyor ve isareti adresten siliyor.
+   *
+   * Hunideki en gorunmez halka buydu: giris ekraninda mi kaybediyoruz
+   * yoksa donus mu kopuyor, olculemiyordu. Isaret yalnizca OLCUM
+   * bilgisi; hicbir yetki karari ona bakmiyor.
+   */
+  let hedef = guvenliYol(opts.hedef);
+  if (hedef && opts.niyet === 'mesaj') {
+    const [yol, parca] = hedef.split('#');
+    const ayirac = yol.includes('?') ? '&' : '?';
+    hedef = `${yol}${ayirac}donus=mesaj${parca ? '#' + parca : ''}`;
+  }
   if (hedef) p.set('devam', hedef);
   if (opts.niyet) p.set('niyet', opts.niyet);
   if (opts.ilan) p.set('ilan', opts.ilan);

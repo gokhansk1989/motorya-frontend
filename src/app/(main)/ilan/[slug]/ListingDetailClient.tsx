@@ -120,6 +120,34 @@ export default function ListingDetailClient({ initialListing }: { initialListing
     });
   }, [listing?.id, listing?.seller?.id, user?.id]);
 
+  /**
+   * Kimlik dogrulamasindan sonra MESAJ NIYETIYLE bu ilana donus.
+   *
+   * Hunideki en kritik ve en gorunmez halka buydu: "giris ekraninda mi
+   * kaybediyoruz yoksa donus mu kopuyor" sorusu olculemiyordu.
+   *
+   * Isaret adres parametresinden okunuyor (`donus=mesaj`); giris akisi
+   * dondurdugunde ekleniyor. Olay bir kez uretilip parametre adresten
+   * TEMIZLENIYOR - yoksa sayfa yenileme ve geri/ileri tuslari ayni
+   * donusu birden cok kez sayardi.
+   *
+   * Yalnizca oturum gercekten acildiysa sayiliyor: parametre elle
+   * yazilabilir bir sey, tek basina kanit degil.
+   */
+  const donusOlculdu = useRef(false);
+  useEffect(() => {
+    if (!listing?.id || !user || donusOlculdu.current) return;
+    const p = new URLSearchParams(window.location.search);
+    if (p.get('donus') !== 'mesaj') return;
+    donusOlculdu.current = true;
+    olc('mesaj_girisden_donuldu', { listingId: listing.id });
+    p.delete('donus');
+    const qs = p.toString();
+    try {
+      window.history.replaceState(null, '', window.location.pathname + (qs ? `?${qs}` : ''));
+    } catch {}
+  }, [listing?.id, user?.id]);
+
   const [imgIdx, setImgIdx] = useState(0);
   const galleryTouchX = useRef(0);
   const [showOfferModal, setShowOfferModal] = useState(false);
@@ -564,8 +592,16 @@ export default function ListingDetailClient({ initialListing }: { initialListing
                       olc('mesaj_butonu_tiklandi', {
                         listingId: listing.id,
                         kendiIlani: !!user && user.id === listing.seller?.id,
+                        // Misafir ve uye akislari raporda AYRI olculuyor:
+                        // misafirin onunde giris duvari var, uyenin yok.
+                        uyeMi: !!user,
                       });
                       if (!user) {
+                        // Giris duvarina carpma ayri bir adim. Boylece
+                        // "kac tiklama giris ekranina dustu" sorusu,
+                        // uyelerin tiklamalarini paydaya katmadan
+                        // cevaplanabiliyor.
+                        olc('mesaj_giris_gerekti', { listingId: listing.id });
                         // Ilan ve niyet giris/kayit boyunca korunuyor;
                         // giristen sonra kullanici BU ilana donuyor.
                         // Parametreler yalnizca gezinme bilgisi - mesaj
@@ -575,11 +611,31 @@ export default function ListingDetailClient({ initialListing }: { initialListing
                         router.push(girisAdresi({ hedef: suAnkiYol(), niyet: 'mesaj', ilan: listing.slug ?? listing.id }));
                         return;
                       }
+                      // Deneme BASARI DEGIL. Basarinin tek kaniti
+                      // sunucuda kaydedilmis konusma/mesaj satiri;
+                      // ikisinin farki "basladi ama gonderemedi"
+                      // grubunu gosteriyor.
+                      olc('mesaj_gonderim_denendi', { listingId: listing.id });
                       try {
                         const conv = await startConversation.mutateAsync({ otherUserId: listing.seller.id, listingId: listing.id });
                         analytics.conversationStarted({ listingId: listing.id, price: Number(listing.price) });
                         router.push(`/mesajlarim?conv=${conv.id}`);
-                      } catch { toast.error('Mesaj başlatılamadı'); }
+                      } catch (e: any) {
+                        // YALNIZCA kaba hata kodu. Sunucunun mesaji
+                        // kullanici adi ya da baska kisisel veri
+                        // icerebilir; analitige hicbir kosulda girmiyor.
+                        const durum = e?.response?.status;
+                        const kod =
+                          durum === 401 ? 'yetkisiz'
+                          : durum === 403 ? 'yasak'
+                          : durum === 404 ? 'bulunamadi'
+                          : durum === 429 ? 'hiz_siniri'
+                          : durum >= 500 ? 'sunucu'
+                          : durum ? 'istemci'
+                          : 'ag';
+                        olc('mesaj_gonderim_hatasi', { listingId: listing.id, kod });
+                        toast.error('Mesaj başlatılamadı');
+                      }
                     }}
                   >
                     <MessageCircle size={15} />

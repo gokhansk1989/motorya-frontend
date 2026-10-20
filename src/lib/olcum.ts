@@ -31,6 +31,13 @@ export type OlayAdi =
   | 'arama_sonuc_tiklandi'
   | 'ilan_detay_goruntulendi'
   | 'mesaj_butonu_tiklandi'
+  // Mesajlasma hunisinin ara adimlari. Sunucudaki olay sozlugu
+  // (olay-sozlugu.ts) ile AYNI olmak zorunda: orada tanimli olmayan bir
+  // ad sessizce atiliyor, burada tanimli olmayan bir ad derlenmiyor.
+  | 'mesaj_giris_gerekti'
+  | 'mesaj_girisden_donuldu'
+  | 'mesaj_gonderim_denendi'
+  | 'mesaj_gonderim_hatasi'
   | 'kampanya_acilisi';
 
 type Props = Record<string, string | number | boolean | string[] | undefined>;
