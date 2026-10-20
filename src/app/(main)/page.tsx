@@ -161,9 +161,21 @@ function HeroSection({ onSearch, categories, brands }: { onSearch: (q: string) =
             >
               <Plus size={16} aria-hidden="true" /> Ücretsiz ilan ver
             </Link>
-            <span style={{ fontSize: 13, color: 'var(--ink-3)' }}>
-              Üye olmadan ilanlara göz atabilirsin.
-            </span>
+            {/* Misafire yonelik bir cumle; zaten uye olana anlamsiz.
+                Buton herkese kaliyor - mobilde header hamburgerin
+                icinde oldugu icin giris yapmis kullanicinin da ilan
+                vermeye tek elle tutulur yolu bu.
+
+                `!user` tek basina yeterli: ayni desen iki satir
+                yukaridaki "Kurucu Uye" rozetinde de kullaniliyor ve
+                uretimde dogru calistigi dogrulandi (uye girisinde rozet
+                gorunmuyor). Dev modunda bu bolumun gec hidrate oldugu
+                gorulmustu; uretim derlemesinde o davranis yok. */}
+            {!user && (
+              <span style={{ fontSize: 13, color: 'var(--ink-3)' }}>
+                Üye olmadan ilanlara göz atabilirsin.
+              </span>
+            )}
           </div>
         </div>
         <SonIlanlarPaneli />
