@@ -86,9 +86,22 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
       type: 'website',
       siteName: 'Motorya',
       locale: 'tr_TR',
-      images: listing.images?.length
-        ? [{ url: listing.images[0].url, width: 1200, height: 630, alt: listing.title }]
-        : [],
+      /**
+       * `images` BILEREK verilmiyor.
+       *
+       * Burada acikca verilen og:image, dosya tabanli
+       * `opengraph-image.tsx` kartini EZIYOR - yani uretilen kart hic
+       * kullanilmiyordu. Ustelik verilen adres ham yukleme dosyasiydi:
+       *   - bicimi WebP; WhatsApp ve iMessage bunu cogu zaman
+       *     cizmiyor, onizleme bos cikiyordu,
+       *   - 1200x630 diye bildiriliyordu ama gercek olculer bambaska
+       *     (ornegin 1920x1440); platformlar bildirilen olcuye gore
+       *     yer ayirip gorseli kirpiyordu.
+       *
+       * Alan kaldirilinca Next, ayni klasordeki opengraph-image
+       * rotasini kullaniyor: PNG, tam 1200x630, uzerinde baslik,
+       * fiyat, durum ve sehir yazili.
+       */
     },
     twitter: {
       card: 'summary_large_image',
