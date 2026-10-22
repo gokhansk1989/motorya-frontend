@@ -54,6 +54,18 @@ const CONDITIONS = [
 
 const MAX_IMAGES = 8;
 
+/**
+ * Dosya basina sinir.
+ *
+ * Sunucudaki multer siniri 10 MB; vekil sunucu ise TUM istegi 25 MB'da
+ * kesiyor. Sekiz dosyaya 10'ar MB izin vermek, vekil sunucunun asla
+ * kabul etmeyecegi bir istek uretmek demekti. 8 MB x 3 dosya hala
+ * sinirin altinda kaliyor ve telefon fotograflari rahatca geciyor.
+ */
+const DOSYA_SINIRI = 8 * 1024 * 1024;
+const ISTEK_SINIRI = 18 * 1024 * 1024;
+const MB = (b: number) => `${(b / 1024 / 1024).toFixed(1)} MB`;
+
 
 const card: React.CSSProperties = {
   background: 'var(--bg-1)',
@@ -241,20 +253,66 @@ export default function CreateListingPage() {
   }, [authReady, user, me]);
 
   const uploadFiles = async (toUpload: File[]) => {
+    // Boyut DENEMEDEN once soyleniyor.
+    //
+    // Onceden buyuk dosya once yukleniyor, sonra proxy'den donuyordu;
+    // kullanici megabaytlarca veri harcayip "yuklenemedi" goruyordu.
+    // Ustelik vekil sunucu istek govdesini okumadan bagi kestigi icin
+    // tarayiciya 413 degil ag hatasi donuyor ve olcumde boyut sorunu
+    // "ag" diye gorunuyordu.
+    const buyuk = toUpload.filter((f) => f.size > DOSYA_SINIRI);
+    const gonderilecek = toUpload.filter((f) => f.size <= DOSYA_SINIRI);
+    if (buyuk.length > 0) {
+      olc('ilan_foto_hata', { hataKodu: 'boyut' }, akisId.current);
+      toast.error(
+        buyuk.length === 1
+          ? `Fotoğraf ${MB(buyuk[0].size)} — en fazla ${MB(DOSYA_SINIRI)} olabilir.`
+          : `${buyuk.length} fotoğraf ${MB(DOSYA_SINIRI)} sınırını aşıyor.`,
+      );
+    }
+    if (gonderilecek.length === 0) return;
+
     setUploading(true);
     try {
-      const form = new FormData();
-      toUpload.forEach(f => form.append('files', f));
-      const res = await api.post('/upload/images', form, {
-        headers: { 'Content-Type': 'multipart/form-data' },
-      });
-      setImageUrls(prev => [...prev, ...res.data.urls]);
-      olc('ilan_foto_yuklendi', { adet: res.data.urls?.length ?? toUpload.length }, akisId.current);
+      // Istek basina toplam sinir: vekil sunucu 25 MB'da kesiyor ve bunu
+      // govde okunmadan yaptigi icin tarayiciya duzgun bir 413 bile
+      // ulasmiyor. Sekiz dosya tek istege sigmayabilecegi icin
+      // gruplara bolup yolluyoruz.
+      const gruplar: File[][] = [];
+      let grup: File[] = [];
+      let toplam = 0;
+      for (const f of gonderilecek) {
+        if (grup.length > 0 && toplam + f.size > ISTEK_SINIRI) {
+          gruplar.push(grup); grup = []; toplam = 0;
+        }
+        grup.push(f); toplam += f.size;
+      }
+      if (grup.length > 0) gruplar.push(grup);
+
+      for (const g of gruplar) {
+        const form = new FormData();
+        g.forEach(f => form.append('files', f));
+        const res = await api.post('/upload/images', form, {
+          headers: { 'Content-Type': 'multipart/form-data' },
+        });
+        setImageUrls(prev => [...prev, ...res.data.urls]);
+        olc('ilan_foto_yuklendi', { adet: res.data.urls?.length ?? g.length }, akisId.current);
+
+        // Kismi basari: sunucu gecenleri dondu, kalanlari ayrica bildirdi.
+        // Bunlari sessizce yutmak, kullanicinin eksik fotografla ilan
+        // vermesine yol acardi.
+        const hatalar: { ad: string; kod: string; mesaj: string }[] = res.data.hatalar ?? [];
+        for (const h of hatalar) {
+          olc('ilan_foto_hata', { hataKodu: h.kod }, akisId.current);
+          toast.error(h.mesaj, { duration: 7000 });
+        }
+      }
     } catch (err) {
       // Yalnizca kaba hata kodu olculuyor; dosya adi, boyut ve sunucu mesaji
       // gonderilmiyor.
       olc('ilan_foto_hata', { hataKodu: fotoHataKodu(err) }, akisId.current);
-      toast.error('Fotoğraf yüklenemedi');
+      const m = (err as any)?.response?.data?.message;
+      toast.error(typeof m === 'string' && m ? m : 'Fotoğraf yüklenemedi', { duration: 7000 });
     } finally {
       setUploading(false);
       if (fileInputRef.current) fileInputRef.current.value = '';
