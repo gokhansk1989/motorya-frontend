@@ -7,11 +7,12 @@ import { z } from 'zod';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { api } from '@/lib/api';
 import { useCreateListing, usePriceGuide } from '@/hooks/useListings';
-import { Upload, X, ChevronDown, Zap, Camera, ImagePlus, ChevronRight, Check } from 'lucide-react';
+import { Upload, X, ChevronDown, Zap, Camera, ImagePlus, ChevronRight, ChevronLeft, Check, Star, Crop, Trash2 } from 'lucide-react';
 import { useRef, useState, useMemo, useEffect } from 'react';
 import { gecerliTcKimlik } from '@/lib/tcKimlik';
 import toast from 'react-hot-toast';
 import { CoverCropModal } from '@/components/listings/CoverCropModal';
+import { KART_ORANI_CSS } from '@/lib/gorselOran';
 import { IL_ILCE, ALL_CITIES } from '@/lib/il-ilce';
 import { analytics } from '@/lib/analytics';
 import { olc, olcumBosalt, rastgeleKimlik, fotoHataKodu } from '@/lib/olcum';
@@ -252,6 +253,37 @@ export default function CreateListingPage() {
     olc('ilan_akis_basladi', undefined, akisId.current);
   }, [authReady, user, me]);
 
+  /**
+   * Tek bir dosyayi yukleyip URL'sini dondurur.
+   *
+   * `uploadFiles` sonuclari dogrudan listeye EKLIYOR; kadraj
+   * guncellemesinde ise yeni gorselin var olanin YERINE gecmesi
+   * gerekiyor. Bu yuzden ayri bir yol.
+   */
+  const yukleVeUrlAl = async (dosyalar: File[]): Promise<string[]> => {
+    setUploading(true);
+    try {
+      const form = new FormData();
+      dosyalar.forEach(f => form.append('files', f));
+      const res = await api.post('/upload/images', form, {
+        headers: { 'Content-Type': 'multipart/form-data' },
+      });
+      const hatalar: { ad: string; kod: string; mesaj: string }[] = res.data.hatalar ?? [];
+      for (const h of hatalar) {
+        olc('ilan_foto_hata', { hataKodu: h.kod }, akisId.current);
+        toast.error(h.mesaj, { duration: 7000 });
+      }
+      return res.data.urls ?? [];
+    } catch (err) {
+      olc('ilan_foto_hata', { hataKodu: fotoHataKodu(err) }, akisId.current);
+      const m = (err as any)?.response?.data?.message;
+      toast.error(typeof m === 'string' && m ? m : 'Fotoğraf yüklenemedi', { duration: 7000 });
+      return [];
+    } finally {
+      setUploading(false);
+    }
+  };
+
   const uploadFiles = async (toUpload: File[]) => {
     // Boyut DENEMEDEN once soyleniyor.
     //
@@ -335,17 +367,42 @@ export default function CreateListingPage() {
     await uploadFiles(selected);
   };
 
+  /**
+   * Kadraj onaylandi. Iki ayri durum var:
+   *  - YENI yukleme: kirpilmis kapak + kalan dosyalar yukleniyor.
+   *  - MEVCUT fotografin kadraji: yalnizca o fotograf degisiyor ve
+   *    SIRASI korunuyor. Sona eklenseydi kapak sessizce baska bir
+   *    fotografa gecerdi.
+   */
   const handleCropConfirm = async (cropped: File) => {
     if (!cropQueue) return;
     const { rest } = cropQueue;
+    const hedef = kadrajIndeks;
     setCropQueue(null);
+    setKadrajIndeks(null);
+
+    if (hedef !== null) {
+      const yeniUrller = await yukleVeUrlAl([cropped]);
+      if (yeniUrller.length === 0) return;   // hata zaten bildirildi
+      setImageUrls(p => p.map((u, j) => (j === hedef ? yeniUrller[0] : u)));
+      toast.success('Kadraj güncellendi');
+      return;
+    }
     await uploadFiles([cropped, ...rest]);
   };
 
+  /**
+   * Kadrajdan vazgecildi. Mevcut bir fotografin kadraji
+   * duzenleniyorduysa HICBIR SEY degismiyor: eski kapak ve eski kadraj
+   * oldugu gibi kaliyor.
+   */
   const handleCropSkip = async () => {
     if (!cropQueue) return;
     const { coverFile, rest } = cropQueue;
+    const mevcuduDuzenliyorduk = kadrajIndeks !== null;
     setCropQueue(null);
+    setKadrajIndeks(null);
+    if (mevcuduDuzenliyorduk) return;
     await uploadFiles([coverFile, ...rest]);
   };
 
@@ -481,6 +538,84 @@ export default function CreateListingPage() {
     setTaslak(null);
     olc('ilan_form_acildi', { kaynak: 'yeni' }, akisId.current);
     await taslagiSil();
+  };
+
+  /** Izgara altindaki islem dugmelerinin ortak stili (44px dokunma hedefi). */
+  const islemDugmesi = (pasif: boolean): React.CSSProperties => ({
+    flex: 1, height: 44, minWidth: 44, display: 'grid', placeItems: 'center',
+    background: 'transparent', border: 0,
+    borderRight: '1px solid var(--line-soft)',
+    color: pasif ? 'var(--ink-3)' : 'var(--ink-2)',
+    cursor: pasif ? 'default' : 'pointer',
+    opacity: pasif ? 0.4 : 1,
+  });
+
+  /**
+   * Kapak degistirme.
+   *
+   * Kapak = listenin ILK ogesi. Onceden bunu degistirmenin tek yolu
+   * fotografi silip yeniden yuklemekti; ikinci fotografa tiklamak
+   * hicbir sey yapmiyordu.
+   *
+   * Secilen fotograf basa ALINIYOR, digerlerinin kendi arasindaki
+   * sirasi korunuyor - yani "kapak secimi" ile "siralama" birbirini
+   * bozmuyor.
+   */
+  const kapakYap = (i: number) => {
+    if (i === 0) return;
+    setImageUrls(p => {
+      const y = p.slice();
+      const [secilen] = y.splice(i, 1);
+      return [secilen, ...y];
+    });
+    toast.success('Kapak değiştirildi');
+  };
+
+  /** Fotografi listede bir ileri/bir geri tasir. Surukleme gerektirmez. */
+  const tasi = (i: number, yon: -1 | 1) => {
+    const j = i + yon;
+    setImageUrls(p => {
+      if (j < 0 || j >= p.length) return p;
+      const y = p.slice();
+      [y[i], y[j]] = [y[j], y[i]];
+      return y;
+    });
+  };
+
+  /**
+   * Fotograf kaldirma.
+   *
+   * Kapak kaldirilirsa sirada kalan ilk fotograf kapak olur ve bu
+   * kullaniciya SOYLENIR: sessizce baska bir fotografin kapak olmasi,
+   * ilan yayimlandiktan sonra fark edilen turden bir surpriz.
+   */
+  const fotografiKaldir = (i: number) => {
+    const kapaktiMi = i === 0;
+    setImageUrls(p => p.filter((_, j) => j !== i));
+    if (kapaktiMi && imageUrls.length > 1) {
+      toast('Kapak kaldırıldı — sıradaki fotoğraf kapak oldu', { icon: 'ℹ️' });
+    }
+  };
+
+  /**
+   * Var olan bir fotografin kadrajini yeniden duzenler.
+   *
+   * Yuklenmis gorsel sunucuda; kirpma ekrani ise File bekliyor. Gorseli
+   * geri indirip File'a ceviriyoruz. Ayni kaynaktan geldigi icin CORS
+   * sorunu yok.
+   */
+  const [kadrajIndeks, setKadrajIndeks] = useState<number | null>(null);
+  /** Masaustunde surukle-birak gorsel geri bildirimi. */
+  const [surukleniyor, setSurukleniyor] = useState(false);
+  const kadrajiDuzenle = async (i: number) => {
+    try {
+      const res = await fetch(imageUrls[i]);
+      const blob = await res.blob();
+      setKadrajIndeks(i);
+      setCropQueue({ coverFile: new File([blob], `kadraj-${i}.jpg`, { type: blob.type || 'image/jpeg' }), rest: [] });
+    } catch {
+      toast.error('Fotoğraf açılamadı, tekrar dene');
+    }
   };
 
   const handleNext = async () => {
@@ -796,13 +931,35 @@ export default function CreateListingPage() {
         <input ref={fileInputRef} type="file" accept="image/*" multiple style={{ display: 'none' }} onChange={e => handleFiles(e.target.files)} />
         <input ref={cameraInputRef} type="file" accept="image/*" capture="environment" style={{ display: 'none' }} onChange={e => handleFiles(e.target.files)} />
 
-        <div className="m-form-card" style={{ ...card, display: step === 2 ? 'block' : 'none' }}>
+        <div
+          className="m-form-card"
+          style={{
+            ...card,
+            display: step === 2 ? 'block' : 'none',
+            outline: surukleniyor ? '2px dashed var(--accent)' : undefined,
+            outlineOffset: surukleniyor ? -6 : undefined,
+          }}
+          onDragOver={e => { e.preventDefault(); setSurukleniyor(true); }}
+          onDragLeave={e => { if (e.currentTarget === e.target) setSurukleniyor(false); }}
+          onDrop={e => {
+            e.preventDefault();
+            setSurukleniyor(false);
+            void handleFiles(e.dataTransfer.files);
+          }}
+        >
             <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', marginBottom: 18 }}>
               <p style={{ ...lbl, fontSize: 15, margin: 0 }}>Fotoğraflar</p>
               <span style={{ fontSize: 12, fontFamily: 'var(--font-mono)', color: imageUrls.length >= MAX_IMAGES ? 'var(--bad)' : 'var(--ink-3)' }}>
                 {imageUrls.length}/{MAX_IMAGES}
               </span>
             </div>
+
+            {/* Sinirlar SECIMDEN ONCE goruluyor.
+                Onceden bunlari ogrenmenin tek yolu, dosyayi secip
+                reddedilmesini beklemekti. */}
+            <p style={{ fontSize: 12.5, color: 'var(--ink-3)', margin: '-8px 0 14px', lineHeight: 1.55 }}>
+              JPEG, PNG, WebP, HEIC · dosya başına en fazla {MB(DOSYA_SINIRI)} · en fazla {MAX_IMAGES} fotoğraf
+            </p>
 
             {/* Empty state — big pick buttons */}
             {imageUrls.length === 0 && !uploading && (
@@ -838,17 +995,89 @@ export default function CreateListingPage() {
             )}
 
             {imageUrls.length > 0 && (
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(88px, 1fr))', gap: 10 }}>
-                {imageUrls.map((url, i) => (
-                  <div key={i} style={{ position: 'relative', aspectRatio: '1', borderRadius: 10, overflow: 'hidden', background: 'var(--bg-2)', border: i === 0 ? '2px solid var(--accent)' : '1px solid var(--line)' }}>
-                    <img src={url} style={{ width: '100%', height: '100%', objectFit: 'cover' }} alt="" />
-                    <button type="button" onClick={() => setImageUrls(p => p.filter((_, j) => j !== i))} style={{ position: 'absolute', top: 4, right: 4, width: 22, height: 22, background: 'oklch(0 0 0 / 0.65)', border: 0, borderRadius: '50%', display: 'grid', placeItems: 'center', cursor: 'pointer', color: '#fff' }}>
-                      <X size={12} />
-                    </button>
-                    {i === 0 && <span style={{ position: 'absolute', bottom: 4, left: 4, fontSize: 10, fontFamily: 'var(--font-mono)', background: 'var(--accent)', color: 'var(--accent-ink)', borderRadius: 4, padding: '2px 5px' }}>KAPAK</span>}
-                  </div>
-                ))}
-              </div>
+              <>
+                <p style={{ fontSize: 12.5, color: 'var(--ink-3)', margin: '0 0 10px', lineHeight: 1.5 }}>
+                  İlk fotoğraf kapak olur. Ürünün tamamının göründüğü, aydınlık bir fotoğrafı kapak seç.
+                </p>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(140px, 1fr))', gap: 12 }}>
+                  {imageUrls.map((url, i) => (
+                    <div key={url + i} style={{ borderRadius: 12, overflow: 'hidden', background: 'var(--bg-2)', border: i === 0 ? '2px solid var(--accent)' : '1px solid var(--line)' }}>
+                      {/* Onizleme KART ORANINDA: satici fotografin kartta
+                          nasil gorunecegini burada goruyor. Once kare
+                          gosteriliyordu, yani izgaradaki gorunum gercekle
+                          uyusmuyordu. */}
+                      <div style={{ position: 'relative', aspectRatio: KART_ORANI_CSS, background: 'var(--bg-2)' }}>
+                        <img src={url} style={{ width: '100%', height: '100%', objectFit: 'cover' }} alt={`Fotoğraf ${i + 1}`} />
+                        {i === 0 && (
+                          <span style={{
+                            position: 'absolute', top: 6, left: 6, fontSize: 10, fontWeight: 700,
+                            fontFamily: 'var(--font-mono)', background: 'var(--accent)',
+                            color: 'var(--accent-ink)', borderRadius: 5, padding: '3px 7px',
+                            display: 'inline-flex', alignItems: 'center', gap: 4,
+                          }}>
+                            <Check size={11} aria-hidden="true" />KAPAK
+                          </span>
+                        )}
+                      </div>
+
+                      {/* Islemler gorsel UZERINDE degil ALTINDA.
+                          Ustune binen 22px'lik bir X hem fotografi
+                          orterek kapatiyor hem de dokunma hedefi olarak
+                          cok kucuktu (erisilebilirlik tabani 44px). */}
+                      <div style={{ display: 'flex', borderTop: '1px solid var(--line-soft)' }}>
+                        <button
+                          type="button"
+                          onClick={() => kapakYap(i)}
+                          disabled={i === 0}
+                          aria-label={i === 0 ? `Fotoğraf ${i + 1} zaten kapak` : `Fotoğraf ${i + 1}'i kapak yap`}
+                          title={i === 0 ? 'Bu zaten kapak' : 'Kapak yap'}
+                          style={islemDugmesi(i === 0)}
+                        >
+                          <Star size={15} fill={i === 0 ? 'currentColor' : 'none'} aria-hidden="true" />
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => kadrajiDuzenle(i)}
+                          aria-label={`Fotoğraf ${i + 1} kadrajını düzenle`}
+                          title="Kadrajı düzenle"
+                          style={islemDugmesi(false)}
+                        >
+                          <Crop size={15} aria-hidden="true" />
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => tasi(i, -1)}
+                          disabled={i === 0}
+                          aria-label={`Fotoğraf ${i + 1}'i öne al`}
+                          title="Öne al"
+                          style={islemDugmesi(i === 0)}
+                        >
+                          <ChevronLeft size={15} aria-hidden="true" />
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => tasi(i, 1)}
+                          disabled={i === imageUrls.length - 1}
+                          aria-label={`Fotoğraf ${i + 1}'i geri al`}
+                          title="Geri al"
+                          style={islemDugmesi(i === imageUrls.length - 1)}
+                        >
+                          <ChevronRight size={15} aria-hidden="true" />
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => fotografiKaldir(i)}
+                          aria-label={`Fotoğraf ${i + 1}'i kaldır`}
+                          title="Kaldır"
+                          style={{ ...islemDugmesi(false), color: 'var(--bad)' }}
+                        >
+                          <Trash2 size={15} aria-hidden="true" />
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </>
             )}
           </div>
 

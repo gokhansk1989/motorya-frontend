@@ -398,12 +398,26 @@ export default function ListingDetailClient({ initialListing }: { initialListing
             }}
           >
             {images.length > 0 ? (
-              <img
-                src={images[imgIdx].url}
-                alt={listing.title}
+              /* Acici bir DUGME, img degil.
+                 Iki sebep: (1) klavyeyle gezen biri galeriyi hic
+                 acamiyordu - img odaklanabilir degil; (2) galeri
+                 kapaninca odak acan ogeye donuyor, ama odaklanamayan
+                 bir img'e donunca odak sayfanin basina dusuyordu. */
+              <button
+                type="button"
                 onClick={() => setGaleriAcik(true)}
-                style={{ width: '100%', height: '100%', objectFit: 'contain', cursor: 'zoom-in' }}
-              />
+                aria-label={`${listing.title} fotoğraflarını tam ekran aç`}
+                style={{
+                  width: '100%', height: '100%', padding: 0, border: 0,
+                  background: 'transparent', cursor: 'zoom-in', display: 'block',
+                }}
+              >
+                <img
+                  src={images[imgIdx].url}
+                  alt={listing.title}
+                  style={{ width: '100%', height: '100%', objectFit: 'contain' }}
+                />
+              </button>
             ) : (
               <div style={{
                 position: 'absolute', inset: 0,

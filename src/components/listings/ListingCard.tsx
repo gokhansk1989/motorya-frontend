@@ -1,7 +1,7 @@
 'use client';
 import Link from 'next/link';
 import Image from 'next/image';
-import { Heart, MapPin, Eye, Star } from 'lucide-react';
+import { Heart, MapPin, Eye, Star, Image as ImageIcon } from 'lucide-react';
 import { formatPrice, timeAgo } from '@/lib/utils';
 import { useToggleFavorite, useFavoriteIds } from '@/hooks/useListings';
 import { useAuthStore } from '@/store/auth';
@@ -67,10 +67,30 @@ export function ListingCard({ listing }: { listing: Listing }) {
               <span style={{ fontSize: 11, fontWeight: 700, padding: '3px 8px', borderRadius: 6, background: 'oklch(0 0 0 / 0.55)', color: '#fff' }}>SATILDI</span>
             )}
           </div>
+          {/* Birden fazla fotograf varsa sayac. Karttaki tek gorsel,
+              ilanin tek fotografi oldugu izlenimi veriyordu; alici
+              detaya girmeden kac acidan fotograf oldugunu bilemiyordu. */}
+          {/* Sayi sunucudan `_count.images` ile geliyor; listede yalnizca
+              kapak indigi icin `images.length` her zaman 1. */}
+          {(((listing as any)._count?.images ?? (listing as any).images?.length) ?? 0) > 1 && (
+            <span
+              aria-label={`${(listing as any)._count?.images ?? (listing as any).images?.length} fotoğraf`}
+              style={{
+                position: 'absolute', bottom: 8, right: 8, zIndex: 2,
+                display: 'inline-flex', alignItems: 'center', gap: 4,
+                padding: '3px 7px', borderRadius: 6, fontSize: 11, fontWeight: 600,
+                background: 'oklch(0 0 0 / 0.55)', color: '#fff',
+                backdropFilter: 'blur(4px)', fontVariantNumeric: 'tabular-nums',
+              }}
+            >
+              <ImageIcon size={11} aria-hidden="true" />
+              {(listing as any)._count?.images ?? (listing as any).images?.length}
+            </span>
+          )}
           {user && (
             <button
               onClick={e => { e.preventDefault(); e.stopPropagation(); toggle.mutate(listing.id); }}
-              aria-label="Favori"
+              aria-label={isFav ? 'Favorilerden çıkar' : 'Favorilere ekle'}
               style={{
                 position: 'absolute', top: 8, right: 8, width: 44, height: 44,
                 display: 'grid', placeItems: 'center', borderRadius: '50%',

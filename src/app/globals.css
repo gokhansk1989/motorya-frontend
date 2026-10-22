@@ -317,7 +317,10 @@ input, textarea, select { font-family: inherit; color: var(--ink); }
 .m-card:hover { transform: translateY(-3px); border-color: var(--line); box-shadow: var(--shadow-lg); }
 .m-card:hover .m-card-img { transform: scale(1.05); }
 
-.m-card-media { position: relative; aspect-ratio: 4 / 3.4; overflow: hidden; background: var(--bg-2); }
+/* Oran lib/gorselOran.ts ile AYNI olmak zorunda: kapak kirpma ekrani
+   oradan okuyor. Ikisi ayrisirsa saticinin sectigi kadraj kartta
+   kirpilir. */
+.m-card-media { position: relative; aspect-ratio: var(--kart-orani, 4 / 3.4); overflow: hidden; background: var(--bg-2); }
 .m-card-img { width: 100%; height: 100%; object-fit: cover; transition: transform .4s cubic-bezier(.2,.7,.2,1); }
 .m-card-img-contain { width: 100%; height: 100%; object-fit: contain; background: white; padding: 1rem; transition: transform .4s cubic-bezier(.2,.7,.2,1); }
 
