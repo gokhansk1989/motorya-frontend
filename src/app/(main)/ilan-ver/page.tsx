@@ -542,7 +542,11 @@ export default function CreateListingPage() {
 
   /** Izgara altindaki islem dugmelerinin ortak stili (44px dokunma hedefi). */
   const islemDugmesi = (pasif: boolean): React.CSSProperties => ({
-    flex: 1, height: 44, minWidth: 44, display: 'grid', placeItems: 'center',
+    // 5 dugme x 44px = 220px; kart dar ekranda 145px olabiliyor ve
+    // sondaki "Kaldir" kartin disina tasip tiklanamaz hale geliyordu.
+    // `flex: 1 0 44px` + saran satir: dar kartta ikinci sataya geciyor,
+    // dokunma hedefi 44px'in altina DUSMUYOR.
+    flex: '1 0 44px', height: 44, minWidth: 44, display: 'grid', placeItems: 'center',
     background: 'transparent', border: 0,
     borderRight: '1px solid var(--line-soft)',
     color: pasif ? 'var(--ink-3)' : 'var(--ink-2)',
@@ -1024,12 +1028,12 @@ export default function CreateListingPage() {
                           Ustune binen 22px'lik bir X hem fotografi
                           orterek kapatiyor hem de dokunma hedefi olarak
                           cok kucuktu (erisilebilirlik tabani 44px). */}
-                      <div style={{ display: 'flex', borderTop: '1px solid var(--line-soft)' }}>
+                      <div style={{ display: 'flex', flexWrap: 'wrap', borderTop: '1px solid var(--line-soft)' }}>
                         <button
                           type="button"
                           onClick={() => kapakYap(i)}
                           disabled={i === 0}
-                          aria-label={i === 0 ? `Fotoğraf ${i + 1} zaten kapak` : `Fotoğraf ${i + 1}'i kapak yap`}
+                          aria-label={i === 0 ? `${i + 1}. fotoğraf zaten kapak` : `${i + 1}. fotoğrafı kapak yap`}
                           title={i === 0 ? 'Bu zaten kapak' : 'Kapak yap'}
                           style={islemDugmesi(i === 0)}
                         >
@@ -1038,7 +1042,7 @@ export default function CreateListingPage() {
                         <button
                           type="button"
                           onClick={() => kadrajiDuzenle(i)}
-                          aria-label={`Fotoğraf ${i + 1} kadrajını düzenle`}
+                          aria-label={`${i + 1}. fotoğrafın kadrajını düzenle`}
                           title="Kadrajı düzenle"
                           style={islemDugmesi(false)}
                         >
@@ -1048,7 +1052,7 @@ export default function CreateListingPage() {
                           type="button"
                           onClick={() => tasi(i, -1)}
                           disabled={i === 0}
-                          aria-label={`Fotoğraf ${i + 1}'i öne al`}
+                          aria-label={`${i + 1}. fotoğrafı öne al`}
                           title="Öne al"
                           style={islemDugmesi(i === 0)}
                         >
@@ -1058,7 +1062,7 @@ export default function CreateListingPage() {
                           type="button"
                           onClick={() => tasi(i, 1)}
                           disabled={i === imageUrls.length - 1}
-                          aria-label={`Fotoğraf ${i + 1}'i geri al`}
+                          aria-label={`${i + 1}. fotoğrafı geri al`}
                           title="Geri al"
                           style={islemDugmesi(i === imageUrls.length - 1)}
                         >
@@ -1067,7 +1071,7 @@ export default function CreateListingPage() {
                         <button
                           type="button"
                           onClick={() => fotografiKaldir(i)}
-                          aria-label={`Fotoğraf ${i + 1}'i kaldır`}
+                          aria-label={`${i + 1}. fotoğrafı kaldır`}
                           title="Kaldır"
                           style={{ ...islemDugmesi(false), color: 'var(--bad)' }}
                         >
