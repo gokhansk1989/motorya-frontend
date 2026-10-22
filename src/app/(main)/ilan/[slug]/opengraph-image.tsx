@@ -1,4 +1,5 @@
 import { ImageResponse } from 'next/og';
+import sharp from 'sharp';
 import { SSR_API_URL } from '@/lib/apiBase';
 
 export const size = { width: 1200, height: 630 };
@@ -13,9 +14,31 @@ const CONDITION_LABELS: Record<string, string> = {
   POOR: 'Kullanılmış',
 };
 
-async function fetchListing(id: string) {
+/**
+ * Paylasim karti icin ilani getirir.
+ *
+ * ── UC AYRI HATA BIR ARADAYDI ─────────────────────────────────────
+ *
+ * Bu kart hicbir zaman ilani gosteremedi; her paylasilan baglanti
+ * fotografsiz, fiyatsiz, "Motorya Ilani" yazan bos bir kart
+ * uretiyordu. WhatsApp ve Instagram'da paylasilan her ilan boyle
+ * gorunuyordu.
+ *
+ * 1. Route klasoru [slug] ama kod `params.id` okuyordu - her zaman
+ *    undefined.
+ * 2. Next 16'da `params` bir Promise; `await` edilmeden alan
+ *    okunamaz.
+ * 3. `/listings/<slug>` ucu yok, 404 doner. Dogrusu
+ *    `/listings/by-slug?s=` - sayfanin kendisi zaten bunu kullaniyor.
+ *
+ * Ucu birden ayni anda sessizce basarisiz oldugu icin kart hic
+ * patlamadi, yalnizca bos cikti.
+ */
+async function fetchListingBySlug(slug: string) {
   try {
-    const res = await fetch(`${SSR_API_URL}/listings/${id}`, { next: { revalidate: 300 } });
+    const res = await fetch(`${SSR_API_URL}/listings/by-slug?s=${encodeURIComponent(slug)}`, {
+      next: { revalidate: 300 },
+    });
     if (!res.ok) return null;
     return await res.json();
   } catch {
@@ -23,14 +46,49 @@ async function fetchListing(id: string) {
   }
 }
 
-export default async function OgImage({ params }: { params: { id: string } }) {
-  const listing = await fetchListing(params.id);
+/**
+ * Ilan fotografini karta gomulebilir hale getirir.
+ *
+ * Yukleme hatti her fotografi WebP'ye ceviriyor; next/og'un altindaki
+ * satori ise uzak gorselleri kendi cozucusuyle okuyor ve WebP'yi
+ * desteklemiyor. Sonuc sessiz: kart uretiliyor ama arka plan bos
+ * kaliyor.
+ *
+ * Bu yuzden gorseli burada sunucu tarafinda JPEG'e cevirip veri
+ * adresi olarak gomuyoruz. Kart zaten 1200x630 oldugu icin ayrica
+ * kuculuyor - hem satori'nin isi kolaylasiyor hem cikti kucuk kaliyor.
+ *
+ * Basarisiz olursa `null` donuyor ve kart fotografsiz ciziliyor:
+ * paylasim kartinin hic uretilememesi, fotografsiz uretilmesinden
+ * cok daha kotu.
+ */
+async function gorseliGom(url: string): Promise<string | null> {
+  try {
+    const res = await fetch(url, { next: { revalidate: 300 } });
+    if (!res.ok) return null;
+    const ham = Buffer.from(await res.arrayBuffer());
+    const jpeg = await sharp(ham)
+      .resize({ width: size.width, height: size.height, fit: 'cover' })
+      .jpeg({ quality: 78 })
+      .toBuffer();
+    return `data:image/jpeg;base64,${jpeg.toString('base64')}`;
+  } catch {
+    return null;
+  }
+}
+
+export default async function OgImage({ params }: { params: Promise<{ slug: string }> }) {
+  const { slug } = await params;
+  const listing = await fetchListingBySlug(slug);
 
   const title = listing?.title ?? 'Motorya İlanı';
-  const price = listing ? Number(listing.price).toLocaleString('tr-TR') + ' ₺' : '';
+  // "TL" yaziyoruz: satori'nin varsayilan fontunda ₺ glifi yok ve
+  // fiyat "5.000 ▯" diye ciziliyordu. Font gomup kartin agirligini
+  // artirmaktansa, Turkce'de zaten dogal olan kisaltma.
+  const price = listing ? Number(listing.price).toLocaleString('tr-TR') + ' TL' : '';
   const city = listing?.city;
   const condition = listing ? CONDITION_LABELS[listing.condition] ?? listing.condition : null;
-  const photo = listing?.images?.[0]?.url;
+  const photo = listing?.images?.[0]?.url ? await gorseliGom(listing.images[0].url) : null;
 
   return new ImageResponse(
     (
@@ -45,9 +103,16 @@ export default async function OgImage({ params }: { params: { id: string } }) {
         }}
       >
         {photo && (
+          /* width/height ACIKCA veriliyor: next/og uzak bir gorselin
+             boyutunu kendiliginden cozemiyor ve "Image size cannot be
+             determined" ile tum karti dusuruyor. Bu yol daha once hic
+             calismadigi icin (ilan zaten yuklenemiyordu) hata hic
+             gorulmemisti. */
           <img
             src={photo}
             alt=""
+            width={size.width}
+            height={size.height}
             style={{
               position: 'absolute',
               inset: 0,
