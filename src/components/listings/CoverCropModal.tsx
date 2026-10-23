@@ -85,8 +85,21 @@ export function CoverCropModal({ src, mevcut, onConfirm, onSkip, onIptal }: Prop
           </button>
         </div>
 
-        {/* Önizleme kutusu kartın GERÇEK oranında (4/3.4). */}
-        <div style={{ position: 'relative', width: '100%', aspectRatio: KART_ORANI_CSS, maxHeight: '46vh', background: '#000' }}>
+        {/* Önizleme kutusu kartın GERÇEK oranında (4/3.4).
+            Yükseklik SINIRLANMIYOR, GENİŞLİK sınırlanıyor: `maxHeight`
+            ile kısıtlamak `aspect-ratio`yu eziyordu ve kısa ekranlarda
+            önizleme 1.57 orana düşüyordu — yani tam da düzeltmeye
+            çalıştığımız uyumsuzluk geri geliyordu (canlıda ölçüldü). */}
+        <div
+          style={{
+            position: 'relative',
+            width: '100%',
+            maxWidth: `calc(46vh * ${KART_ORANI})`,
+            margin: '0 auto',
+            aspectRatio: KART_ORANI_CSS,
+            background: '#000',
+          }}
+        >
           <Cropper
             image={src}
             crop={crop}
