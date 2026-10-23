@@ -11,8 +11,8 @@ import { Upload, X, ChevronDown, Zap, Camera, ImagePlus, ChevronRight, ChevronLe
 import { useRef, useState, useMemo, useEffect } from 'react';
 import { gecerliTcKimlik } from '@/lib/tcKimlik';
 import toast from 'react-hot-toast';
-import { CoverCropModal } from '@/components/listings/CoverCropModal';
-import { KART_ORANI_CSS } from '@/lib/gorselOran';
+import { FotografYoneticisi } from '@/components/listings/FotografYoneticisi';
+import type { Kadraj } from '@/lib/gorselOran';
 import { IL_ILCE, ALL_CITIES } from '@/lib/il-ilce';
 import { analytics } from '@/lib/analytics';
 import { olc, olcumBosalt, rastgeleKimlik, fotoHataKodu } from '@/lib/olcum';
@@ -232,10 +232,15 @@ export default function CreateListingPage() {
 
   const [step, setStep] = useState(1);
   const [imageUrls, setImageUrls] = useState<string[]>([]);
+  /**
+   * Adres -> kadraj eslemesi.
+   *
+   * Diziye degil ADRESE bagli: fotograf sirasi degisince kadrajlar
+   * karismiyor ve kapak degistirmek bir fotografin kadrajini baska
+   * bir fotografa vermiyor.
+   */
+  const [kadrajlar, setKadrajlar] = useState<Record<string, Kadraj>>({});
   const [uploading, setUploading] = useState(false);
-  const [cropQueue, setCropQueue] = useState<{ coverFile: File; rest: File[] } | null>(null);
-  const fileInputRef = useRef<HTMLInputElement>(null);
-  const cameraInputRef = useRef<HTMLInputElement>(null);
   const createListing = useCreateListing();
 
   const [selL1, setSelL1] = useState('');
@@ -253,158 +258,9 @@ export default function CreateListingPage() {
     olc('ilan_akis_basladi', undefined, akisId.current);
   }, [authReady, user, me]);
 
-  /**
-   * Tek bir dosyayi yukleyip URL'sini dondurur.
-   *
-   * `uploadFiles` sonuclari dogrudan listeye EKLIYOR; kadraj
-   * guncellemesinde ise yeni gorselin var olanin YERINE gecmesi
-   * gerekiyor. Bu yuzden ayri bir yol.
-   */
-  const yukleVeUrlAl = async (dosyalar: File[]): Promise<string[]> => {
-    setUploading(true);
-    try {
-      const form = new FormData();
-      dosyalar.forEach(f => form.append('files', f));
-      const res = await api.post('/upload/images', form, {
-        headers: { 'Content-Type': 'multipart/form-data' },
-      });
-      const hatalar: { ad: string; kod: string; mesaj: string }[] = res.data.hatalar ?? [];
-      for (const h of hatalar) {
-        olc('ilan_foto_hata', { hataKodu: h.kod }, akisId.current);
-        toast.error(h.mesaj, { duration: 7000 });
-      }
-      return res.data.urls ?? [];
-    } catch (err) {
-      olc('ilan_foto_hata', { hataKodu: fotoHataKodu(err) }, akisId.current);
-      const m = (err as any)?.response?.data?.message;
-      toast.error(typeof m === 'string' && m ? m : 'Fotoğraf yüklenemedi', { duration: 7000 });
-      return [];
-    } finally {
-      setUploading(false);
-    }
-  };
 
-  const uploadFiles = async (toUpload: File[]) => {
-    // Boyut DENEMEDEN once soyleniyor.
-    //
-    // Onceden buyuk dosya once yukleniyor, sonra proxy'den donuyordu;
-    // kullanici megabaytlarca veri harcayip "yuklenemedi" goruyordu.
-    // Ustelik vekil sunucu istek govdesini okumadan bagi kestigi icin
-    // tarayiciya 413 degil ag hatasi donuyor ve olcumde boyut sorunu
-    // "ag" diye gorunuyordu.
-    const buyuk = toUpload.filter((f) => f.size > DOSYA_SINIRI);
-    const gonderilecek = toUpload.filter((f) => f.size <= DOSYA_SINIRI);
-    if (buyuk.length > 0) {
-      olc('ilan_foto_hata', { hataKodu: 'boyut' }, akisId.current);
-      toast.error(
-        buyuk.length === 1
-          ? `Fotoğraf ${MB(buyuk[0].size)} — en fazla ${MB(DOSYA_SINIRI)} olabilir.`
-          : `${buyuk.length} fotoğraf ${MB(DOSYA_SINIRI)} sınırını aşıyor.`,
-      );
-    }
-    if (gonderilecek.length === 0) return;
 
-    setUploading(true);
-    try {
-      // Istek basina toplam sinir: vekil sunucu 25 MB'da kesiyor ve bunu
-      // govde okunmadan yaptigi icin tarayiciya duzgun bir 413 bile
-      // ulasmiyor. Sekiz dosya tek istege sigmayabilecegi icin
-      // gruplara bolup yolluyoruz.
-      const gruplar: File[][] = [];
-      let grup: File[] = [];
-      let toplam = 0;
-      for (const f of gonderilecek) {
-        if (grup.length > 0 && toplam + f.size > ISTEK_SINIRI) {
-          gruplar.push(grup); grup = []; toplam = 0;
-        }
-        grup.push(f); toplam += f.size;
-      }
-      if (grup.length > 0) gruplar.push(grup);
 
-      for (const g of gruplar) {
-        const form = new FormData();
-        g.forEach(f => form.append('files', f));
-        const res = await api.post('/upload/images', form, {
-          headers: { 'Content-Type': 'multipart/form-data' },
-        });
-        setImageUrls(prev => [...prev, ...res.data.urls]);
-        olc('ilan_foto_yuklendi', { adet: res.data.urls?.length ?? g.length }, akisId.current);
-
-        // Kismi basari: sunucu gecenleri dondu, kalanlari ayrica bildirdi.
-        // Bunlari sessizce yutmak, kullanicinin eksik fotografla ilan
-        // vermesine yol acardi.
-        const hatalar: { ad: string; kod: string; mesaj: string }[] = res.data.hatalar ?? [];
-        for (const h of hatalar) {
-          olc('ilan_foto_hata', { hataKodu: h.kod }, akisId.current);
-          toast.error(h.mesaj, { duration: 7000 });
-        }
-      }
-    } catch (err) {
-      // Yalnizca kaba hata kodu olculuyor; dosya adi, boyut ve sunucu mesaji
-      // gonderilmiyor.
-      olc('ilan_foto_hata', { hataKodu: fotoHataKodu(err) }, akisId.current);
-      const m = (err as any)?.response?.data?.message;
-      toast.error(typeof m === 'string' && m ? m : 'Fotoğraf yüklenemedi', { duration: 7000 });
-    } finally {
-      setUploading(false);
-      if (fileInputRef.current) fileInputRef.current.value = '';
-      if (cameraInputRef.current) cameraInputRef.current.value = '';
-    }
-  };
-
-  const handleFiles = async (files: FileList | null) => {
-    if (!files || files.length === 0) return;
-    const remaining = MAX_IMAGES - imageUrls.length;
-    if (remaining <= 0) { toast.error(`En fazla ${MAX_IMAGES} fotoğraf ekleyebilirsiniz`); return; }
-    const selected = Array.from(files).slice(0, remaining);
-
-    if (imageUrls.length === 0) {
-      const [coverFile, ...rest] = selected;
-      setCropQueue({ coverFile, rest });
-      return;
-    }
-
-    await uploadFiles(selected);
-  };
-
-  /**
-   * Kadraj onaylandi. Iki ayri durum var:
-   *  - YENI yukleme: kirpilmis kapak + kalan dosyalar yukleniyor.
-   *  - MEVCUT fotografin kadraji: yalnizca o fotograf degisiyor ve
-   *    SIRASI korunuyor. Sona eklenseydi kapak sessizce baska bir
-   *    fotografa gecerdi.
-   */
-  const handleCropConfirm = async (cropped: File) => {
-    if (!cropQueue) return;
-    const { rest } = cropQueue;
-    const hedef = kadrajIndeks;
-    setCropQueue(null);
-    setKadrajIndeks(null);
-
-    if (hedef !== null) {
-      const yeniUrller = await yukleVeUrlAl([cropped]);
-      if (yeniUrller.length === 0) return;   // hata zaten bildirildi
-      setImageUrls(p => p.map((u, j) => (j === hedef ? yeniUrller[0] : u)));
-      toast.success('Kadraj güncellendi');
-      return;
-    }
-    await uploadFiles([cropped, ...rest]);
-  };
-
-  /**
-   * Kadrajdan vazgecildi. Mevcut bir fotografin kadraji
-   * duzenleniyorduysa HICBIR SEY degismiyor: eski kapak ve eski kadraj
-   * oldugu gibi kaliyor.
-   */
-  const handleCropSkip = async () => {
-    if (!cropQueue) return;
-    const { coverFile, rest } = cropQueue;
-    const mevcuduDuzenliyorduk = kadrajIndeks !== null;
-    setCropQueue(null);
-    setKadrajIndeks(null);
-    if (mevcuduDuzenliyorduk) return;
-    await uploadFiles([coverFile, ...rest]);
-  };
 
   const { data: allCategories = [] } = useCategories();
   // Marka listesi secilen kategoriye gore SIRALANIYOR, kisalmiyor: 154
@@ -510,11 +366,12 @@ export default function CreateListingPage() {
           gender: gender || '',
         },
         imageUrls,
+        imageCrops: kadrajlar,
         step,
       });
     }, 1500);
     return () => { if (kaydetZamani.current) clearTimeout(kaydetZamani.current); };
-  }, [taslakDurumu, izlenen, imageUrls, step, selL1, selL2, gender]);
+  }, [taslakDurumu, izlenen, imageUrls, kadrajlar, step, selL1, selL2, gender]);
 
   /** "Taslagina devam et": kaydedilmis degerleri forma yaz. */
   const taslagaDevamEt = () => {
@@ -527,6 +384,9 @@ export default function CreateListingPage() {
       if (p[alan]) setValue(alan, p[alan]);
     }
     setImageUrls(taslak.imageUrls ?? []);
+    // Kadrajlar da taslaktan geri geliyor: taslaga donen kullanici
+    // sectigi kadraji kaybetmiyor.
+    setKadrajlar((taslak.imageCrops as Record<string, Kadraj>) ?? {});
     setStep(Math.min(Math.max(taslak.step ?? 1, 1), 4));
     setTaslakDurumu('hazir');
     olc('ilan_form_acildi', { kaynak: 'taslak' }, akisId.current);
@@ -540,66 +400,9 @@ export default function CreateListingPage() {
     await taslagiSil();
   };
 
-  /** Izgara altindaki islem dugmelerinin ortak stili (44px dokunma hedefi). */
-  const islemDugmesi = (pasif: boolean): React.CSSProperties => ({
-    // 5 dugme x 44px = 220px; kart dar ekranda 145px olabiliyor ve
-    // sondaki "Kaldir" kartin disina tasip tiklanamaz hale geliyordu.
-    // `flex: 1 0 44px` + saran satir: dar kartta ikinci sataya geciyor,
-    // dokunma hedefi 44px'in altina DUSMUYOR.
-    flex: '1 0 44px', height: 44, minWidth: 44, display: 'grid', placeItems: 'center',
-    background: 'transparent', border: 0,
-    borderRight: '1px solid var(--line-soft)',
-    color: pasif ? 'var(--ink-3)' : 'var(--ink-2)',
-    cursor: pasif ? 'default' : 'pointer',
-    opacity: pasif ? 0.4 : 1,
-  });
 
-  /**
-   * Kapak degistirme.
-   *
-   * Kapak = listenin ILK ogesi. Onceden bunu degistirmenin tek yolu
-   * fotografi silip yeniden yuklemekti; ikinci fotografa tiklamak
-   * hicbir sey yapmiyordu.
-   *
-   * Secilen fotograf basa ALINIYOR, digerlerinin kendi arasindaki
-   * sirasi korunuyor - yani "kapak secimi" ile "siralama" birbirini
-   * bozmuyor.
-   */
-  const kapakYap = (i: number) => {
-    if (i === 0) return;
-    setImageUrls(p => {
-      const y = p.slice();
-      const [secilen] = y.splice(i, 1);
-      return [secilen, ...y];
-    });
-    toast.success('Kapak değiştirildi');
-  };
 
-  /** Fotografi listede bir ileri/bir geri tasir. Surukleme gerektirmez. */
-  const tasi = (i: number, yon: -1 | 1) => {
-    const j = i + yon;
-    setImageUrls(p => {
-      if (j < 0 || j >= p.length) return p;
-      const y = p.slice();
-      [y[i], y[j]] = [y[j], y[i]];
-      return y;
-    });
-  };
 
-  /**
-   * Fotograf kaldirma.
-   *
-   * Kapak kaldirilirsa sirada kalan ilk fotograf kapak olur ve bu
-   * kullaniciya SOYLENIR: sessizce baska bir fotografin kapak olmasi,
-   * ilan yayimlandiktan sonra fark edilen turden bir surpriz.
-   */
-  const fotografiKaldir = (i: number) => {
-    const kapaktiMi = i === 0;
-    setImageUrls(p => p.filter((_, j) => j !== i));
-    if (kapaktiMi && imageUrls.length > 1) {
-      toast('Kapak kaldırıldı — sıradaki fotoğraf kapak oldu', { icon: 'ℹ️' });
-    }
-  };
 
   /**
    * Var olan bir fotografin kadrajini yeniden duzenler.
@@ -609,18 +412,6 @@ export default function CreateListingPage() {
    * sorunu yok.
    */
   const [kadrajIndeks, setKadrajIndeks] = useState<number | null>(null);
-  /** Masaustunde surukle-birak gorsel geri bildirimi. */
-  const [surukleniyor, setSurukleniyor] = useState(false);
-  const kadrajiDuzenle = async (i: number) => {
-    try {
-      const res = await fetch(imageUrls[i]);
-      const blob = await res.blob();
-      setKadrajIndeks(i);
-      setCropQueue({ coverFile: new File([blob], `kadraj-${i}.jpg`, { type: blob.type || 'image/jpeg' }), rest: [] });
-    } catch {
-      toast.error('Fotoğraf açılamadı, tekrar dene');
-    }
-  };
 
   const handleNext = async () => {
     if (step === 1) {
@@ -687,6 +478,8 @@ export default function CreateListingPage() {
         sizeLabel: data.sizeLabel || undefined,
         gender: gender || undefined,
         imageUrls,
+        imageCrops: kadrajlar,
+        
       });
       // Basari dugmeye tiklamayla degil, sunucunun ilani olusturup kimligini
       // dondurmesiyle sayiliyor. 4. adim (Fiyat) ayri "adim tamamlandi"
@@ -931,159 +724,19 @@ export default function CreateListingPage() {
           </div>
 
         {/* ── STEP 2: Fotoğraflar ── */}
-        {/* Hidden inputs her zaman DOM'da kalmalı */}
-        <input ref={fileInputRef} type="file" accept="image/*" multiple style={{ display: 'none' }} onChange={e => handleFiles(e.target.files)} />
-        <input ref={cameraInputRef} type="file" accept="image/*" capture="environment" style={{ display: 'none' }} onChange={e => handleFiles(e.target.files)} />
-
-        <div
-          className="m-form-card"
-          style={{
-            ...card,
-            display: step === 2 ? 'block' : 'none',
-            outline: surukleniyor ? '2px dashed var(--accent)' : undefined,
-            outlineOffset: surukleniyor ? -6 : undefined,
-          }}
-          onDragOver={e => { e.preventDefault(); setSurukleniyor(true); }}
-          onDragLeave={e => { if (e.currentTarget === e.target) setSurukleniyor(false); }}
-          onDrop={e => {
-            e.preventDefault();
-            setSurukleniyor(false);
-            void handleFiles(e.dataTransfer.files);
-          }}
-        >
-            <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', marginBottom: 18 }}>
-              <p style={{ ...lbl, fontSize: 15, margin: 0 }}>Fotoğraflar</p>
-              <span style={{ fontSize: 12, fontFamily: 'var(--font-mono)', color: imageUrls.length >= MAX_IMAGES ? 'var(--bad)' : 'var(--ink-3)' }}>
-                {imageUrls.length}/{MAX_IMAGES}
-              </span>
-            </div>
-
-            {/* Sinirlar SECIMDEN ONCE goruluyor.
-                Onceden bunlari ogrenmenin tek yolu, dosyayi secip
-                reddedilmesini beklemekti. */}
-            <p style={{ fontSize: 12.5, color: 'var(--ink-3)', margin: '-8px 0 14px', lineHeight: 1.55 }}>
-              JPEG, PNG, WebP, HEIC · dosya başına en fazla {MB(DOSYA_SINIRI)} · en fazla {MAX_IMAGES} fotoğraf
-            </p>
-
-            {/* Empty state — big pick buttons */}
-            {imageUrls.length === 0 && !uploading && (
-              <div className="m-form-2col" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginBottom: 14 }}>
-                <button type="button" className="photo-pick-btn" onClick={() => cameraInputRef.current?.click()}>
-                  <Camera size={32} strokeWidth={1.5} />
-                  <span>Fotoğraf Çek</span>
-                </button>
-                <button type="button" className="photo-pick-btn" onClick={() => fileInputRef.current?.click()}>
-                  <ImagePlus size={32} strokeWidth={1.5} />
-                  <span>Galeriden Seç</span>
-                </button>
-              </div>
-            )}
-
-            {/* Add more buttons */}
-            {imageUrls.length > 0 && imageUrls.length < MAX_IMAGES && (
-              <div style={{ display: 'flex', gap: 10, marginBottom: 14 }}>
-                <button type="button" onClick={() => fileInputRef.current?.click()} disabled={uploading} className="m-btn" style={{ flex: 1, gap: 8, justifyContent: 'center' }}>
-                  <ImagePlus size={17} /><span>Galeriden Seç</span>
-                </button>
-                <button type="button" onClick={() => cameraInputRef.current?.click()} disabled={uploading} className="m-btn" style={{ flex: 1, gap: 8, justifyContent: 'center' }}>
-                  <Camera size={17} /><span>Kamera</span>
-                </button>
-              </div>
-            )}
-
-            {uploading && (
-              <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 14px', background: 'var(--bg-2)', borderRadius: 8, marginBottom: 12, fontSize: 13, color: 'var(--ink-3)' }}>
-                <span style={{ width: 16, height: 16, border: '2px solid var(--accent)', borderTopColor: 'transparent', borderRadius: '50%', animation: 'spin 0.7s linear infinite', display: 'inline-block', flexShrink: 0 }} />
-                Fotoğraflar yükleniyor…
-              </div>
-            )}
-
-            {imageUrls.length > 0 && (
-              <>
-                <p style={{ fontSize: 12.5, color: 'var(--ink-3)', margin: '0 0 10px', lineHeight: 1.5 }}>
-                  İlk fotoğraf kapak olur. Ürünün tamamının göründüğü, aydınlık bir fotoğrafı kapak seç.
-                </p>
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(140px, 1fr))', gap: 12 }}>
-                  {imageUrls.map((url, i) => (
-                    <div key={url + i} style={{ borderRadius: 12, overflow: 'hidden', background: 'var(--bg-2)', border: i === 0 ? '2px solid var(--accent)' : '1px solid var(--line)' }}>
-                      {/* Onizleme KART ORANINDA: satici fotografin kartta
-                          nasil gorunecegini burada goruyor. Once kare
-                          gosteriliyordu, yani izgaradaki gorunum gercekle
-                          uyusmuyordu. */}
-                      <div style={{ position: 'relative', aspectRatio: KART_ORANI_CSS, background: 'var(--bg-2)' }}>
-                        <img src={url} style={{ width: '100%', height: '100%', objectFit: 'cover' }} alt={`Fotoğraf ${i + 1}`} />
-                        {i === 0 && (
-                          <span style={{
-                            position: 'absolute', top: 6, left: 6, fontSize: 10, fontWeight: 700,
-                            fontFamily: 'var(--font-mono)', background: 'var(--accent)',
-                            color: 'var(--accent-ink)', borderRadius: 5, padding: '3px 7px',
-                            display: 'inline-flex', alignItems: 'center', gap: 4,
-                          }}>
-                            <Check size={11} aria-hidden="true" />KAPAK
-                          </span>
-                        )}
-                      </div>
-
-                      {/* Islemler gorsel UZERINDE degil ALTINDA.
-                          Ustune binen 22px'lik bir X hem fotografi
-                          orterek kapatiyor hem de dokunma hedefi olarak
-                          cok kucuktu (erisilebilirlik tabani 44px). */}
-                      <div style={{ display: 'flex', flexWrap: 'wrap', borderTop: '1px solid var(--line-soft)' }}>
-                        <button
-                          type="button"
-                          onClick={() => kapakYap(i)}
-                          disabled={i === 0}
-                          aria-label={i === 0 ? `${i + 1}. fotoğraf zaten kapak` : `${i + 1}. fotoğrafı kapak yap`}
-                          title={i === 0 ? 'Bu zaten kapak' : 'Kapak yap'}
-                          style={islemDugmesi(i === 0)}
-                        >
-                          <Star size={15} fill={i === 0 ? 'currentColor' : 'none'} aria-hidden="true" />
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => kadrajiDuzenle(i)}
-                          aria-label={`${i + 1}. fotoğrafın kadrajını düzenle`}
-                          title="Kadrajı düzenle"
-                          style={islemDugmesi(false)}
-                        >
-                          <Crop size={15} aria-hidden="true" />
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => tasi(i, -1)}
-                          disabled={i === 0}
-                          aria-label={`${i + 1}. fotoğrafı öne al`}
-                          title="Öne al"
-                          style={islemDugmesi(i === 0)}
-                        >
-                          <ChevronLeft size={15} aria-hidden="true" />
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => tasi(i, 1)}
-                          disabled={i === imageUrls.length - 1}
-                          aria-label={`${i + 1}. fotoğrafı geri al`}
-                          title="Geri al"
-                          style={islemDugmesi(i === imageUrls.length - 1)}
-                        >
-                          <ChevronRight size={15} aria-hidden="true" />
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => fotografiKaldir(i)}
-                          aria-label={`${i + 1}. fotoğrafı kaldır`}
-                          title="Kaldır"
-                          style={{ ...islemDugmesi(false), color: 'var(--bad)' }}
-                        >
-                          <Trash2 size={15} aria-hidden="true" />
-                        </button>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </>
-            )}
-          </div>
+        {/* Fotograf yonetimi ORTAK bilesende: ilan verme ve ilan
+            duzenleme ekranlari ayni yetenekleri paylasiyor, boylece
+            birinde duzeltilen bir davranis digerinde eksik kalmiyor. */}
+        <div className="m-form-card" style={{ ...card, display: step === 2 ? 'block' : 'none' }}>
+          <FotografYoneticisi
+            deger={{ urller: imageUrls, kadrajlar }}
+            onDegis={d => { setImageUrls(d.urller); setKadrajlar(d.kadrajlar); }}
+            onMesgul={setUploading}
+            onOlcum={(ad, veri) =>
+              olc(ad === 'yuklendi' ? 'ilan_foto_yuklendi' : 'ilan_foto_hata', veri as any, akisId.current)
+            }
+          />
+        </div>
 
         {/* ── STEP 3: Detaylar — display:none ile gizle, DOM'dan çıkarma ── */}
         <div style={{ display: step === 3 ? 'block' : 'none' }}>
@@ -1344,13 +997,6 @@ export default function CreateListingPage() {
 
       <style>{`@keyframes spin { to { transform: rotate(360deg); } } option { background: var(--bg-1); color: var(--ink); }`}</style>
 
-      {cropQueue && (
-        <CoverCropModal
-          file={cropQueue.coverFile}
-          onConfirm={handleCropConfirm}
-          onSkip={handleCropSkip}
-        />
-      )}
     </div>
   );
 }

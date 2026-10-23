@@ -1,4 +1,6 @@
 'use client';
+import { KirpilmisGorsel } from './KirpilmisGorsel';
+import { kadrajOku } from '@/lib/gorselOran';
 import Link from 'next/link';
 import Image from 'next/image';
 import { Heart, MapPin, Eye, Star, Image as ImageIcon } from 'lucide-react';
@@ -37,12 +39,26 @@ export function ListingCard({ listing }: { listing: Listing }) {
     ? Math.round((1 - Number(listing.price) / Number(listing.originalPrice)) * 100)
     : null;
 
+  // Kapagin kadraji: yalnizca ONAYLI surumden geliyor. Incelenmemis
+  // kadraj ListingPendingEdit'te bekliyor ve Listing satirina
+  // gecmedigi icin karta sizamiyor.
+  const kapakKadraji = kadrajOku((listing as any).images?.[0]?.crop);
+
   return (
     <article className="m-card m-fade-up">
       <Link href={`/ilan/${listing.slug ?? listing.id}`} style={{ display: 'block', textDecoration: 'none' }}>
         <div className="m-card-media">
           {thumb ? (
-            <Image src={thumb} alt={listing.title} fill sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 240px" className="m-card-img-contain" style={{ objectFit: 'contain' }} />
+            kapakKadraji ? (
+              /* Kadraj verilmisse secilen alan kutuyu dolduruyor.
+                 next/image yerine duz img: `fill` mutlak yerlesim
+                 kullaniyor ve kadraj icin gereken olcek/kaydirma ile
+                 cakisiyor. Yuklenen dosyalar zaten 1920 px WebP'ye
+                 indirgenmis durumda. */
+              <KirpilmisGorsel src={thumb} alt={listing.title} kadraj={kapakKadraji} loading="lazy" />
+            ) : (
+              <Image src={thumb} alt={listing.title} fill sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 240px" className="m-card-img-contain" style={{ objectFit: 'contain' }} />
+            )
           ) : (
             <div style={{
               position: 'absolute', inset: 0,

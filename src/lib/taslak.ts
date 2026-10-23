@@ -17,6 +17,8 @@ import { api } from './api';
 export interface Taslak {
   payload: Record<string, string>;
   imageUrls: string[];
+  /** Adres -> kadraj eslemesi (bkz. lib/gorselOran.ts). */
+  imageCrops?: Record<string, { x: number; y: number; w: number; h: number }>;
   step: number;
   updatedAt: string;
 }
@@ -35,6 +37,8 @@ export async function taslagiGetir(): Promise<Taslak | null> {
 export async function taslagiKaydet(t: {
   payload: Record<string, unknown>;
   imageUrls: string[];
+  /** Adres -> kadraj eslemesi (bkz. lib/gorselOran.ts). */
+  imageCrops?: Record<string, { x: number; y: number; w: number; h: number }>;
   step: number;
 }): Promise<void> {
   try {

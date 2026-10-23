@@ -10,6 +10,8 @@ import { useRef, useState, useEffect } from 'react';
 import toast from 'react-hot-toast';
 import Link from 'next/link';
 import { IL_ILCE, ALL_CITIES } from '@/lib/il-ilce';
+import { FotografYoneticisi, type FotografDurumu } from '@/components/listings/FotografYoneticisi';
+import { kadrajOku, type Kadraj } from '@/lib/gorselOran';
 
 const schema = z.object({
   title: z.string().min(5, 'En az 5 karakter'),
@@ -61,10 +63,10 @@ export default function EditListingPage() {
   const router = useRouter();
   const qc = useQueryClient();
   const [imageUrls, setImageUrls] = useState<string[]>([]);
+  /** Adres -> kadraj eslemesi; ilan verme ekranindakiyle ayni bicim. */
+  const [kadrajlar, setKadrajlar] = useState<Record<string, Kadraj>>({});
   const [uploading, setUploading] = useState(false);
   const [initialized, setInitialized] = useState(false);
-  const fileInputRef = useRef<HTMLInputElement>(null);
-  const cameraInputRef = useRef<HTMLInputElement>(null);
 
   const { data: listing, isLoading } = useQuery({
     queryKey: ['listing', id],
@@ -101,6 +103,16 @@ export default function EditListingPage() {
         sizeLabel: listing.sizeLabel ?? '',
       });
       setImageUrls(listing.images?.map((img: any) => img.url) ?? []);
+      // Kayitli kadrajlar geri yukleniyor: duzenlemeye giren kullanici
+      // daha once sectigi kadraji kaybetmiyor ve yeniden duzenlerken
+      // ORIJINAL fotograf uzerinden calisiyor.
+      setKadrajlar(
+        Object.fromEntries(
+          (listing.images ?? [])
+            .map((img: any) => [img.url, kadrajOku(img.crop)])
+            .filter(([, k]: any) => k),
+        ) as Record<string, Kadraj>,
+      );
       setInitialized(true);
     }
   }, [listing, initialized, reset]);
@@ -113,32 +125,16 @@ export default function EditListingPage() {
       qc.invalidateQueries({ queryKey: ['listing', id] });
       router.push('/ilanlarim');
     },
-    onError: () => toast.error('İlan güncellenemedi'),
+    // Hata durumunda yonlendirme YOK: kullanicinin yaptigi
+    // degisiklikler formda duruyor, tekrar deneyebiliyor.
+    onError: (e: any) =>
+      toast.error(e?.response?.data?.message || 'İlan güncellenemedi — değişikliklerin duruyor, tekrar deneyebilirsin'),
   });
 
-  const handleFiles = async (files: FileList | null) => {
-    if (!files || files.length === 0) return;
-    const remaining = MAX_IMAGES - imageUrls.length;
-    if (remaining <= 0) { toast.error(`En fazla ${MAX_IMAGES} fotoğraf ekleyebilirsiniz`); return; }
-    const selected = Array.from(files).slice(0, remaining);
-    setUploading(true);
-    try {
-      const form = new FormData();
-      selected.forEach(f => form.append('files', f));
-      const res = await api.post('/upload/images', form, { headers: { 'Content-Type': 'multipart/form-data' } });
-      setImageUrls(prev => [...prev, ...res.data.urls]);
-    } catch {
-      toast.error('Fotoğraf yüklenemedi');
-    } finally {
-      setUploading(false);
-      if (fileInputRef.current) fileInputRef.current.value = '';
-      if (cameraInputRef.current) cameraInputRef.current.value = '';
-    }
-  };
 
   const onSubmit = async (data: FormData) => {
     if (imageUrls.length === 0) { toast.error('En az bir fotoğraf ekleyin'); return; }
-    updateMutation.mutate({ ...data, imageUrls });
+    updateMutation.mutate({ ...data, imageUrls, imageCrops: kadrajlar });
   };
 
   if (isLoading) {
@@ -175,55 +171,20 @@ export default function EditListingPage() {
 
       <form onSubmit={handleSubmit(onSubmit)}>
 
-        {/* Fotoğraflar */}
+        {/* Fotograflar — ilan verme ekraniyla AYNI bilesen.
+            Onceden burada kapak secme, siralama ve kadraj yoktu:
+            kullanici ilani duzenlemeye girdiginde yeni ilan
+            ekranindaki yeteneklerin yarisini kaybediyordu. */}
         <div style={card}>
-          <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', marginBottom: 16 }}>
-            <p style={{ ...label, fontSize: 15, margin: 0 }}>Fotoğraflar</p>
-            <span style={{ fontSize: 12, fontFamily: 'var(--font-mono)', color: imageUrls.length >= MAX_IMAGES ? 'var(--bad)' : 'var(--ink-3)' }}>
-              {imageUrls.length}/{MAX_IMAGES} görsel
-            </span>
-          </div>
-          <input ref={fileInputRef} type="file" accept="image/*" multiple style={{ display: 'none' }} onChange={e => handleFiles(e.target.files)} />
-          <input ref={cameraInputRef} type="file" accept="image/*" capture="environment" style={{ display: 'none' }} onChange={e => handleFiles(e.target.files)} />
-
-          {imageUrls.length < MAX_IMAGES && (
-            <div style={{ display: 'flex', gap: 10, marginBottom: 14 }}>
-              <button type="button" onClick={() => fileInputRef.current?.click()} disabled={uploading} className="m-btn" style={{ flex: 1, gap: 8, justifyContent: 'center' }}>
-                <ImagePlus size={17} /><span>Galeriden Seç</span>
-              </button>
-              <button type="button" onClick={() => cameraInputRef.current?.click()} disabled={uploading} className="m-btn" style={{ flex: 1, gap: 8, justifyContent: 'center' }}>
-                <Camera size={17} /><span>Kamera</span>
-              </button>
-            </div>
-          )}
-
-          {uploading && (
-            <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 14px', background: 'var(--bg-2)', borderRadius: 8, marginBottom: 12, fontSize: 13, color: 'var(--ink-3)' }}>
-              <span style={{ width: 16, height: 16, border: '2px solid var(--accent)', borderTopColor: 'transparent', borderRadius: '50%', animation: 'spin 0.7s linear infinite', display: 'inline-block', flexShrink: 0 }} />
-              Fotoğraflar yükleniyor…
-            </div>
-          )}
-
-          {imageUrls.length > 0 ? (
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(88px, 1fr))', gap: 10 }}>
-              {imageUrls.map((url, i) => (
-                <div key={i} style={{ position: 'relative', aspectRatio: '1', borderRadius: 10, overflow: 'hidden', background: 'var(--bg-2)', border: i === 0 ? '2px solid var(--accent)' : '1px solid var(--line)' }}>
-                  <img src={url} style={{ width: '100%', height: '100%', objectFit: 'cover' }} alt="" />
-                  <button type="button" onClick={() => setImageUrls(p => p.filter((_, j) => j !== i))}
-                    style={{ position: 'absolute', top: 4, right: 4, width: 22, height: 22, background: 'oklch(0 0 0 / 0.65)', border: 0, borderRadius: '50%', display: 'grid', placeItems: 'center', cursor: 'pointer', color: '#fff' }}>
-                    <X size={12} />
-                  </button>
-                  {i === 0 && <span style={{ position: 'absolute', bottom: 4, left: 4, fontSize: 10, fontFamily: 'var(--font-mono)', background: 'var(--accent)', color: 'var(--accent-ink)', borderRadius: 4, padding: '2px 5px' }}>KAPAK</span>}
-                </div>
-              ))}
-            </div>
-          ) : !uploading && (
-            <div onClick={() => fileInputRef.current?.click()}
-              style={{ border: '2px dashed var(--line)', borderRadius: 12, padding: '36px 0', textAlign: 'center', color: 'var(--ink-3)', cursor: 'pointer' }}>
-              <Upload size={30} style={{ margin: '0 auto 10px', opacity: 0.35 }} />
-              <p style={{ fontSize: 14, fontWeight: 500 }}>Fotoğraf ekle</p>
-            </div>
-          )}
+          <FotografYoneticisi
+            deger={{ urller: imageUrls, kadrajlar }}
+            onDegis={(d: FotografDurumu) => { setImageUrls(d.urller); setKadrajlar(d.kadrajlar); }}
+            onMesgul={setUploading}
+          />
+          <p style={{ fontSize: 12, color: 'var(--ink-3)', marginTop: 14, lineHeight: 1.55 }}>
+            Fotoğraf veya kadraj değişikliği moderasyon onayına gider. Onaylanana kadar
+            ilanında <strong>şu anki onaylı görseller</strong> yayında kalmaya devam eder.
+          </p>
         </div>
 
         {/* İlan Bilgileri */}
