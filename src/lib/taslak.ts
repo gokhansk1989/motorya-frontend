@@ -19,6 +19,8 @@ export interface Taslak {
   imageUrls: string[];
   /** Adres -> kadraj eslemesi (bkz. lib/gorselOran.ts). */
   imageCrops?: Record<string, { x: number; y: number; w: number; h: number }>;
+  /** Kapak olarak secilen fotografin adresi; siradan bagimsiz. */
+  coverUrl?: string | null;
   step: number;
   updatedAt: string;
 }
@@ -39,6 +41,8 @@ export async function taslagiKaydet(t: {
   imageUrls: string[];
   /** Adres -> kadraj eslemesi (bkz. lib/gorselOran.ts). */
   imageCrops?: Record<string, { x: number; y: number; w: number; h: number }>;
+  /** Kapak olarak secilen fotografin adresi; siradan bagimsiz. */
+  coverUrl?: string | null;
   step: number;
 }): Promise<void> {
   try {

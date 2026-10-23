@@ -20,7 +20,10 @@ function ConditionPill({ condition }: { condition: string }) {
   };
   const c = map[condition] ?? { label: condition, tone: 'var(--good)' };
   return (
-    <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6, fontFamily: 'var(--font-mono)', fontSize: 11.5, fontWeight: 700, letterSpacing: '0.03em', color: 'var(--ink-2)' }}>
+    // `whiteSpace: nowrap` sart: "Sifir Gibi" iki kelime ve 360 px'te
+    // ikinci satira kayip karti 17 px uzatiyordu. Satirin sarmamasi
+    // yetmiyor, ICINDEKI metnin de sarmamasi gerekiyor.
+    <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6, fontFamily: 'var(--font-mono)', fontSize: 11.5, fontWeight: 700, letterSpacing: '0.03em', color: 'var(--ink-2)', whiteSpace: 'nowrap', flexShrink: 0 }}>
       <span style={{ width: 8, height: 8, borderRadius: 2, background: c.tone, flexShrink: 0 }} />
       {c.label}
     </span>
@@ -122,10 +125,29 @@ export function ListingCard({ listing }: { listing: Listing }) {
       </Link>
 
       <div className="m-card-body">
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
+        {/* Durum + marka TEK SATIRDA kalıyor.
+            Uzun marka adlarında ("Alpinestars", "Rev'it!") bu satır
+            360 px'te ikinci satıra kayıyor ve kart 17 px uzuyordu;
+            aynı satırdaki iki karttan birinde fiyat ve konum 17 px
+            aşağıda kalıyordu (canlıda ölçüldü). Marka artık sarmıyor,
+            sığmazsa kısalıyor — dış yükseklik eşitlenerek gizlenen bir
+            iç hizasızlık kalmıyor. */}
+        <div style={{
+          display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+          gap: 6, marginBottom: 8, minHeight: 17, flexWrap: 'nowrap',
+        }}>
           <ConditionPill condition={listing.condition} />
           {listing.brand && (
-            <span className="m-kicker" style={{ letterSpacing: '0.12em' }}>{listing.brand.name}</span>
+            <span
+              className="m-kicker"
+              title={listing.brand.name}
+              style={{
+                letterSpacing: '0.12em', whiteSpace: 'nowrap',
+                overflow: 'hidden', textOverflow: 'ellipsis', minWidth: 0,
+              }}
+            >
+              {listing.brand.name}
+            </span>
           )}
         </div>
         <Link href={`/ilan/${listing.slug ?? listing.id}`} style={{ textDecoration: 'none' }}>
@@ -152,24 +174,47 @@ export function ListingCard({ listing }: { listing: Listing }) {
             </span>
           </div>
         )}
-        <div style={{ display: 'flex', alignItems: 'baseline', gap: 8, flexWrap: 'wrap' }}>
-          <span className="m-price">
+        {/* Fiyat bloğu SABİT YÜKSEKLİKTE: fiyat kendi satırında, eski
+            fiyat ve indirim rozeti altında.
+
+            Önceden üçü tek bir saran satırdaydı ve içeriğe göre 1, 2
+            ya da 3 satıra çıkıyordu; 390 px'te kartlar 345–400 px
+            arasında değişiyor, aynı satırdaki kartlar arasında boşluk
+            oluşuyordu (canlıda ölçüldü). İkinci satır indirim olmayan
+            kartlarda da yer kaplıyor, böylece fiyat ve konum
+            satırları tüm kartlarda aynı hizada. */}
+        <div>
+          <div className="m-price" style={{ whiteSpace: 'nowrap' }}>
             {formatPrice(listing.price)}
-          </span>
-          {listing.originalPrice && (
-            <span className="m-price-old">{formatPrice(listing.originalPrice)}</span>
-          )}
-          {discountPct && discountPct > 0 && (
-            // Bu oran SATICININ girdigi liste fiyatina gore hesaplaniyor;
-            // dogrulanmis bir magaza indirimi degil. Baslik metni bunu
-            // soyluyor ki rozet bir garanti gibi okunmasin.
-            <span
-              title="Satıcının belirttiği liste fiyatına göre"
-              style={{ fontSize: 11, fontWeight: 700, padding: '2px 6px', borderRadius: 4, background: '#ffe5d3', color: '#c04a12', lineHeight: 1.4 }}
-            >
-              %{discountPct} <span style={{ fontWeight: 500 }}>satıcı indirimi</span>
-            </span>
-          )}
+          </div>
+          <div style={{
+            display: 'flex', alignItems: 'center', gap: 5,
+            minHeight: 20, marginTop: 2, overflow: 'hidden',
+          }}>
+            {listing.originalPrice && (
+              <span className="m-price-old" style={{ whiteSpace: 'nowrap' }}>
+                {formatPrice(listing.originalPrice)}
+              </span>
+            )}
+            {discountPct && discountPct > 0 && (
+              // Bu oran SATICININ girdigi liste fiyatina gore hesaplaniyor;
+              // dogrulanmis bir magaza indirimi degil. Baslik metni bunu
+              // soyluyor ki rozet bir garanti gibi okunmasin.
+              <span
+                title="Satıcının belirttiği liste fiyatına göre"
+                style={{
+                  fontSize: 10, fontWeight: 700, padding: '2px 5px', borderRadius: 4,
+                  background: '#ffe5d3', color: '#c04a12', lineHeight: 1.3,
+                  whiteSpace: 'nowrap', flexShrink: 0,
+                }}
+              >
+                {/* "satici" kelimesi dar kartta da kaliyor: rozetin
+                    dogrulanmis bir magaza indirimi gibi okunmamasi
+                    bunun tek guvencesi. Uzun kelime yerine kisasi. */}
+                %{discountPct} <span style={{ fontWeight: 500 }}>satıcı</span>
+              </span>
+            )}
+          </div>
         </div>
         {/* Sehir, tarih ve goruntulenme 12px ve --ink-3 ile yaziliyordu; bes
             sutunlu masaustu duzeninde okunmasi zordu. Bir punto buyutup bir

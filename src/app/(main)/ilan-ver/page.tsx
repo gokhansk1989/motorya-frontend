@@ -240,6 +240,8 @@ export default function CreateListingPage() {
    * bir fotografa vermiyor.
    */
   const [kadrajlar, setKadrajlar] = useState<Record<string, Kadraj>>({});
+  /** Kapak olarak secilen fotografin adresi; siradan bagimsiz. */
+  const [kapak, setKapak] = useState<string | null>(null);
   const [uploading, setUploading] = useState(false);
   const createListing = useCreateListing();
 
@@ -367,11 +369,12 @@ export default function CreateListingPage() {
         },
         imageUrls,
         imageCrops: kadrajlar,
+        coverUrl: kapak ?? undefined,
         step,
       });
     }, 1500);
     return () => { if (kaydetZamani.current) clearTimeout(kaydetZamani.current); };
-  }, [taslakDurumu, izlenen, imageUrls, kadrajlar, step, selL1, selL2, gender]);
+  }, [taslakDurumu, izlenen, imageUrls, kadrajlar, kapak, step, selL1, selL2, gender]);
 
   /** "Taslagina devam et": kaydedilmis degerleri forma yaz. */
   const taslagaDevamEt = () => {
@@ -387,6 +390,7 @@ export default function CreateListingPage() {
     // Kadrajlar da taslaktan geri geliyor: taslaga donen kullanici
     // sectigi kadraji kaybetmiyor.
     setKadrajlar((taslak.imageCrops as Record<string, Kadraj>) ?? {});
+    setKapak(taslak.coverUrl ?? null);
     setStep(Math.min(Math.max(taslak.step ?? 1, 1), 4));
     setTaslakDurumu('hazir');
     olc('ilan_form_acildi', { kaynak: 'taslak' }, akisId.current);
@@ -479,6 +483,7 @@ export default function CreateListingPage() {
         gender: gender || undefined,
         imageUrls,
         imageCrops: kadrajlar,
+        coverUrl: kapak ?? undefined,
         
       });
       // Basari dugmeye tiklamayla degil, sunucunun ilani olusturup kimligini
@@ -729,8 +734,8 @@ export default function CreateListingPage() {
             birinde duzeltilen bir davranis digerinde eksik kalmiyor. */}
         <div className="m-form-card" style={{ ...card, display: step === 2 ? 'block' : 'none' }}>
           <FotografYoneticisi
-            deger={{ urller: imageUrls, kadrajlar }}
-            onDegis={d => { setImageUrls(d.urller); setKadrajlar(d.kadrajlar); }}
+            deger={{ urller: imageUrls, kadrajlar, kapak }}
+            onDegis={d => { setImageUrls(d.urller); setKadrajlar(d.kadrajlar); setKapak(d.kapak); }}
             onMesgul={setUploading}
             onOlcum={(ad, veri) =>
               olc(ad === 'yuklendi' ? 'ilan_foto_yuklendi' : 'ilan_foto_hata', veri as any, akisId.current)

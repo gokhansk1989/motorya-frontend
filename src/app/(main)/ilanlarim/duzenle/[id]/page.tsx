@@ -65,6 +65,7 @@ export default function EditListingPage() {
   const [imageUrls, setImageUrls] = useState<string[]>([]);
   /** Adres -> kadraj eslemesi; ilan verme ekranindakiyle ayni bicim. */
   const [kadrajlar, setKadrajlar] = useState<Record<string, Kadraj>>({});
+  const [kapak, setKapak] = useState<string | null>(null);
   const [uploading, setUploading] = useState(false);
   const [initialized, setInitialized] = useState(false);
 
@@ -102,7 +103,11 @@ export default function EditListingPage() {
         district: listing.district ?? '',
         sizeLabel: listing.sizeLabel ?? '',
       });
-      setImageUrls(listing.images?.map((img: any) => img.url) ?? []);
+      // Sunucu gorselleri KAPAK ONDE donduruyor; satici sirasini
+      // gormek icin sortOrder'a gore yeniden diziyoruz.
+      const sirali = [...(listing.images ?? [])].sort((a: any, b: any) => a.sortOrder - b.sortOrder);
+      setImageUrls(sirali.map((img: any) => img.url));
+      setKapak((listing.images ?? []).find((i: any) => i.isCover)?.url ?? sirali[0]?.url ?? null);
       // Kayitli kadrajlar geri yukleniyor: duzenlemeye giren kullanici
       // daha once sectigi kadraji kaybetmiyor ve yeniden duzenlerken
       // ORIJINAL fotograf uzerinden calisiyor.
@@ -134,7 +139,7 @@ export default function EditListingPage() {
 
   const onSubmit = async (data: FormData) => {
     if (imageUrls.length === 0) { toast.error('En az bir fotoğraf ekleyin'); return; }
-    updateMutation.mutate({ ...data, imageUrls, imageCrops: kadrajlar });
+    updateMutation.mutate({ ...data, imageUrls, imageCrops: kadrajlar, coverUrl: kapak ?? undefined });
   };
 
   if (isLoading) {
@@ -177,8 +182,8 @@ export default function EditListingPage() {
             ekranindaki yeteneklerin yarisini kaybediyordu. */}
         <div style={card}>
           <FotografYoneticisi
-            deger={{ urller: imageUrls, kadrajlar }}
-            onDegis={(d: FotografDurumu) => { setImageUrls(d.urller); setKadrajlar(d.kadrajlar); }}
+            deger={{ urller: imageUrls, kadrajlar, kapak }}
+            onDegis={(d: FotografDurumu) => { setImageUrls(d.urller); setKadrajlar(d.kadrajlar); setKapak(d.kapak); }}
             onMesgul={setUploading}
           />
           <p style={{ fontSize: 12, color: 'var(--ink-3)', marginTop: 14, lineHeight: 1.55 }}>

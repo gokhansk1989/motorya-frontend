@@ -429,10 +429,10 @@ export default function ListingDetailClient({ initialListing }: { initialListing
             )}
             {images.length > 1 && (
               <>
-                <button onClick={() => setImgIdx(i => Math.max(0, i - 1))} style={{ position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)', width: 36, height: 36, borderRadius: '50%', background: 'oklch(0 0 0 / 0.5)', border: '1px solid oklch(1 0 0 / 0.12)', display: 'grid', placeItems: 'center', color: '#fff', backdropFilter: 'blur(6px)' }}>
+                <button type="button" aria-label="Önceki fotoğraf" onClick={() => setImgIdx(i => Math.max(0, i - 1))} style={{ position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)', width: 36, height: 36, borderRadius: '50%', background: 'oklch(0 0 0 / 0.5)', border: '1px solid oklch(1 0 0 / 0.12)', display: 'grid', placeItems: 'center', color: '#fff', backdropFilter: 'blur(6px)' }}>
                   <ChevronLeft size={18} />
                 </button>
-                <button onClick={() => setImgIdx(i => Math.min(images.length - 1, i + 1))} style={{ position: 'absolute', right: 12, top: '50%', transform: 'translateY(-50%)', width: 36, height: 36, borderRadius: '50%', background: 'oklch(0 0 0 / 0.5)', border: '1px solid oklch(1 0 0 / 0.12)', display: 'grid', placeItems: 'center', color: '#fff', backdropFilter: 'blur(6px)' }}>
+                <button type="button" aria-label="Sonraki fotoğraf" onClick={() => setImgIdx(i => Math.min(images.length - 1, i + 1))} style={{ position: 'absolute', right: 12, top: '50%', transform: 'translateY(-50%)', width: 36, height: 36, borderRadius: '50%', background: 'oklch(0 0 0 / 0.5)', border: '1px solid oklch(1 0 0 / 0.12)', display: 'grid', placeItems: 'center', color: '#fff', backdropFilter: 'blur(6px)' }}>
                   <ChevronRight size={18} />
                 </button>
               </>
@@ -443,6 +443,8 @@ export default function ListingDetailClient({ initialListing }: { initialListing
               </span>
             )}
             <button
+              type="button"
+              aria-label="İlanı paylaş"
               onClick={async () => {
                 const url = `${window.location.origin}/ilan/${id}`;
                 const shareText = `${listing.title} — ${formatPrice(listing.price)}`;
@@ -457,13 +459,24 @@ export default function ListingDetailClient({ initialListing }: { initialListing
                 }
               }}
               style={{ position: 'absolute', top: 12, right: 12, width: 36, height: 36, borderRadius: 8, background: 'oklch(0 0 0 / 0.5)', border: '1px solid oklch(1 0 0 / 0.12)', display: 'grid', placeItems: 'center', color: '#fff', backdropFilter: 'blur(6px)', cursor: 'pointer' }}>
-              <Share2 size={18} />
+              <Share2 size={18} aria-hidden="true" />
             </button>
           </div>
           {images.length > 1 && (
-            <div style={{ display: 'flex', gap: 8, marginTop: 12, overflowX: 'auto' }}>
+            <div role="tablist" aria-label="İlan fotoğrafları" style={{ display: 'flex', gap: 8, marginTop: 12, overflowX: 'auto' }}>
               {images.map((img: { url: string }, i: number) => (
-                <button key={i} onClick={() => setImgIdx(i)} style={{ width: 76, height: 62, borderRadius: 8, overflow: 'hidden', border: '2px solid ' + (i === imgIdx ? 'var(--accent)' : 'transparent'), padding: 0, flexShrink: 0, cursor: 'pointer' }}>
+                /* Kucuk resimler sekme gibi davraniyor: hangisinin
+                   secili oldugu YALNIZCA cerceve rengiyle degil,
+                   aria-selected ile de bildiriliyor. */
+                <button
+                  key={i}
+                  type="button"
+                  role="tab"
+                  aria-selected={i === imgIdx}
+                  aria-label={`Fotoğraf ${i + 1} / ${images.length}`}
+                  onClick={() => setImgIdx(i)}
+                  style={{ width: 76, height: 62, borderRadius: 8, overflow: 'hidden', border: '2px solid ' + (i === imgIdx ? 'var(--accent)' : 'var(--line)'), opacity: i === imgIdx ? 1 : 0.65, padding: 0, flexShrink: 0, cursor: 'pointer' }}
+                >
                   <img src={img.url} style={{ width: '100%', height: '100%', objectFit: 'cover' }} alt="" />
                 </button>
               ))}

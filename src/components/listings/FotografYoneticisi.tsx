@@ -46,12 +46,49 @@ type KuyrukOgesi = {
   dosya: File;
   durum: KuyrukDurumu;
   sebep?: string;
+  /** Hata kodu: aynı dosyayla tekrar denemenin faydası var mı? */
+  kod?: string;
   onizleme: string;
 };
+
+/**
+ * Aynı dosyayla tekrar denemek anlamsız olan hatalar.
+ *
+ * Biçim desteklenmiyorsa dosya ikinci denemede de desteklenmeyecek;
+ * "Tekrar dene" sunmak kullanıcıyı boşuna uğraştırır. Ağ ve sunucu
+ * hatalarında ise tekrar denemek gerçekten işe yarar.
+ */
+const TEKRAR_FAYDASIZ = ['tip', 'bozuk', 'heic', 'boyut'];
+
+/** Kullanıcıya gösterilecek hata metni — iç ayrıntı sızdırmadan. */
+function hataMetni(kod: string): string {
+  switch (kod) {
+    case 'ag':
+      return 'Bağlantı kurulamadı. İnternetini kontrol edip tekrar dene.';
+    case 'boyut':
+      return 'Dosya çok büyük.';
+    case 'limit':
+      return 'Çok hızlı denendi. Biraz bekleyip tekrar dene.';
+    case 'sunucu':
+      return 'Sunucuda bir sorun oldu. Birazdan tekrar dene.';
+    case 'tip':
+      return 'Bu dosya desteklenmiyor. JPEG, PNG, WebP veya HEIC fotoğraf seç.';
+    default:
+      return 'Fotoğraf yüklenemedi.';
+  }
+}
 
 export type FotografDurumu = {
   urller: string[];
   kadrajlar: Record<string, Kadraj>;
+  /**
+   * Kapak olarak secilen fotografin ADRESI.
+   *
+   * Onceden kapak "dizinin ilk ogesi" idi; ikinci fotografi kapak
+   * yapmak onu basa tasiyor, yani saticinin kurdugu sirayi bozuyordu.
+   * Artik kapak secmek sirayi, sira degistirmek de kapagi etkilemiyor.
+   */
+  kapak: string | null;
 };
 
 interface Props {
@@ -65,6 +102,8 @@ interface Props {
 
 export function FotografYoneticisi({ deger, onDegis, onOlcum, onMesgul }: Props) {
   const { urller, kadrajlar } = deger;
+  // Secili kapak listede yoksa (silinmisse) ilk fotograf kapak sayilir.
+  const kapak = deger.kapak && urller.includes(deger.kapak) ? deger.kapak : (urller[0] ?? null);
   const [kuyruk, setKuyruk] = useState<KuyrukOgesi[]>([]);
   const [surukleniyor, setSurukleniyor] = useState(false);
   const [kadrajHedefi, setKadrajHedefi] = useState<string | null>(null);
@@ -76,8 +115,8 @@ export function FotografYoneticisi({ deger, onDegis, onOlcum, onMesgul }: Props)
   const mesgul = kuyruk.some(k => k.durum === 'yukleniyor' || k.durum === 'bekliyor');
 
   const guncelle = useCallback((y: Partial<FotografDurumu>) => {
-    onDegis({ urller, kadrajlar, ...y });
-  }, [urller, kadrajlar, onDegis]);
+    onDegis({ urller, kadrajlar, kapak, ...y });
+  }, [urller, kadrajlar, kapak, onDegis]);
 
   /** Tek bir kuyruk öğesini yükler. Kuyruktaki durumu kendisi günceller. */
   const ogeyiYukle = useCallback(async (oge: KuyrukOgesi) => {
@@ -98,7 +137,9 @@ export function FotografYoneticisi({ deger, onDegis, onOlcum, onMesgul }: Props)
       if (gelen.length === 0) {
         const h = hatalar[0];
         onOlcum?.('hata', { hataKodu: h?.kod ?? 'bilinmiyor' });
-        setKuyruk(k => k.map(x => (x.id === oge.id ? { ...x, durum: 'hata', sebep: h?.mesaj ?? 'Yüklenemedi' } : x)));
+        setKuyruk(k => k.map(x => (x.id === oge.id
+          ? { ...x, durum: 'hata', kod: h?.kod, sebep: h?.mesaj ?? hataMetni(h?.kod ?? '') }
+          : x)));
         return;
       }
 
@@ -106,7 +147,9 @@ export function FotografYoneticisi({ deger, onDegis, onOlcum, onMesgul }: Props)
       setKuyruk(k => k.map(x => (x.id === oge.id ? { ...x, durum: 'tamam' } : x)));
       // Başarılı dosya listeye şimdi giriyor: hatalı bir dosyanın
       // yüklenmiş gibi ilana eklenmesi mümkün değil.
-      onDegis({ urller: [...urller, ...gelen].slice(0, EN_FAZLA_FOTO), kadrajlar });
+      const yeniUrller = [...urller, ...gelen].slice(0, EN_FAZLA_FOTO);
+      // Ilk fotograf yuklendiginde kapak kendiliginden o oluyor.
+      onDegis({ urller: yeniUrller, kadrajlar, kapak: kapak ?? yeniUrller[0] ?? null });
 
       // Tamamlananı kısa süre sonra kuyruktan düşür; liste zaten
       // fotoğrafı gösteriyor, iki yerde durmasının anlamı yok.
@@ -114,15 +157,18 @@ export function FotografYoneticisi({ deger, onDegis, onOlcum, onMesgul }: Props)
     } catch (err) {
       const kod = fotoHataKodu(err);
       onOlcum?.('hata', { hataKodu: kod });
+      // Sunucu metni varsa onu gosteriyoruz (zaten kullanici dilinde);
+      // yoksa koda gore hazir metin. Ic hata ayrintisi (yigin izi,
+      // kod adi) asla kullaniciya gitmiyor.
       const m = (err as any)?.response?.data?.message;
       setKuyruk(k => k.map(x => (x.id === oge.id
-        ? { ...x, durum: 'hata', sebep: typeof m === 'string' && m ? m : 'Bağlantı kurulamadı' }
+        ? { ...x, durum: 'hata', kod, sebep: typeof m === 'string' && m ? m : hataMetni(kod) }
         : x)));
     } finally {
       calisan.current.delete(oge.id);
       onMesgul?.(false);
     }
-  }, [urller, kadrajlar, onDegis, onOlcum, onMesgul]);
+  }, [urller, kadrajlar, kapak, onDegis, onOlcum, onMesgul]);
 
   /** Seçilen dosyaları kuyruğa alır ve sırayla yükler. */
   const dosyalariAl = useCallback(async (secilen: FileList | File[] | null) => {
@@ -166,16 +212,21 @@ export function FotografYoneticisi({ deger, onDegis, onOlcum, onMesgul }: Props)
 
   // ── Kapak / sıra / kaldırma ──────────────────────────────────────
 
-  const kapakYap = (i: number) => {
-    if (i === 0) return;
-    const y = urller.slice();
-    const [secilen] = y.splice(i, 1);
-    // Kadrajlar ADRESE bağlı olduğu için sıra değişince taşınmıyor:
-    // kapak değiştirmek bir fotoğrafın kadrajını diğerine vermiyor.
-    guncelle({ urller: [secilen, ...y] });
+  /**
+   * Kapak yap.
+   *
+   * Yalnizca isaret degisiyor; fotograf YERINDEN OYNAMIYOR. Eskiden
+   * secilen fotograf basa tasiniyordu ve satici her kapak degisiminde
+   * kurdugu sirayi kaybediyordu.
+   */
+  const kapakYap = (url: string) => {
+    if (url === kapak) return;
+    guncelle({ kapak: url });
     toast.success('Kapak değiştirildi');
   };
 
+  /** Siralama. Kapak ADRESE bagli oldugu icin bu islem kapagi
+   *  degistirmiyor - fotograf nereye giderse gitsin kapak odur. */
   const tasi = (i: number, yon: -1 | 1) => {
     const j = i + yon;
     if (j < 0 || j >= urller.length) return;
@@ -185,20 +236,24 @@ export function FotografYoneticisi({ deger, onDegis, onOlcum, onMesgul }: Props)
   };
 
   const kaldir = (i: number) => {
-    const kapaktiMi = i === 0;
     const silinen = urller[i];
+    const kapaktiMi = silinen === kapak;
     const y = urller.filter((_, j) => j !== i);
     const k = { ...kadrajlar };
     delete k[silinen];                 // kadrajı da bırakma
-    guncelle({ urller: y, kadrajlar: k });
+    const yeniKapak = kapaktiMi ? (y[0] ?? null) : kapak;
+    guncelle({ urller: y, kadrajlar: k, kapak: yeniKapak });
     if (kapaktiMi && y.length > 0) {
-      toast('Kapak kaldırıldı — sıradaki fotoğraf kapak oldu', { icon: 'ℹ️' });
+      toast('Kapak kaldırıldı — listedeki ilk fotoğraf kapak oldu', { icon: 'ℹ️' });
     }
   };
 
   const kadrajiUygula = (kadraj: Kadraj | null) => {
     const hedef = kadrajHedefi;
     setKadrajHedefi(null);
+    // Odak, pencereyi acan "Kadraj" dugmesine donuyor: klavyeyle
+    // gezen kullanici aksi halde sayfanin basina dusuyordu.
+    if (hedef) setTimeout(() => kadrajDugmeleri.current[hedef]?.focus(), 0);
     if (!hedef) return;
     const k = { ...kadrajlar };
     if (kadraj) k[hedef] = kadraj;
@@ -207,12 +262,22 @@ export function FotografYoneticisi({ deger, onDegis, onOlcum, onMesgul }: Props)
     toast.success(kadraj ? 'Kadraj kaydedildi' : 'Fotoğrafın tamamı gösterilecek');
   };
 
+  /** Ikon + kisa yazi. Dokunma hedefi 44px'in altina dusmuyor. */
   const islemDugmesi = (pasif: boolean): React.CSSProperties => ({
-    flex: '1 0 44px', height: 44, minWidth: 44, display: 'grid', placeItems: 'center',
+    // Her satirda IKI dugme. `1 0 auto` ile etiket uzunluguna gore
+    // sariyordu: "Kapak yap" genis oldugu icin bir kartta 3, digerinde
+    // 2 satir olusuyor ve ayni izgaradaki kartlar farkli yukseklige
+    // geliyordu.
+    flex: '1 1 calc(50% - 1px)', minHeight: 44, minWidth: 44,
+    display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 5,
+    padding: '0 8px', fontSize: 11.5, lineHeight: 1.1, whiteSpace: 'nowrap',
     background: 'transparent', border: 0, borderRight: '1px solid var(--line-soft)',
     color: pasif ? 'var(--ink-3)' : 'var(--ink-2)',
     cursor: pasif ? 'default' : 'pointer', opacity: pasif ? 0.4 : 1,
   });
+
+  /** Kadraj penceresi kapaninca odagin donecegi dugmeler. */
+  const kadrajDugmeleri = useRef<Record<string, HTMLButtonElement | null>>({});
 
   const doluluk = urller.length + kuyruk.filter(k => k.durum !== 'hata').length;
 
@@ -255,18 +320,21 @@ export function FotografYoneticisi({ deger, onDegis, onOlcum, onMesgul }: Props)
 
       {urller.length > 0 && (
         <p style={{ fontSize: 12.5, color: 'var(--ink-3)', margin: '0 0 10px', lineHeight: 1.5 }}>
-          İlk fotoğraf kapak olur. Ürünün tamamının göründüğü, aydınlık bir fotoğrafı kapak seç.
+          Kapak, kartlarda ve paylaşımlarda görünen fotoğraftır — sıradan bağımsızdır.
+          Ürünün tamamının göründüğü, aydınlık bir fotoğrafı kapak seç.
         </p>
       )}
 
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(140px, 1fr))', gap: 12 }}>
-        {urller.map((url, i) => (
-          <div key={url} style={{ borderRadius: 12, overflow: 'hidden', background: 'var(--bg-2)', border: i === 0 ? '2px solid var(--accent)' : '1px solid var(--line)' }}>
+        {urller.map((url, i) => {
+          const buKapak = url === kapak;
+          return (
+          <div key={url} style={{ borderRadius: 12, overflow: 'hidden', background: 'var(--bg-2)', border: buKapak ? '2px solid var(--accent)' : '1px solid var(--line)' }}>
             {/* Önizleme KART ORANINDA ve KADRAJLI: satıcı kartta ne
                 göreceğini burada görüyor. */}
             <div style={{ position: 'relative', aspectRatio: KART_ORANI_CSS, background: 'var(--bg-2)' }}>
               <KirpilmisGorsel src={url} alt={`Fotoğraf ${i + 1}`} kadraj={kadrajlar[url] ?? null} />
-              {i === 0 && (
+              {buKapak && (
                 <span style={{
                   position: 'absolute', top: 6, left: 6, fontSize: 10, fontWeight: 700,
                   fontFamily: 'var(--font-mono)', background: 'var(--accent)', color: 'var(--accent-ink)',
@@ -286,35 +354,42 @@ export function FotografYoneticisi({ deger, onDegis, onOlcum, onMesgul }: Props)
               )}
             </div>
 
-            {/* İşlemler görselin ALTINDA; üstüne binen küçük düğmeler hem
-                fotoğrafı örtüyor hem 44px dokunma hedefinin altında
-                kalıyordu. Satır dar kartta sarıyor. */}
+            {/* Islemler YAZIYLA.
+                Onceden yalnizca ikon vardi; erisilebilir adlar
+                doluydu ama ekranda goren kullanici ne oldugunu ancak
+                uzerine gelerek anlayabiliyordu - mobilde bu hic
+                mumkun degil. */}
             <div style={{ display: 'flex', flexWrap: 'wrap', borderTop: '1px solid var(--line-soft)' }}>
-              <button type="button" onClick={() => kapakYap(i)} disabled={i === 0}
-                aria-label={i === 0 ? `${i + 1}. fotoğraf zaten kapak` : `${i + 1}. fotoğrafı kapak yap`}
-                title={i === 0 ? 'Bu zaten kapak' : 'Kapak yap'} style={islemDugmesi(i === 0)}>
-                <Star size={15} fill={i === 0 ? 'currentColor' : 'none'} aria-hidden="true" />
+              <button type="button" onClick={() => kapakYap(url)} disabled={buKapak}
+                aria-label={buKapak ? `${i + 1}. fotoğraf zaten kapak` : `${i + 1}. fotoğrafı kapak yap`}
+                style={islemDugmesi(buKapak)}>
+                <Star size={14} fill={buKapak ? 'currentColor' : 'none'} aria-hidden="true" />
+                <span>{buKapak ? 'Kapak' : 'Kapak yap'}</span>
               </button>
               <button type="button" onClick={() => setKadrajHedefi(url)}
-                aria-label={`${i + 1}. fotoğrafın kadrajını düzenle`} title="Kadrajı düzenle" style={islemDugmesi(false)}>
-                <Crop size={15} aria-hidden="true" />
+                aria-label={`${i + 1}. fotoğrafın kadrajını düzenle`} style={islemDugmesi(false)}
+                ref={el => { kadrajDugmeleri.current[url] = el; }}>
+                <Crop size={14} aria-hidden="true" /><span>Kadraj</span>
               </button>
               <button type="button" onClick={() => tasi(i, -1)} disabled={i === 0}
-                aria-label={`${i + 1}. fotoğrafı öne al`} title="Öne al" style={islemDugmesi(i === 0)}>
-                <ChevronLeft size={15} aria-hidden="true" />
+                aria-label={`${i + 1}. fotoğrafı öne al`} style={islemDugmesi(i === 0)}>
+                <ChevronLeft size={14} aria-hidden="true" /><span>Öne</span>
               </button>
               <button type="button" onClick={() => tasi(i, 1)} disabled={i === urller.length - 1}
-                aria-label={`${i + 1}. fotoğrafı geri al`} title="Geri al" style={islemDugmesi(i === urller.length - 1)}>
-                <ChevronRight size={15} aria-hidden="true" />
+                aria-label={`${i + 1}. fotoğrafı geri al`} style={islemDugmesi(i === urller.length - 1)}>
+                <ChevronRight size={14} aria-hidden="true" /><span>Geri</span>
               </button>
+              {/* Silme digerlerinden AYRI: tam genislikte, kirmizi ve
+                  ustte ince bir ayracla. Geri alinamayan tek islem. */}
               <button type="button" onClick={() => kaldir(i)}
-                aria-label={`${i + 1}. fotoğrafı kaldır`} title="Kaldır"
-                style={{ ...islemDugmesi(false), color: 'var(--bad)' }}>
-                <Trash2 size={15} aria-hidden="true" />
+                aria-label={`${i + 1}. fotoğrafı kaldır`}
+                style={{ ...islemDugmesi(false), flex: '1 0 100%', borderRight: 0, borderTop: '1px solid var(--line-soft)', color: 'var(--bad)' }}>
+                <Trash2 size={14} aria-hidden="true" /><span>Kaldır</span>
               </button>
             </div>
           </div>
-        ))}
+          );
+        })}
 
         {/* Kuyruktaki dosyalar: her biri kendi durumunu gösteriyor. */}
         {kuyruk.map(k => (
@@ -343,15 +418,31 @@ export function FotografYoneticisi({ deger, onDegis, onOlcum, onMesgul }: Props)
             </div>
             {k.durum === 'hata' && (
               <div style={{ padding: '8px 10px' }}>
+                {/* Hangi dosyanın başarısız olduğu yazıyor: beş dosya
+                    seçildiğinde "bir tanesi olmadı" demek yetmiyor. */}
+                <p style={{ fontSize: 11.5, fontWeight: 600, color: 'var(--ink-2)', margin: '0 0 3px', wordBreak: 'break-all' }}>
+                  {k.dosya.name}
+                </p>
                 <p style={{ fontSize: 11.5, color: 'var(--bad)', margin: '0 0 8px', lineHeight: 1.45 }}>{k.sebep}</p>
                 <div style={{ display: 'flex', gap: 8 }}>
-                  <button type="button" onClick={() => void ogeyiYukle(k)}
-                    aria-label="Bu fotoğrafı tekrar yüklemeyi dene"
-                    className="m-btn" style={{ flex: 1, minHeight: 36, gap: 6, fontSize: 12.5 }}>
-                    <RotateCcw size={13} aria-hidden="true" />Tekrar dene
-                  </button>
+                  {TEKRAR_FAYDASIZ.includes(k.kod ?? '') ? (
+                    // Biçim/boyut hatasında aynı dosyayı tekrar yollamak
+                    // aynı sonucu verir; kullanıcıyı doğru eyleme
+                    // yönlendiriyoruz.
+                    <button type="button"
+                      onClick={() => { setKuyruk(q => q.filter(x => x.id !== k.id)); dosyaRef.current?.click(); }}
+                      className="m-btn" style={{ flex: 1, minHeight: 36, gap: 6, fontSize: 12.5 }}>
+                      <ImagePlus size={13} aria-hidden="true" />Başka dosya seç
+                    </button>
+                  ) : (
+                    <button type="button" onClick={() => void ogeyiYukle(k)}
+                      aria-label={`${k.dosya.name} dosyasını tekrar yüklemeyi dene`}
+                      className="m-btn" style={{ flex: 1, minHeight: 36, gap: 6, fontSize: 12.5 }}>
+                      <RotateCcw size={13} aria-hidden="true" />Tekrar dene
+                    </button>
+                  )}
                   <button type="button" onClick={() => setKuyruk(q => q.filter(x => x.id !== k.id))}
-                    aria-label="Bu dosyadan vazgeç"
+                    aria-label={`${k.dosya.name} dosyasından vazgeç`}
                     className="m-btn m-btn-ghost" style={{ minHeight: 36, fontSize: 12.5, padding: '0 10px' }}>
                     Vazgeç
                   </button>
@@ -380,7 +471,12 @@ export function FotografYoneticisi({ deger, onDegis, onOlcum, onMesgul }: Props)
           mevcut={kadrajlar[kadrajHedefi] ?? null}
           onConfirm={kadrajiUygula}
           onSkip={() => kadrajiUygula(null)}
-          onIptal={() => setKadrajHedefi(null)}
+          onIptal={() => {
+            const hedef = kadrajHedefi;
+            setKadrajHedefi(null);
+            // Vazgecince de odak geri donuyor ve HICBIR SEY degismiyor.
+            setTimeout(() => kadrajDugmeleri.current[hedef]?.focus(), 0);
+          }}
         />
       )}
     </div>
