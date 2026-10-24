@@ -54,13 +54,18 @@ const cspZorlayici = [
    * yaziliyordu. Yani zorlayici moda gecmek icin gereken veri hic
    * toplanmiyordu.
    *
-   * Iki yonerge birden: `report-uri` eski tarayicilar (Chrome'da
-   * kullanim disi ama hala calisiyor), `report-to` yenileri. Ucun
+   * `report-to` BILEREK YOK. Ikisi birlikte verildiginde Chrome
+   * `report-uri`'yi yok sayip yeni Reporting API'ye geciyor; canlida
+   * olculdu: tarayici 3 gercek ihlal tespit etti ama uca TEK bir istek
+   * bile atmadi (ag kaydinda yok, sunucu kaydinda yok). `report-uri`
+   * kullanim disi ilan edilmis olsa da calisan tek yol su an o.
+   * `report-to`ya donmek icin once teslimatin olculmesi gerekiyor.
+   *
+   * Ucun
    * kendisi adresleri buduyor ve `script-sample` almiyor;
    * bkz. app/api/csp-rapor/route.ts.
    */
   'report-uri /api/csp-rapor',
-  'report-to csp',
 ].join('; ');
 
 const cspRaporModu = [
@@ -83,13 +88,18 @@ const cspRaporModu = [
    * yaziliyordu. Yani zorlayici moda gecmek icin gereken veri hic
    * toplanmiyordu.
    *
-   * Iki yonerge birden: `report-uri` eski tarayicilar (Chrome'da
-   * kullanim disi ama hala calisiyor), `report-to` yenileri. Ucun
+   * `report-to` BILEREK YOK. Ikisi birlikte verildiginde Chrome
+   * `report-uri`'yi yok sayip yeni Reporting API'ye geciyor; canlida
+   * olculdu: tarayici 3 gercek ihlal tespit etti ama uca TEK bir istek
+   * bile atmadi (ag kaydinda yok, sunucu kaydinda yok). `report-uri`
+   * kullanim disi ilan edilmis olsa da calisan tek yol su an o.
+   * `report-to`ya donmek icin once teslimatin olculmesi gerekiyor.
+   *
+   * Ucun
    * kendisi adresleri buduyor ve `script-sample` almiyor;
    * bkz. app/api/csp-rapor/route.ts.
    */
   'report-uri /api/csp-rapor',
-  'report-to csp',
 ].join('; ');
 
 const securityHeaders = [
@@ -100,11 +110,6 @@ const securityHeaders = [
   { key: 'Permissions-Policy', value: 'camera=(), microphone=(), geolocation=(), payment=()' },
   { key: 'Content-Security-Policy', value: cspZorlayici },
   { key: 'Content-Security-Policy-Report-Only', value: cspRaporModu },
-  // Reporting API uc tanimi: `report-to csp` buna isaret ediyor.
-  {
-    key: 'Reporting-Endpoints',
-    value: 'csp="/api/csp-rapor"',
-  },
 ];
 
 const nextConfig: NextConfig = {
