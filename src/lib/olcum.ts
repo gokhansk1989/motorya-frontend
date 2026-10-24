@@ -16,6 +16,7 @@
  * baslatmiyor ve cerez onayi gerektirmiyor.
  */
 
+import { tokeniAl } from './oturum';
 import { API_URL } from './apiBase';
 import { kampanyaAlanlari, kampanyayiYakala, bekleyenAcilisiAl, adresiTemizle } from './kampanya';
 
@@ -113,7 +114,7 @@ function gonder(olaylar: Olay[], kapanis = false) {
 
   let token: string | null = null;
   try {
-    token = localStorage.getItem('access_token');
+    token = tokeniAl();
   } catch {
     token = null;
   }

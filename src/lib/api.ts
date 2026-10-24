@@ -2,17 +2,27 @@ import axios, { AxiosError, AxiosRequestConfig } from 'axios';
 
 import { API_URL } from './apiBase';
 import { guvenliYol } from './donus';
+import { tokeniAl, tokeniYaz, tokeniSil, yenilemeyiPaylas } from './oturum';
 
 export { API_URL };
 
 export const api = axios.create({
   baseURL: API_URL,
   headers: { 'Content-Type': 'application/json' },
+  /**
+   * Yenileme çerezinin gidebilmesi için şart.
+   *
+   * Site API'ye kendi origin'i üzerinden (`motorya.com.tr/api-backend`)
+   * konuştuğu için bu aslında same-origin bir istek; yine de axios'un
+   * varsayılanı çerez göndermemek, açıkça belirtmek gerekiyor.
+   */
+  withCredentials: true,
 });
 
 api.interceptors.request.use((config) => {
   if (typeof window !== 'undefined') {
-    const token = localStorage.getItem('access_token');
+    // Token BELLEKTEN okunuyor; `localStorage`'da bir kopyası yok.
+    const token = tokeniAl();
     if (token) config.headers.Authorization = `Bearer ${token}`;
   }
   return config;
@@ -20,20 +30,24 @@ api.interceptors.request.use((config) => {
 
 // Refresh flow: 401 gelirse tek seferlik refresh dene, orijinal isteği yeni token ile tekrarla.
 // Paralel giren 401'ler tek refresh çağrısını bekler (queue).
-let refreshInFlight: Promise<string | null> | null = null;
-
-async function performRefresh(): Promise<string | null> {
-  const refreshToken = localStorage.getItem('refresh_token');
-  const deviceId = localStorage.getItem('device_id');
-  if (!refreshToken || !deviceId) return null;
+/**
+ * Erişim tokenını yeniler.
+ *
+ * GÖVDE BOŞ: yenileme tokenı ve cihaz kimliği `HttpOnly` çerezde,
+ * sunucu onları oradan okuyor. İstemcinin bu değerleri bilmesi
+ * gerekmiyor — zaten amacı bu.
+ *
+ * Yeni yenileme tokenı da yanıtta dönmüyor; sunucu çerezi kendisi
+ * güncelliyor (rotasyon).
+ */
+export async function performRefresh(): Promise<string | null> {
   try {
-    const res = await axios.post(`${API_URL}/auth/refresh`, { refreshToken, deviceId }, {
+    const res = await axios.post(`${API_URL}/auth/refresh`, {}, {
       headers: { 'Content-Type': 'application/json' },
+      withCredentials: true,
     });
     const newAccess = res.data?.accessToken as string | undefined;
-    const newRefresh = res.data?.refreshToken as string | undefined;
-    if (newAccess) localStorage.setItem('access_token', newAccess);
-    if (newRefresh) localStorage.setItem('refresh_token', newRefresh);
+    if (newAccess) tokeniYaz(newAccess);
     return newAccess ?? null;
   } catch {
     return null;
@@ -50,9 +64,14 @@ api.interceptors.response.use(
     const url = original?.url ?? '';
     if (status === 401 && !original._retried && !url.includes('/auth/refresh') && !url.includes('/auth/login')) {
       original._retried = true;
-      refreshInFlight = refreshInFlight ?? performRefresh();
-      const newToken = await refreshInFlight;
-      refreshInFlight = null;
+      /**
+       * Eşzamanlı 401'ler TEK yenileme isteğini paylaşıyor.
+       *
+       * Sunucuda rotasyon ve tekrar kullanım tespiti var: paralel iki
+       * yenileme isteğinden ikincisi ESKİ tokenı sunmuş olur ve
+       * oturumu kapattırır. Yani koruma kendi kullanıcımızı atardı.
+       */
+      const newToken = await yenilemeyiPaylas(performRefresh);
       if (newToken) {
         original.headers = { ...(original.headers as any), Authorization: `Bearer ${newToken}` };
         return api.request(original);
@@ -83,13 +102,21 @@ api.interceptors.response.use(
        *
        * Artik yalnizca GERCEK kimlik bilgisinin varligina bakiliyor.
        */
-      const oturumVardi =
-        !!localStorage.getItem('access_token') || !!localStorage.getItem('refresh_token');
+      /**
+       * Oturum VAR MIYDI?
+       *
+       * Artık tek ölçüt bellekteki token. Eskiden `motorya-auth`
+       * anahtarının varlığına da bakılıyordu; zustand `logout()`'ta o
+       * anahtarı silmeyip üzerine `{"state":{"user":null}}` yazdığı
+       * için çıkış yapmış ziyaretçi de "oturumu doldu" ekranına
+       * atılıyordu. Artık anahtarda kimlik bilgisi yok, zaten ölçüt
+       * olarak da kullanılmıyor.
+       */
+      const oturumVardi = !!tokeniAl();
 
-      localStorage.removeItem('access_token');
-      localStorage.removeItem('refresh_token');
-      localStorage.removeItem('device_id');
-      localStorage.removeItem('motorya-auth');
+      tokeniSil();
+      // Kalıcı kullanıcı nesnesi de düşüyor: oturum bitti.
+      try { localStorage.removeItem('motorya-auth'); } catch { /* gizli sekme */ }
 
       /**
        * Istegi yapan taraf "bu istek misafirde de 401 donebilir, beni

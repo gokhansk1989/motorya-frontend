@@ -2,6 +2,7 @@
 import { useCallback } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { useAuthStore } from '@/store/auth';
+import { api } from '@/lib/api';
 
 /**
  * Cikis islemi — oturumu VE kullaniciya ozel onbellegi birlikte temizler.
@@ -18,6 +19,11 @@ import { useAuthStore } from '@/store/auth';
  *
  * `cancelQueries` once cagriliyor: devam eden istekler iptal edilsin,
  * `clear` sonrasinda geri gelip onbellegi yeniden doldurmasinlar.
+ *
+ * SUNUCU OTURUMU da iptal ediliyor. Yalnizca istemciyi temizlemek,
+ * yenileme tokenini gecerli birakirdi: bir kopyasi sizmissa cikis
+ * yapmak onu durdurmazdi. `/auth/logout` hem cihaz kaydini iptal
+ * ediyor hem cerezi siliyor.
  */
 export function useCikis() {
   const qc = useQueryClient();
@@ -25,6 +31,14 @@ export function useCikis() {
 
   return useCallback(async () => {
     await qc.cancelQueries();
+    // Sunucu tarafi iptal basarisiz olsa bile istemci temizligi
+    // yapilmali: kullanici "cikis yaptim" diyorsa ekranda oturum
+    // kalmamali.
+    try {
+      await api.post('/auth/logout');
+    } catch {
+      /* ag hatasi: yerel cikis yine de yapiliyor */
+    }
     logout();
     qc.clear();
   }, [qc, logout]);

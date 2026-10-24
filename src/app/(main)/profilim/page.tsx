@@ -102,7 +102,7 @@ const inp = (err?: boolean): React.CSSProperties => ({
 });
 
 export default function ProfilePage() {
-  const { user, setAuth, token, logout } = useAuthStore();
+  const { user, setUser, logout } = useAuthStore();
   const router = useRouter();
   const [tab, setTab] = useState<Tab>('profil');
   const [showPwd, setShowPwd] = useState(false);
@@ -178,7 +178,8 @@ export default function ProfilePage() {
     // eksik bir alan dondurdugunde (gecmiste emailVerifiedAt oldu) o bilgi
     // sessizce kaybolur ve kullanici dogrulanmamis gibi gorunur.
     onSuccess: (updated) => {
-      setAuth({ ...(user ?? {}), ...updated }, token!);
+      // Token'a dokunmuyoruz: bellekte duruyor ve degismedi.
+      setUser({ ...(user as any ?? {}), ...updated });
       qc.invalidateQueries({ queryKey: ['my-profile'] });
       toast.success('Profil güncellendi');
     },
@@ -1145,7 +1146,7 @@ export default function ProfilePage() {
 // kendisi. Bu durumda uyari gosteriliyor: adlarinin yayinda oldugunu
 // bilmeden birakmasinlar.
 function KullaniciAdiAlani({ profile }: { profile: any }) {
-  const { user, setAuth, token } = useAuthStore();
+  const { user, setUser } = useAuthStore();
   const qc = useQueryClient();
   const [ad, setAd] = useState('');
   const [kaydediliyor, setKaydediliyor] = useState(false);
@@ -1163,7 +1164,7 @@ function KullaniciAdiAlani({ profile }: { profile: any }) {
     try {
       const res = await api.patch('/users/me/username', { username: temiz });
       const yeni = res.data?.displayName ?? temiz;
-      if (user && token) setAuth({ ...user, displayName: yeni }, token);
+      if (user) setUser({ ...user, displayName: yeni });
       qc.invalidateQueries({ queryKey: ['my-profile'] });
       setAd('');
       toast.success('Kullanıcı adın güncellendi');

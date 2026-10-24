@@ -105,7 +105,9 @@ function LoginPage() {
   const onSubmit = async (data: FormData) => {
     try {
       const res = await api.post('/auth/login', { ...data, turnstileToken: turnstileToken || undefined });
-      setAuth(res.data.user, res.data.accessToken, res.data.refreshToken, res.data.deviceId);
+      // Yenileme tokeni artik yanitta DONMUYOR; sunucu HttpOnly cereze
+      // yaziyor. Istemci yalnizca kisa omurlu erisim tokenini goruyor.
+      setAuth(res.data.user, res.data.accessToken);
       toast.success('Hoş geldin!');
       // Sozlesme/KVKK onayi olmayan kullanicilar onay ekranina gider.
       // Backend bu bilgiyi zaten donuyordu ama yalnizca Google girisinde

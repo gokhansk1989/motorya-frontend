@@ -9,7 +9,7 @@ import { SOCKET_ORIGIN, SOCKET_PATH } from '@/lib/apiBase';
 // Teklif durumu (kabul/red/karşı teklif) değişince sayfayı canlı güncelle —
 // mesajlaşmadaki socket altyapısı üzerinden 'offer:updated' event'i dinler.
 export function useOfferUpdates() {
-  const token = useAuthStore((s) => s.token);
+  const token = useAuthStore((s) => s.user);
   const qc = useQueryClient();
 
   useEffect(() => {

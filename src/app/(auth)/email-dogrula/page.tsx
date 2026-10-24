@@ -20,7 +20,7 @@ function EmailDogrulaContent() {
 
     api.get(`/auth/verify-email?token=${token}`)
       .then(res => {
-        setAuth(res.data.user, res.data.accessToken, res.data.refreshToken, res.data.deviceId);
+        setAuth(res.data.user, res.data.accessToken);
         setStatus('success');
         // Ayni sekmede baslatilan kayit akisinin hedefi varsa oraya
         // don; yoksa ana sayfa. Farkli cihazda acilan baglanti icin

@@ -3,6 +3,8 @@
 import { useEffect } from 'react';
 import { api } from '@/lib/api';
 import { useAuthStore } from '@/store/auth';
+import { performRefresh } from '@/lib/api';
+import { tokeniAl, yenilemeyiPaylas, eskiDepoyuTemizle } from '@/lib/oturum';
 
 /**
  * Oturumdaki kullanici bilgisini acilista sunucudan tazeler.
@@ -26,8 +28,35 @@ import { useAuthStore } from '@/store/auth';
  * akisini isletiyor, burada ikinci bir hata mesaji gostermek anlamsiz.
  */
 export function OturumTazeleyici() {
-  const token = useAuthStore(s => s.token);
+  // Token artik bellekte ve kalici degil; oturum varligi kullanici
+  // nesnesinden okunuyor.
+  const token = useAuthStore(s => s.user);
   const setUser = useAuthStore(s => s.setUser);
+
+  /**
+   * ONYUKLEME: erisim tokenini cerezden geri kazan.
+   *
+   * Erisim tokeni artik yalnizca bellekte; sayfa yenilenince gidiyor.
+   * Ama yenileme tokeni `HttpOnly` cerezde duruyor, yani oturum
+   * SURUYOR. Acilista bir kez `/auth/refresh` cagirip bellege yeni bir
+   * erisim tokeni koyuyoruz.
+   *
+   * Ayrica eski surumden kalmis `localStorage` token kopyalari
+   * siliniyor: birakilsalardi duzeltmenin amaci bosa cikardi.
+   *
+   * Kalici kullanici nesnesi yoksa cagirmiyoruz: hic giris yapmamis
+   * ziyaretci icin her sayfa aciliista bir istek atmak gereksiz.
+   */
+  useEffect(() => {
+    eskiDepoyuTemizle();
+    if (!useAuthStore.getState().user) return;
+    if (tokeniAl()) return;
+    void yenilemeyiPaylas(performRefresh).then((yeni) => {
+      // Yenileme basarisizsa oturum gercekten bitmis: kalici kullanici
+      // nesnesini de dusurelim ki arayuz girmis gibi davranmasin.
+      if (!yeni) useAuthStore.getState().logout();
+    });
+  }, []);
 
   useEffect(() => {
     if (!token) return;

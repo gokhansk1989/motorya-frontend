@@ -9,7 +9,8 @@ import { Send, MessageCircle, Lock, Check, CheckCheck, Circle, ArrowLeft } from 
 import { motion, AnimatePresence } from 'framer-motion';
 import Link from 'next/link';
 import { timeAgo } from '@/lib/utils';
-import { api } from '@/lib/api';
+import { api, performRefresh } from '@/lib/api';
+import { tokeniAl, yenilemeyiPaylas } from '@/lib/oturum';
 import toast from 'react-hot-toast';
 
 // NEXT_PUBLIC_API_URL örn: https://motorya.com.tr/api-backend
@@ -67,10 +68,42 @@ export default function MessagesPage() {
   // Socket bağlantısı
   useEffect(() => {
     if (!user) return;
-    const token = localStorage.getItem('access_token');
-    const socket = io(`${SOCKET_ORIGIN}/chat`, { auth: { token }, transports: ['websocket'], path: SOCKET_PATH });
-    socketRef.current = socket;
+    let iptalEdildi = false;
+    let socket: Socket | null = null;
+    /**
+     * `user` yukarida kontrol edildi; fonksiyon icine tasininca
+     * TypeScript daraltmayi kaybediyor, yerel bir kopyayla tasiyoruz.
+     *
+     * Tanim IIFE'den ONCE olmak zorunda: token zaten bellekteyse
+     * (SPA gezintisi) IIFE hic `await` etmeden senkron ilerliyor ve
+     * asagida tanimlanmis bir `const`a erisince TDZ hatasi aliyordu.
+     * Sonuc sessizdi: soket hic acilmiyor, mesajlasma canli
+     * guncellemeyi kaybediyordu.
+     */
+    const buKullanici = user;
 
+    /**
+     * Soket, erişim tokenı BELLEĞE GELDİKTEN SONRA bağlanıyor.
+     *
+     * Token artık `localStorage`'da değil; sayfa yenilendiğinde
+     * bellekte yok ve açılışta bir kez `/auth/refresh` ile geri
+     * alınıyor. Eskisi gibi senkron okusaydık, yenilemeden hemen
+     * sonra soket `token: null` ile bağlanır ve sunucu bağlantıyı
+     * reddederdi — mesajlaşma sessizce çalışmazdı.
+     *
+     * Token zaten bellekteyse `yenilemeyiPaylas` yeni istek atmıyor;
+     * bu yol yalnızca ilk yüklemede bir turluk gecikme ekliyor.
+     */
+    (async () => {
+      let token = tokeniAl();
+      if (!token) token = await yenilemeyiPaylas(performRefresh);
+      if (iptalEdildi || !token) return;
+      socket = io(`${SOCKET_ORIGIN}/chat`, { auth: { token }, transports: ['websocket'], path: SOCKET_PATH });
+      socketRef.current = socket;
+      kancalariBagla(socket);
+    })();
+
+    function kancalariBagla(socket: Socket) {
     socket.on('user:online', ({ userId }: { userId: string }) => {
       setOnlineUsers(prev => new Set([...prev, userId]));
     });
@@ -87,16 +120,23 @@ export default function MessagesPage() {
       qc.invalidateQueries({ queryKey: ['conversations'] });
     });
     socket.on('message:read', ({ conversationId, userId: readerId }: any) => {
-      if (readerId !== user.id) {
+      if (readerId !== buKullanici.id) {
         qc.invalidateQueries({ queryKey: ['messages', conversationId] });
         qc.invalidateQueries({ queryKey: ['conversations'] });
       }
     });
     socket.on('message:typing', ({ userId: tid, typing: t }: any) => {
-      if (tid !== user.id) setTyping(t);
+      if (tid !== buKullanici.id) setTyping(t);
     });
+    }
 
-    return () => { socket.disconnect(); };
+    // Temizleme: bagli degilsek de iptal bayragini kaldiriyoruz ki
+    // gec gelen yenileme sonrasi soket acilmasin.
+    return () => {
+      iptalEdildi = true;
+      socketRef.current?.disconnect();
+      socketRef.current = null;
+    };
   }, [user]);
 
   // Konuşma değişince odaya katıl + okundu işaretle

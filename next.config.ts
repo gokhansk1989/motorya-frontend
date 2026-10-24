@@ -27,6 +27,40 @@ const cspZorlayici = [
   "base-uri 'self'",
   "form-action 'self'",
   "frame-ancestors 'none'",
+  /**
+   * Asagidakiler reklam yiginina DOKUNMUYOR ama gercek saldirilari
+   * kesiyor; bu yuzden rapor modundan zorlayiciya alindilar.
+   *
+   *  - img-src: zaten `https:` ile genis, ama `http:` gorseli ve
+   *    bilinmeyen semalari kesiyor. AdSense gorselleri https.
+   *  - font-src: yazi tipi yalnizca kendimizden ve Google Fonts'tan.
+   *    Reklamlar font yuklemiyor.
+   *  - style-src: `unsafe-inline` ZORUNLU (Next satir ici stil
+   *    uretiyor ve kodun her yerinde style prop'u var), ama yabanci
+   *    bir alan adindan stylesheet cekilmesini engelliyor.
+   *
+   * script-src ve connect-src BILEREK disarida: Google reklam yigini
+   * surekli yeni alan adi cagiriyor ve listeyi zorlayici moda almak,
+   * Google yeni bir alan ekledigi gun reklamlari sessizce kirar.
+   */
+  "img-src 'self' data: blob: https:",
+  "font-src 'self' data: https://fonts.gstatic.com",
+  "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
+  /**
+   * Raporlar BIR YERE gidiyor.
+   *
+   * Onceden `report-uri`/`report-to` yoktu: politika "rapor modunda"
+   * gorunuyor ama ihlaller yalnizca kullanicinin kendi konsoluna
+   * yaziliyordu. Yani zorlayici moda gecmek icin gereken veri hic
+   * toplanmiyordu.
+   *
+   * Iki yonerge birden: `report-uri` eski tarayicilar (Chrome'da
+   * kullanim disi ama hala calisiyor), `report-to` yenileri. Ucun
+   * kendisi adresleri buduyor ve `script-sample` almiyor;
+   * bkz. app/api/csp-rapor/route.ts.
+   */
+  'report-uri /api/csp-rapor',
+  'report-to csp',
 ].join('; ');
 
 const cspRaporModu = [
@@ -41,6 +75,21 @@ const cspRaporModu = [
   "base-uri 'self'",
   "form-action 'self'",
   "frame-ancestors 'none'",
+  /**
+   * Raporlar BIR YERE gidiyor.
+   *
+   * Onceden `report-uri`/`report-to` yoktu: politika "rapor modunda"
+   * gorunuyor ama ihlaller yalnizca kullanicinin kendi konsoluna
+   * yaziliyordu. Yani zorlayici moda gecmek icin gereken veri hic
+   * toplanmiyordu.
+   *
+   * Iki yonerge birden: `report-uri` eski tarayicilar (Chrome'da
+   * kullanim disi ama hala calisiyor), `report-to` yenileri. Ucun
+   * kendisi adresleri buduyor ve `script-sample` almiyor;
+   * bkz. app/api/csp-rapor/route.ts.
+   */
+  'report-uri /api/csp-rapor',
+  'report-to csp',
 ].join('; ');
 
 const securityHeaders = [
@@ -51,6 +100,11 @@ const securityHeaders = [
   { key: 'Permissions-Policy', value: 'camera=(), microphone=(), geolocation=(), payment=()' },
   { key: 'Content-Security-Policy', value: cspZorlayici },
   { key: 'Content-Security-Policy-Report-Only', value: cspRaporModu },
+  // Reporting API uc tanimi: `report-to csp` buna isaret ediyor.
+  {
+    key: 'Reporting-Endpoints',
+    value: 'csp="/api/csp-rapor"',
+  },
 ];
 
 const nextConfig: NextConfig = {

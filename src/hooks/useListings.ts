@@ -166,7 +166,7 @@ export function useMyFavorites() {
 export function useFavoriteIds() {
   // Oturum bilgisini localStorage'dan doğrudan okumak yerine store'dan al:
   // tek kaynak korunur ve render sırasında `typeof window` dallanması olmaz.
-  const hasToken = useAuthStore((s) => !!s.token);
+  const hasToken = useAuthStore((s) => !!s.user);
   const q = useQuery({
     queryKey: ['favorite-ids'],
     queryFn: () => api.get('/listings/favorites/mine').then((r) => {

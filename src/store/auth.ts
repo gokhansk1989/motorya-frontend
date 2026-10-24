@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
+import { tokeniYaz, tokeniSil, tokeniAl } from '@/lib/oturum';
 
 interface User {
   id: string;
@@ -10,14 +11,30 @@ interface User {
   emailVerifiedAt?: string | null;
 }
 
+/**
+ * Oturum durumu.
+ *
+ * ── TOKEN ARTIK BURADA DEĞİL ──────────────────────────────────────
+ *
+ * Önceden `token`, `refreshToken` ve `deviceId` hem bu durumda hem de
+ * zustand persist'in `motorya-auth` anahtarıyla `localStorage`'da
+ * duruyordu. Aynı origin'de çalışan bir XSS bunları okuyabilirdi.
+ *
+ * Artık:
+ *  - Yenileme tokenı sunucuda `HttpOnly` çerezde (JS okuyamaz).
+ *  - Erişim tokenı yalnızca bellekte (`lib/oturum.ts`).
+ *  - Bu durumda yalnızca KULLANICI nesnesi kalıcı. O bir kimlik
+ *    bilgisi değil: adı, avatarı, rolü. Kalıcı olması, sayfa açılışında
+ *    arayüzün boş kullanıcıyla çizilip sonra zıplamasını önlüyor.
+ *
+ * Kalıcı kullanıcı nesnesi YETKİ VERMEZ. Her korumalı istek sunucuda
+ * tokenla doğrulanıyor; buradaki `role` yalnızca menü çizmek için.
+ */
 interface AuthState {
   user: User | null;
-  token: string | null;
-  refreshToken: string | null;
-  deviceId: string | null;
-  setAuth: (user: User, token: string, refreshToken?: string, deviceId?: string) => void;
+  setAuth: (user: User, token: string) => void;
   setUser: (user: User) => void;
-  setTokens: (token: string, refreshToken?: string) => void;
+  setTokens: (token: string) => void;
   logout: () => void;
   isAuthenticated: () => boolean;
 }
@@ -26,39 +43,34 @@ export const useAuthStore = create<AuthState>()(
   persist(
     (set, get) => ({
       user: null,
-      token: null,
-      refreshToken: null,
-      deviceId: null,
       // Kullanici adi degisimi gibi kismi guncellemelerde oturumu bozmadan
       // yalnizca kullanici bilgisini tazelemek icin.
       setUser: (user) => set({ user }),
-      setAuth: (user, token, refreshToken, deviceId) => {
-        localStorage.setItem('access_token', token);
-        if (refreshToken) localStorage.setItem('refresh_token', refreshToken);
-        if (deviceId) localStorage.setItem('device_id', deviceId);
-        set({
-          user,
-          token,
-          refreshToken: refreshToken ?? get().refreshToken,
-          deviceId: deviceId ?? get().deviceId,
-        });
+      setAuth: (user, token) => {
+        tokeniYaz(token);
+        set({ user });
       },
-      setTokens: (token, refreshToken) => {
-        localStorage.setItem('access_token', token);
-        if (refreshToken) localStorage.setItem('refresh_token', refreshToken);
-        set({ token, refreshToken: refreshToken ?? get().refreshToken });
+      setTokens: (token) => {
+        tokeniYaz(token);
       },
       logout: () => {
-        localStorage.removeItem('access_token');
-        localStorage.removeItem('refresh_token');
-        localStorage.removeItem('device_id');
-        set({ user: null, token: null, refreshToken: null, deviceId: null });
+        tokeniSil();
+        set({ user: null });
       },
-      isAuthenticated: () => !!get().token,
+      /**
+       * Oturum var mı?
+       *
+       * Bellekteki token YA DA kalıcı kullanıcı. İkincisi şart: sayfa
+       * yenilenince token bellekten silinir ama çerez durduğu için
+       * oturum sürüyordur. Yalnızca tokena bakmak, her yenilemede
+       * kullanıcıyı çıkmış göstermek olurdu.
+       */
+      isAuthenticated: () => !!tokeniAl() || !!get().user,
     }),
     {
       name: 'motorya-auth',
-      partialize: (s) => ({ user: s.user, token: s.token, refreshToken: s.refreshToken, deviceId: s.deviceId }),
+      // Token alanları BİLEREK yok: diske hiçbir kimlik bilgisi yazılmıyor.
+      partialize: (s) => ({ user: s.user }),
     }
   )
 );

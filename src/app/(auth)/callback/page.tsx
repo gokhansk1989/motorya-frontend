@@ -43,7 +43,7 @@ function CallbackHandler() {
         if (iptal) return;
         const { accessToken, refreshToken, deviceId, user, needsConsent } = data;
         if (!accessToken || !user) { router.replace('/giris'); return; }
-        setAuth(user, accessToken, refreshToken, deviceId);
+        setAuth(user, accessToken);
         // needsConsent yalnızca sözleşmeleri henüz onaylamamış, yani ilk kez
         // giren Google kullanıcıları için true dönüyor — kayıt sinyali olarak
         // güvenilir.
