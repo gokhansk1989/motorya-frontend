@@ -2,11 +2,14 @@
 
 import Script from 'next/script';
 import { useEffect } from 'react';
+import { usePathname } from 'next/navigation';
+import { hassasYolMu } from '@/lib/hassas-yollar';
 
 declare global {
   interface Window { dataLayer: unknown[] }
 }
-import { usePathname } from 'next/navigation';
+
+const GA_ID = 'G-S0BXZLVQ26';
 
 /**
  * Reklam ve olcumleme betiklerinin kapisi.
@@ -49,41 +52,6 @@ import { usePathname } from 'next/navigation';
  * yukleme sonrasi betik DOM'da olmadigi icin dongu olusmuyor.
  */
 
-/**
- * Betiklerin YUKLENMEYECEGI yollar.
- *
- * Onek esleşmesi: `/profilim/ayarlar` da kapsama giriyor. Liste
- * ACIK tutuluyor — yeni bir hesap sayfasi eklendiginde buraya da
- * eklenmesi gerekiyor ve bu, sessizce unutulmaktansa gorunur bir
- * bakim yuku.
- */
-const GA_ID = 'G-S0BXZLVQ26';
-
-const HASSAS_YOLLAR = [
-  // Kimlik akisi — (auth) grubunun tamami
-  '/giris',
-  '/kayit',
-  '/sifremi-unuttum',
-  '/sifre-sifirla',
-  '/email-dogrula',
-  '/email-gonderildi',
-  '/kullanici-adi',
-  '/onaylar',
-  '/callback',
-  // Hesap sayfalari
-  '/profilim',
-  '/mesajlarim',
-  '/ilanlarim',
-  '/tekliflerim',
-  '/bildirimler',
-  '/favoriler',
-  '/alarmlarim',
-  '/ilan-ver',
-];
-
-export function hassasYolMu(yol: string): boolean {
-  return HASSAS_YOLLAR.some((h) => yol === h || yol.startsWith(h + '/'));
-}
 
 /** Reklam/olcumleme betiklerinden biri belgede duruyor mu? */
 function betikYuklenmisMi(): boolean {
