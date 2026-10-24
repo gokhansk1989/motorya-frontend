@@ -70,7 +70,19 @@ const cspZorlayici = [
 
 const cspRaporModu = [
   "default-src 'self'",
-  "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://pagead2.googlesyndication.com https://*.googlesyndication.com https://*.googletagservices.com https://*.doubleclick.net https://*.adtrafficquality.google https://*.gstatic.com https://www.googletagmanager.com https://www.google-analytics.com https://www.google.com https://challenges.cloudflare.com",
+  // 'unsafe-eval' CIKARILDI (yalnizca rapor modunda, kullaniciya etkisi yok).
+  //
+  // Yerelde ana sayfa, /ara ve /kayit'ta AdSense tam baslatilmis halde
+  // olculdu: tek bir eval ihlali cikmadi. Ama kapsam eksikti -- yerel
+  // derleme uretim API'sine baktigi icin ilanlar render edilmedi,
+  // Turnstile hic yuklenmedi, oturum acik akislar (mesajlasma soketi,
+  // fotograf yukleme/kadraj) denenmedi.
+  //
+  // Bu yuzden "gerek yok" demek yerine SORUYU OLCULEBILIR hale
+  // getiriyoruz: rapor modunda birakilinca, gercek kullanicilarda eval
+  // kullanan bir sey varsa /api/csp-rapor'a dusecek. Hic rapor gelmezse
+  // zorlayici politikaya 'unsafe-eval' olmadan gecilebilir.
+  "script-src 'self' 'unsafe-inline' https://pagead2.googlesyndication.com https://*.googlesyndication.com https://*.googletagservices.com https://*.doubleclick.net https://*.adtrafficquality.google https://*.gstatic.com https://www.googletagmanager.com https://www.google-analytics.com https://www.google.com https://challenges.cloudflare.com",
   "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
   "img-src 'self' data: blob: https:",
   "font-src 'self' data: https://fonts.gstatic.com",
