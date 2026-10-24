@@ -1,6 +1,7 @@
 import { Saira, Saira_Condensed, Hanken_Grotesk, Space_Mono } from 'next/font/google';
 import type { Metadata, Viewport } from 'next';
 import Script from 'next/script';
+import UcuncuTarafBetikleri from '@/components/UcuncuTarafBetikleri';
 import './globals.css';
 import { Providers } from './providers';
 import { KampanyaYakalayici } from '@/components/analytics/KampanyaYakalayici';
@@ -102,16 +103,10 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       <head>
         {/* AdSense betiği async yüklenirken DNS + TLS el sıkışması ilk
             boyamayla yarışıyor; ölçümde tek başına ~314 ms. preconnect bu
-            turu HTML ayrıştırılırken peşin yapıyor. */}
+            turu HTML ayrıştırılırken peşin yapıyor. Betiğin KENDİSİ artık
+            UcuncuTarafBetikleri içinde: kimlik ve hesap sayfalarında hiç
+            yüklenmiyor. preconnect zararsız olduğu için burada kalıyor. */}
         <link rel="preconnect" href="https://pagead2.googlesyndication.com" crossOrigin="anonymous" />
-        {/* Google AdSense — head içinde olmalı, Google botu bu şekilde doğrular.
-            next/script ile body'den yüklemek denendi: "data-nscript" uyarısı
-            üretti ve hydration uyuşmazlığını çözmedi, o yüzden geri alındı. */}
-        <script
-          async
-          src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-4400330012095219"
-          crossOrigin="anonymous"
-        />
       </head>
       <body className="min-h-full antialiased">
         {/* JSON-LD head yerine body'de: Next.js'in önerdiği yerleşim bu ve
@@ -140,20 +135,10 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
             wait_for_update: 500
           });
         `}</Script>
-        {/* GA 'afterInteractive' iken hidrasyonun hemen ardından yükleniyor ve
-            174 KiB'lik betiği ana iş parçacığında değerlendirmek ölçümde
-            engelleme süresine doğrudan giriyordu. 'lazyOnload' onload'dan
-            sonraya bırakıyor: sayfa etkileşime hazır olduktan sonra çalıştığı
-            için hiçbir oturum kaybedilmiyor, yalnızca kritik yoldan çıkıyor.
-            Onay varsayılanları yukarıda beforeInteractive kalıyor — GA'dan
-            önce çalışmaları KVKK gereği. */}
-        <Script src="https://www.googletagmanager.com/gtag/js?id=G-S0BXZLVQ26" strategy="lazyOnload" />
-        <Script id="gtag-init" strategy="lazyOnload">{`
-          window.dataLayer = window.dataLayer || [];
-          function gtag(){dataLayer.push(arguments);}
-          gtag('js', new Date());
-          gtag('config', 'G-S0BXZLVQ26');
-        `}</Script>
+        {/* Reklam ve ölçümleme betikleri BURADA DEĞİL: kimlik ve hesap
+            sayfalarında yüklenmemeleri gerekiyor ve kök layout hangi
+            sayfada olduğumuzu bilmiyor. Kapı UcuncuTarafBetikleri'nde. */}
+        <UcuncuTarafBetikleri />
       </body>
     </html>
   );
