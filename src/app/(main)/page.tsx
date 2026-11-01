@@ -387,7 +387,7 @@ function FeaturedSectionSkeleton() {
       </div>
       <div style={{ display: 'flex', gap: 14, overflow: 'hidden' }}>
         {Array.from({ length: 5 }).map((_, i) => (
-          <div key={i} style={{ width: 220, minWidth: 220, maxWidth: 220, flexShrink: 0 }}>
+          <div key={i} style={{ width: 220, minWidth: 220, maxWidth: 220, flexShrink: 0, display: 'flex' }}>
             <div style={{ height: 150, borderRadius: 12, background: 'var(--bg-2)', animation: 'm-pulse 1.5s ease-in-out infinite' }} />
             <div style={{ height: 12, marginTop: 10, borderRadius: 6, background: 'var(--bg-2)', width: '80%', animation: 'm-pulse 1.5s ease-in-out infinite' }} />
             <div style={{ height: 12, marginTop: 8, borderRadius: 6, background: 'var(--bg-2)', width: '40%', animation: 'm-pulse 1.5s ease-in-out infinite' }} />
@@ -475,7 +475,7 @@ function FeaturedSection() {
               key={`${l.id}-${i}`}
               whileHover={{ y: -4, transition: { duration: 0.18 } }}
               whileTap={{ scale: 0.97 }}
-              style={{ width: 220, minWidth: 220, maxWidth: 220, flexShrink: 0 }}
+              style={{ width: 220, minWidth: 220, maxWidth: 220, flexShrink: 0, display: 'flex' }}
             >
               <ListingCard listing={l} />
             </motion.div>

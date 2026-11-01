@@ -28,5 +28,12 @@ export function timeAgo(date: string | Date) {
   if (h < 24) return `${h} sa önce`;
   const d = Math.floor(h / 24);
   if (d < 30) return `${d} gün önce`;
-  return new Date(date).toLocaleDateString('tr-TR');
+  // 30 günden sonra tam tarihe (09.09.2026) geçiliyordu. Vitrinde yeni
+  // ve eski ilanlar yan yana gelince "4 gün önce" ile "09.09.2026"
+  // karışıyor, göz bunu tutarsızlık olarak okuyordu. Her zaman göreli
+  // dilde kalıyoruz: ay ve yıl da ekleniyor.
+  const ay = Math.floor(d / 30);
+  if (ay < 12) return `${ay} ay önce`;
+  const yil = Math.floor(d / 365);
+  return `${yil} yıl önce`;
 }

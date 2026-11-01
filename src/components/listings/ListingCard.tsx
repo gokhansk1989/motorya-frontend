@@ -226,7 +226,9 @@ export function ListingCard({ listing }: { listing: Listing }) {
             icinde kisaliyor, tarih hic kirpilmiyor. */}
         <div style={{
           display: 'flex', flexWrap: 'wrap', alignItems: 'center',
-          justifyContent: 'space-between', gap: '2px 8px', marginTop: 9,
+          // marginTop: 'auto' -> alt bilgi satırı kartın en altına sabitleniyor;
+          // üstteki içerik (beden rozeti vb.) değişken olsa da alt hiza korunuyor.
+          justifyContent: 'space-between', gap: '2px 8px', marginTop: 'auto', paddingTop: 9,
           color: 'var(--ink-2)', fontSize: 13,
         }}>
           <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6, minWidth: 0, whiteSpace: 'nowrap' }}>
