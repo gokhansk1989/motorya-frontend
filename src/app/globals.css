@@ -312,10 +312,13 @@ input, textarea, select { font-family: inherit; color: var(--ink); }
   position: relative; background: var(--bg-1); border: 1px solid var(--line-soft);
   border-radius: var(--radius); overflow: hidden; cursor: pointer;
   transition: transform .16s ease, border-color .16s ease, box-shadow .16s ease;
-  /* Kart, kapsayıcısını dikeyde dolduruyor (flex kolon). Aynı satırdaki
-     kartların alt hizası ancak böyle eşitleniyor: beden rozeti olan ve
-     olmayan kartlar farklı yükseklikteydi. */
-  display: flex; flex-direction: column; height: 100%;
+  /* Kart, kapsayıcısını hem dikeyde (flex kolon + height) hem YATAYDA
+     (width:100%) dolduruyor. width:100% olmadan: marquee item'i flex
+     olunca kart bir flex ogesi oluyor ve yatayda icerigine gore
+     daraliyordu -- dikey fotografli ilanda gorsel kisa, kart da onunla
+     138px'e kadar buzusuyordu. min-width:0 ise uzun basligin flex
+     ogesini tasirmasini onluyor. */
+  display: flex; flex-direction: column; height: 100%; width: 100%; min-width: 0;
 }
 .m-card:hover { transform: translateY(-3px); border-color: var(--line); box-shadow: var(--shadow-lg); }
 .m-card:hover .m-card-img { transform: scale(1.05); }
