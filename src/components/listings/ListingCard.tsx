@@ -224,18 +224,21 @@ export function ListingCard({ listing }: { listing: Listing }) {
             Iki gruba ayirip sarmaya izin veriyoruz - sigdiginda tek satir,
             sigmadiginda tarih alt satira iniyor. Uzun sehir adi kendi
             icinde kisaliyor, tarih hic kirpilmiyor. */}
-        <div style={{
-          display: 'flex', flexWrap: 'wrap', alignItems: 'center',
-          // marginTop: 'auto' -> alt bilgi satırı kartın en altına sabitleniyor;
-          // üstteki içerik (beden rozeti vb.) değişken olsa da alt hiza korunuyor.
-          justifyContent: 'space-between', gap: '2px 8px', marginTop: 'auto', paddingTop: 9,
-          color: 'var(--ink-2)', fontSize: 13,
-        }}>
-          <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6, minWidth: 0, whiteSpace: 'nowrap' }}>
+        {/* Alt bilgi iki SABIT satir: ustte tarih, altta sehir + goruntulenme.
+            Onceden tek satirda `space-between` ile zorlaniyordu; dar kartta
+            sigmayinca tarih alt satira sariyor, genis kartta tek satir
+            kaliyordu - ayni vitrinde kimi kart tek kimi iki satir. Artik
+            her kart iki satir, hiza tutarli. marginTop:auto ile blok kartin
+            en altina sabit. */}
+        <div style={{ marginTop: 'auto', paddingTop: 9, color: 'var(--ink-2)', fontSize: 13 }}>
+          {/* Ust satir: tarih */}
+          <div style={{ whiteSpace: 'nowrap', marginBottom: 3 }}>{timeAgo(listing.createdAt)}</div>
+          {/* Alt satir: sehir + goruntulenme */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: 6, minWidth: 0, whiteSpace: 'nowrap', minHeight: 18 }}>
             {listing.city && (
               <>
                 <MapPin size={14} style={{ flexShrink: 0 }} />
-                <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: 110 }}>{listing.city}</span>
+                <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: 130 }}>{listing.city}</span>
               </>
             )}
             {views > 0 && (
@@ -245,8 +248,7 @@ export function ListingCard({ listing }: { listing: Listing }) {
                 <span style={{ flexShrink: 0 }}>{views}</span>
               </>
             )}
-          </span>
-          <span style={{ whiteSpace: 'nowrap', flexShrink: 0 }}>{timeAgo(listing.createdAt)}</span>
+          </div>
         </div>
       </div>
     </article>
