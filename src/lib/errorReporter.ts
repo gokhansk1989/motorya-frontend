@@ -13,7 +13,35 @@ function kullaniciHatasi(url: string | undefined, mesaj: unknown): boolean {
   return false;
 }
 
+/**
+ * Bizim kodumuz OLMAYAN, aksiyon alınamaz tarayıcı/webview/eklenti
+ * gürültüsü. Hata kaydının %90'ını bunlar dolduruyor ve gerçek sorunları
+ * gizliyordu:
+ *  - ResizeObserver loop: zararsız tarayıcı uyarısı, hata değil.
+ *  - "Script error.": cross-origin (reklam) betiğinden gelen, mesajsız,
+ *    teşhis edilemez olay.
+ *  - _AutofillCallbackHandler / Java object is gone: uygulama içi tarayıcı
+ *    (Instagram/Facebook webview) ve şifre yöneticisi eklentilerinin kendi
+ *    enjekte ettiği kod; bizim sayfamızın hatası değil.
+ */
+const GURULTU = [
+  /ResizeObserver loop/i,
+  /^Script error\.?$/i,
+  /_AutofillCallbackHandler/i,
+  /Java object is gone/i,
+  /Can't find variable: (instgrm|fbq|__fb)/i,
+  /Non-Error promise rejection captured/i,
+];
+
+function gurultuMu(mesaj: string, url?: string): boolean {
+  // Hata kaydı ucunun KENDİSİ hata verince onu tekrar loglamak döngü
+  // yaratıyor (API 502: POST /error-logs kayıtları buradan).
+  if ((url ?? '').includes('/error-logs')) return true;
+  return GURULTU.some((d) => d.test(mesaj));
+}
+
 function report(message: string, stack?: string | null, context?: Record<string, unknown>) {
+  if (gurultuMu(message, context?.url as string | undefined)) return;
   const userId = useAuthStore.getState().user?.id;
   api
     .post('/error-logs', {
@@ -48,6 +76,9 @@ export function installErrorReporter() {
       const status = err.response?.status;
       const method = err.config?.method?.toUpperCase();
       const url = err.config?.url;
+
+      // /error-logs'a giden isteğin kendi hatasını loglamak döngü yaratır.
+      if ((url ?? '').includes('/error-logs')) return Promise.reject(err);
 
       if (status >= 500) {
         report(
