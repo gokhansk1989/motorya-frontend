@@ -3,7 +3,7 @@ import Link from 'next/link';
 import React from 'react';
 import { ListingCard } from '@/components/listings/ListingCard';
 import Image from 'next/image';
-import { notFound } from 'next/navigation';
+import { notFound, redirect } from 'next/navigation';
 import { AdSlot } from '@/components/ui/AdSlot';
 import { CategoryIcon as CatIcon } from '@/components/icons/CategoryIcons';
 import { CITIES } from '@/lib/cities';
@@ -119,7 +119,10 @@ export default async function CategoryPage({ params }: { params: Promise<{ slug:
     fetchAllL1Categories(),
   ]);
 
-  if (!catData) notFound();
+  // Gecersiz kategori slug'i (orn. /kategori/media — bot/eski index)
+  // notFound yerine ana kategori sayfasina yonlendiriliyor: kullanici
+  // bos 404 yerine kategorileri goruyor, 404 gurultusu de kesiliyor.
+  if (!catData) redirect('/kategoriler');
 
   const { items: listings, total } = await fetchListings(catData.category.id);
 

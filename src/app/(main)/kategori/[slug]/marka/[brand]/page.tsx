@@ -109,7 +109,7 @@ export async function generateStaticParams() {
 export default async function CategoryBrandPage({ params }: Props) {
   const { slug, brand: brandSlug } = await params;
   const [category, brands] = await Promise.all([getCategory(slug), getBrandsForCategory(slug)]);
-  if (!category) notFound();
+  if (!category) permanentRedirect('/kategoriler');
 
   // Marka bu kategoride yoksa kategori sayfasına kalıcı olarak yönlendir.
   //

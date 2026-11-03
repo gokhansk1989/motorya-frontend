@@ -2,7 +2,7 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 import { ListingCard } from '@/components/listings/ListingCard';
 import Image from 'next/image';
-import { notFound } from 'next/navigation';
+import { notFound, redirect } from 'next/navigation';
 import { CITY_MAP, CITIES } from '@/lib/cities';
 import { CategoryIcon as CatIcon } from '@/components/icons/CategoryIcons';
 import { jsonLdHtml } from '@/lib/jsonLd';
@@ -126,7 +126,7 @@ export default async function CityListingPage({ params }: { params: Promise<{ sl
     fetchCategoryData(catSlug),
     fetchAllL1Categories(),
   ]);
-  if (!catData) notFound();
+  if (!catData) redirect('/kategoriler');
 
   const { category } = catData;
   const listings = await fetchListings(category.id, city);

@@ -31,6 +31,9 @@ const GURULTU = [
   /Java object is gone/i,
   /Can't find variable: (instgrm|fbq|__fb)/i,
   /Non-Error promise rejection captured/i,
+  // Reklam/IAB ucuncu taraf kodu (window._META.IABInnovation...): bizim
+  // degil, aksiyon alinamaz.
+  /window\._META|_META\.IAB/i,
 ];
 
 function gurultuMu(mesaj: string, url?: string): boolean {
