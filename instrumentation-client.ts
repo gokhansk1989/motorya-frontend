@@ -1,5 +1,9 @@
 import * as Sentry from '@sentry/nextjs';
 
+/**
+ * Tarayici (client) Sentry baslatici — Next 15.3+ bu dosyayi otomatik
+ * yukluyor. Eski sentry.client.config.ts tek basina calismiyordu.
+ */
 const dsn = process.env.NEXT_PUBLIC_SENTRY_DSN;
 
 if (dsn) {
@@ -9,9 +13,9 @@ if (dsn) {
     tracesSampleRate: 0.1,
     replaysSessionSampleRate: 0,
     replaysOnErrorSampleRate: 1.0,
-    // Admin paneldeki hata kaydina uyguladigimiz GURULTU filtresinin ayni
-    // -- Sentry de ucuncu taraf/tarayici gurultusuyle dolmasin: reklam,
-    // webview, eklenti enjeksiyonlari ve zararsiz tarayici uyarilari.
+    // Admin paneldeki ErrorLog GURULTU filtresinin aynisi: reklam/IAB,
+    // webview, eklenti enjeksiyonlari ve zararsiz tarayici uyarilari
+    // Sentry'yi de doldurmasin.
     ignoreErrors: [
       /ResizeObserver loop/,
       /^Script error\.?$/,
@@ -22,3 +26,6 @@ if (dsn) {
     ],
   });
 }
+
+// Istemci tarafi yonlendirme izleme (performans).
+export const onRouterTransitionStart = Sentry.captureRouterTransitionStart;
