@@ -30,7 +30,15 @@ import { tokeniAl, yenilemeyiPaylas, eskiDepoyuTemizle } from '@/lib/oturum';
 export function OturumTazeleyici() {
   // Token artik bellekte ve kalici degil; oturum varligi kullanici
   // nesnesinden okunuyor.
-  const token = useAuthStore(s => s.user);
+  // Oturum varligi icin kullanici KIMLIGI (primitif) okunuyor, nesnenin
+  // kendisi degil. Asagidaki /users/me effect'i user NESNESINE baglanirsa
+  // sonsuz donguye giriyordu: setUser her yanitta yeni bir nesne uretir,
+  // nesne referansi degisir, effect yeniden kosar, /users/me'yi tekrar
+  // cagirir... Bu dongu hem /users/me'yi throttle'a bogduruyor hem de
+  // user referansina bagli baska effect'leri (orn. ilan-ver taslak
+  // olcumu) onlarca kez tetikleyip huni sayaclarini sisiriyordu.
+  const userId = useAuthStore(s => s.user?.id);
+  const girisVar = useAuthStore(s => !!s.user);
   const setUser = useAuthStore(s => s.setUser);
 
   /**
@@ -58,8 +66,12 @@ export function OturumTazeleyici() {
     });
   }, []);
 
+  // Giris yapildiginda /users/me'yi BIR KEZ cekip mevcut kullanici
+  // nesnesinin uzerine birlestiriyoruz. Bagimlilik user.id: ayni
+  // kullanici icin stabil, setUser yeni nesne uretse de degismiyor ->
+  // dongu yok. Farkli kullaniciya gecilirse (id degisir) yeniden cekiyor.
   useEffect(() => {
-    if (!token) return;
+    if (!girisVar) return;
     let iptal = false;
     api.get('/users/me')
       .then(res => {
@@ -69,7 +81,7 @@ export function OturumTazeleyici() {
       })
       .catch(() => {});
     return () => { iptal = true; };
-  }, [token, setUser]);
+  }, [userId, girisVar, setUser]);
 
   return null;
 }

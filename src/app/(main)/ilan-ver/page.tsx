@@ -215,6 +215,12 @@ export default function CreateListingPage() {
   // tek girisim sayarak yenilemenin sayilari sismesini engelliyor.
   const akisId = useRef<string>('');
   if (!akisId.current) akisId.current = rastgeleKimlik();
+  // Taslak kararinin (ve "soruldu"/"form_acildi" olcumunun) bu akista
+  // yalnizca BIR KEZ calismasini garanti eder. Effect bagimliliklari
+  // (authReady, user, me.tcKimlikVar) birbiri ardina coziulurken ya da
+  // bir referans degisince effect tekrar kosabilir; olay bir kez
+  // gonderilmeli. flowId basina idempotency.
+  const taslakKarariRef = useRef(false);
   const akisBasladi = useRef(false);
   // Cift tiklama ve Enter tekrarlari ayni ilani iki kez olusturmasin.
   // Dugmenin disabled olmasi tek basina yetmiyor: iki tiklama ayni render
@@ -321,6 +327,8 @@ export default function CreateListingPage() {
   // kullaniciya ait, jetonsuz istek bos doner.
   useEffect(() => {
     if (!authReady || !user || !me?.tcKimlikVar) return;
+    if (taslakKarariRef.current) return;   // bu akista bir kez
+    taslakKarariRef.current = true;
     let iptal = false;
     (async () => {
       const t = await taslagiGetir();
