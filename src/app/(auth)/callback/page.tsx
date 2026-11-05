@@ -1,5 +1,6 @@
 'use client';
 import { useEffect, Suspense } from 'react';
+import { kayitKampanyasi } from '@/lib/kampanya';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useAuthStore } from '@/store/auth';
 import { api } from '@/lib/api';
@@ -39,7 +40,9 @@ function CallbackHandler() {
     let iptal = false;
     (async () => {
       try {
-        const { data } = await api.post('/auth/google/exchange', { code });
+        // Kampanya: yeni hesap Google ile olusuyorsa atif icin. sessionStorage'dan
+        // okunuyor (inis aninda yakalandi); yoksa undefined -> tahmin yok.
+        const { data } = await api.post('/auth/google/exchange', { code, kampanya: kayitKampanyasi() });
         if (iptal) return;
         const { accessToken, refreshToken, deviceId, user, needsConsent } = data;
         if (!accessToken || !user) { router.replace('/giris'); return; }

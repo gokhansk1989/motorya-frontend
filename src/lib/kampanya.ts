@@ -36,6 +36,36 @@ export interface Kampanya {
 }
 
 let aktif: Kampanya | null = null;
+
+/**
+ * Kampanyanin sekme-omurlu kalici kopyasi.
+ *
+ * `aktif` yalnizca bellekte; tam yenileme, yeni sekme ve Google OAuth
+ * gidis-donusunde kayboluyordu, bu yuzden kampanya cogu kayitta User
+ * satirina hic ulasamiyordu. sessionStorage aynen donus hedefi
+ * (`motorya-donus`) gibi kullaniliyor: birinci taraf, sekmeye bagli,
+ * sekme kapaninca silinir, yalnizca UTM dizgileri (kimlik/cihaz-id yok).
+ * Takip mekanizmasi DEGIL; islevsel ve kullanicinin kendi baslattigi
+ * akisa ait. Kampanya yetki kararina hic girmiyor; yalnizca hesap
+ * olusturulurken User.kampanya* alanlarina yaziliyor.
+ */
+const KAMPANYA_ANAHTARI = 'motorya-kampanya';
+
+function kampanyayiSakla(k: Kampanya) {
+  try { sessionStorage.setItem(KAMPANYA_ANAHTARI, JSON.stringify(k)); } catch { /* gizli sekme */ }
+}
+
+/** `aktif` bossa sessionStorage'dan geri yukler (tam yenileme/OAuth sonrasi). */
+function aktifiCoz(): Kampanya | null {
+  if (aktif) return aktif;
+  try {
+    const ham = sessionStorage.getItem(KAMPANYA_ANAHTARI);
+    if (!ham) return null;
+    const k = JSON.parse(ham) as Kampanya;
+    if (k && typeof k.utmKaynak === 'string') { aktif = k; return k; }
+  } catch { /* bozuk/erisilemez */ }
+  return null;
+}
 let acilisKaydedildi = false;
 /** Acilis olayi icin bekleyen alanlar; effect bunu tuketiyor. */
 let bekleyenAcilis: Record<string, string> | null = null;
@@ -95,17 +125,19 @@ function yonlendirenKaynak(): string | null {
 
 /** Olaylara iliştirilecek kampanya alanlari. Kampanya yoksa bos nesne. */
 export function kampanyaAlanlari(): Partial<Kampanya> {
-  return aktif ? { ...aktif } : {};
+  const k = aktifiCoz();
+  return k ? { ...k } : {};
 }
 
 /** Kayit isteginde gonderilecek kampanya. Kampanya yoksa undefined. */
 export function kayitKampanyasi(): Record<string, string> | undefined {
-  if (!aktif) return undefined;
+  const k = aktifiCoz();
+  if (!k) return undefined;
   return {
-    kaynak: aktif.utmKaynak,
-    ortam: aktif.utmOrtam,
-    kampanya: aktif.utmKampanya,
-    icerik: aktif.utmIcerik,
+    kaynak: k.utmKaynak,
+    ortam: k.utmOrtam,
+    kampanya: k.utmKampanya,
+    icerik: k.utmIcerik,
   };
 }
 
@@ -145,6 +177,7 @@ export function kampanyayiYakala(): { alanlar: Record<string, string> } | null {
           utmYerlesim: 'diger',
         };
         acilisKaydedildi = true;
+        kampanyayiSakla(aktif);
         bekleyenAcilis = { ...aktif, yonlendiren: y, yol: yolEtiketi() };
         return { alanlar: bekleyenAcilis };
       }
@@ -163,6 +196,7 @@ export function kampanyayiYakala(): { alanlar: Record<string, string> } | null {
     utmYerlesim: yerlesimCikar(icerik, kampanya),
   };
   acilisKaydedildi = true;
+  kampanyayiSakla(aktif);
 
   // Adres temizligi BURADA yapilmiyor: bu fonksiyon React render'i
   // sirasinda calisiyor ve Next.js App Router hydration'i tamamlarken
