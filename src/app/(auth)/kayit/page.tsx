@@ -12,7 +12,7 @@ import { Zap, Eye, EyeOff, User, Mail, Lock } from 'lucide-react';
 import { useState, useCallback, useEffect, useRef, Suspense } from 'react';
 import { Turnstile } from '@/components/Turnstile';
 import { analytics } from '@/lib/analytics';
-import { kayitKampanyasi } from '@/lib/kampanya';
+import { kayitKampanyasi, kampanyayiTemizle } from '@/lib/kampanya';
 import { MarkaLogo } from '@/components/ui/MarkaLogo';
 
 const schema = z.object({
@@ -139,6 +139,10 @@ function RegisterPageInner() {
         kampanya: kayitKampanyasi(),
       });
       analytics.signUp('email');
+      // Kampanya bu kayitta TUKETILDI (sunucuya gonderildi, hesaba
+      // damgalandi): sekmeden sil ki ayni sekmede acilacak baska bir
+      // hesaba yanlislikla devredilmesin.
+      kampanyayiTemizle();
       // Hedef dogrulama ekranina da tasiniyor: kayittan sonra kullanici
       // e-postasini dogrulayip geldiginde ilan formuna donebilsin.
       // E-posta adresi disinda hicbir kisisel veri adrese girmiyor.

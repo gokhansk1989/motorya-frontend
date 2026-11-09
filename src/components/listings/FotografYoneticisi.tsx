@@ -5,6 +5,7 @@ import { Camera, ImagePlus, Star, Crop, Trash2, ChevronLeft, ChevronRight, Check
 import toast from 'react-hot-toast';
 import { api } from '@/lib/api';
 import { fotoHataKodu } from '@/lib/olcum';
+import { gorselHazirla } from '@/lib/gorselHazirla';
 import { KART_ORANI_CSS, type Kadraj } from '@/lib/gorselOran';
 import { KirpilmisGorsel } from './KirpilmisGorsel';
 import { CoverCropModal } from './CoverCropModal';
@@ -36,11 +37,21 @@ import { CoverCropModal } from './CoverCropModal';
  */
 
 export const EN_FAZLA_FOTO = 8;
-/** Vekil sunucu isteğin tamamını 25 MB'da kesiyor; dosya başına tavan. */
-export const DOSYA_SINIRI = 8 * 1024 * 1024;
+/**
+ * Sunucu multer sınırı (10 MB/dosya). Büyük fotoğraflar artık yüklemeden
+ * önce tarayıcıda küçültülüyor; bu sınır yalnızca küçültülemeyen
+ * (ör. HEIC, döndürülmüş) dosyalar için geçerli ve hazırlıktan SONRA
+ * kontrol ediliyor.
+ */
+const SUNUCU_SINIRI = 10 * 1024 * 1024;
+/**
+ * Tarayıcı güvenlik tavanı: bunun üstündeki HAM dosyayı açmayı hiç
+ * denemiyoruz — çok büyük bir görseli decode etmek sekmeyi kilitleyebilir.
+ */
+const HAM_TAVAN = 50 * 1024 * 1024;
 const MB = (b: number) => `${(b / 1024 / 1024).toFixed(1)} MB`;
 
-type KuyrukDurumu = 'bekliyor' | 'yukleniyor' | 'tamam' | 'hata';
+type KuyrukDurumu = 'bekliyor' | 'hazirlaniyor' | 'yukleniyor' | 'tamam' | 'hata';
 type KuyrukOgesi = {
   id: string;
   dosya: File;
@@ -58,7 +69,7 @@ type KuyrukOgesi = {
  * "Tekrar dene" sunmak kullanıcıyı boşuna uğraştırır. Ağ ve sunucu
  * hatalarında ise tekrar denemek gerçekten işe yarar.
  */
-const TEKRAR_FAYDASIZ = ['tip', 'bozuk', 'heic', 'boyut'];
+const TEKRAR_FAYDASIZ = ['tip', 'bozuk', 'heic', 'boyut', 'bellek'];
 
 /** Kullanıcıya gösterilecek hata metni — iç ayrıntı sızdırmadan. */
 function hataMetni(kod: string): string {
@@ -66,7 +77,9 @@ function hataMetni(kod: string): string {
     case 'ag':
       return 'Bağlantı kurulamadı. İnternetini kontrol edip tekrar dene.';
     case 'boyut':
-      return 'Dosya çok büyük.';
+      return 'Fotoğraf çok büyük. Daha küçük bir kopyasını ya da JPEG halini dene.';
+    case 'bellek':
+      return 'Bu fotoğraf tarayıcıda hazırlanamadı (çok büyük). Daha küçük bir kopyasını dene.';
     case 'limit':
       return 'Çok hızlı denendi. Biraz bekleyip tekrar dene.';
     case 'sunucu':
@@ -112,22 +125,51 @@ export function FotografYoneticisi({ deger, onDegis, onOlcum, onMesgul }: Props)
   /** Aynı dosya için eşzamanlı ikinci yükleme başlamasın. */
   const calisan = useRef<Set<string>>(new Set());
 
-  const mesgul = kuyruk.some(k => k.durum === 'yukleniyor' || k.durum === 'bekliyor');
+  const mesgul = kuyruk.some(k => k.durum === 'yukleniyor' || k.durum === 'bekliyor' || k.durum === 'hazirlaniyor');
 
   const guncelle = useCallback((y: Partial<FotografDurumu>) => {
     onDegis({ urller, kadrajlar, kapak, ...y });
   }, [urller, kadrajlar, kapak, onDegis]);
 
   /** Tek bir kuyruk öğesini yükler. Kuyruktaki durumu kendisi günceller. */
-  const ogeyiYukle = useCallback(async (oge: KuyrukOgesi) => {
+  const ogeyiYukle = useCallback(async (oge: KuyrukOgesi, tekrar = false) => {
     if (calisan.current.has(oge.id)) return;        // çift tıklama koruması
     calisan.current.add(oge.id);
-    setKuyruk(k => k.map(x => (x.id === oge.id ? { ...x, durum: 'yukleniyor', sebep: undefined } : x)));
     onMesgul?.(true);
+    const tekrarEki = tekrar ? { tekrar: true } : {};
 
     try {
+      // ── 1) HAZIRLAMA ────────────────────────────────────────────────
+      // Büyük telefon fotoğrafını yüklemeden önce tarayıcıda küçült.
+      // Başarısız olursa dosya ham haliyle geçer (sunucu doğrular); yalnızca
+      // bellek hatasında burada durur.
+      setKuyruk(k => k.map(x => (x.id === oge.id ? { ...x, durum: 'hazirlaniyor', sebep: undefined } : x)));
+      let yuklenecek = oge.dosya;
+      const hazir = await gorselHazirla(oge.dosya);
+      if (hazir.durum === 'hazir') {
+        yuklenecek = hazir.dosya;
+      } else if (hazir.durum === 'hata') {
+        onOlcum?.('hata', { hataKodu: hazir.kod, asama: 'hazirlik', ...tekrarEki });
+        setKuyruk(k => k.map(x => (x.id === oge.id
+          ? { ...x, durum: 'hata', kod: hazir.kod, sebep: hataMetni(hazir.kod) }
+          : x)));
+        return;
+      }
+
+      // Hazırlıktan SONRA dosya hâlâ sunucu sınırını aşıyorsa (küçültülemeyen
+      // HEIC/döndürülmüş dosya) yüklemeyi hiç deneme; net "boyut" hatası ver.
+      if (yuklenecek.size > SUNUCU_SINIRI) {
+        onOlcum?.('hata', { hataKodu: 'boyut', asama: 'hazirlik', ...tekrarEki });
+        setKuyruk(k => k.map(x => (x.id === oge.id
+          ? { ...x, durum: 'hata', kod: 'boyut', sebep: hataMetni('boyut') }
+          : x)));
+        return;
+      }
+
+      // ── 2) YÜKLEME ──────────────────────────────────────────────────
+      setKuyruk(k => k.map(x => (x.id === oge.id ? { ...x, durum: 'yukleniyor' } : x)));
       const form = new FormData();
-      form.append('files', oge.dosya);
+      form.append('files', yuklenecek);
       const res = await api.post('/upload/images', form, {
         headers: { 'Content-Type': 'multipart/form-data' },
       });
@@ -136,14 +178,14 @@ export function FotografYoneticisi({ deger, onDegis, onOlcum, onMesgul }: Props)
 
       if (gelen.length === 0) {
         const h = hatalar[0];
-        onOlcum?.('hata', { hataKodu: h?.kod ?? 'bilinmiyor' });
+        onOlcum?.('hata', { hataKodu: h?.kod ?? 'bilinmiyor', asama: 'yukleme', ...tekrarEki });
         setKuyruk(k => k.map(x => (x.id === oge.id
           ? { ...x, durum: 'hata', kod: h?.kod, sebep: h?.mesaj ?? hataMetni(h?.kod ?? '') }
           : x)));
         return;
       }
 
-      onOlcum?.('yuklendi', { adet: gelen.length });
+      onOlcum?.('yuklendi', { adet: gelen.length, ...tekrarEki });
       setKuyruk(k => k.map(x => (x.id === oge.id ? { ...x, durum: 'tamam' } : x)));
       // Başarılı dosya listeye şimdi giriyor: hatalı bir dosyanın
       // yüklenmiş gibi ilana eklenmesi mümkün değil.
@@ -156,7 +198,7 @@ export function FotografYoneticisi({ deger, onDegis, onOlcum, onMesgul }: Props)
       setTimeout(() => setKuyruk(k => k.filter(x => x.id !== oge.id)), 1200);
     } catch (err) {
       const kod = fotoHataKodu(err);
-      onOlcum?.('hata', { hataKodu: kod });
+      onOlcum?.('hata', { hataKodu: kod, asama: 'yukleme', ...tekrarEki });
       // Sunucu metni varsa onu gosteriyoruz (zaten kullanici dilinde);
       // yoksa koda gore hazir metin. Ic hata ayrintisi (yigin izi,
       // kod adi) asla kullaniciya gitmiyor.
@@ -185,16 +227,20 @@ export function FotografYoneticisi({ deger, onDegis, onOlcum, onMesgul }: Props)
       return;
     }
 
-    const buyuk = hepsi.filter(f => f.size > DOSYA_SINIRI);
-    if (buyuk.length > 0) {
-      onOlcum?.('hata', { hataKodu: 'boyut' });
+    // Tarayıcı güvenlik tavanını aşan dosyalar açılmadan reddediliyor — bu
+    // boyutta bir görseli decode etmek sekmeyi kilitleyebilir. Tavanın
+    // altındaki büyük fotoğraflar yüklemeden önce OTOMATİK küçültülüyor,
+    // artık reddedilmiyor.
+    const devasa = hepsi.filter(f => f.size > HAM_TAVAN);
+    if (devasa.length > 0) {
+      onOlcum?.('hata', { hataKodu: 'boyut', asama: 'hazirlik' });
       toast.error(
-        buyuk.length === 1
-          ? `Fotoğraf ${MB(buyuk[0].size)} — en fazla ${MB(DOSYA_SINIRI)} olabilir.`
-          : `${buyuk.length} fotoğraf ${MB(DOSYA_SINIRI)} sınırını aşıyor.`,
+        devasa.length === 1
+          ? `Fotoğraf ${MB(devasa[0].size)} — çok büyük (en fazla ${MB(HAM_TAVAN)}).`
+          : `${devasa.length} fotoğraf ${MB(HAM_TAVAN)} sınırını aşıyor.`,
       );
     }
-    const uygun = hepsi.filter(f => f.size <= DOSYA_SINIRI).slice(0, kalan);
+    const uygun = hepsi.filter(f => f.size <= HAM_TAVAN).slice(0, kalan);
     if (uygun.length === 0) return;
 
     const yeniler: KuyrukOgesi[] = uygun.map((f, i) => ({
@@ -304,7 +350,7 @@ export function FotografYoneticisi({ deger, onDegis, onOlcum, onMesgul }: Props)
       {/* Sınırlar SEÇİMDEN ÖNCE. Öncesinde bunları öğrenmenin tek yolu
           dosyayı seçip reddedilmesini beklemekti. */}
       <p style={{ fontSize: 12.5, color: 'var(--ink-3)', margin: '0 0 14px', lineHeight: 1.55 }}>
-        JPEG, PNG, WebP, HEIC · dosya başına en fazla {MB(DOSYA_SINIRI)} · en fazla {EN_FAZLA_FOTO} fotoğraf
+        JPEG, PNG, WebP, HEIC · büyük fotoğraflar otomatik küçültülür · en fazla {EN_FAZLA_FOTO} fotoğraf
       </p>
 
       <div style={{ display: 'flex', gap: 10, marginBottom: 14, flexWrap: 'wrap' }}>
@@ -406,6 +452,12 @@ export function FotografYoneticisi({ deger, onDegis, onOlcum, onMesgul }: Props)
                 {/* Durum yalnızca RENKLE değil, simge ve yazıyla da
                     anlatılıyor. */}
                 {k.durum === 'bekliyor' && <span>⏳ Sırada</span>}
+                {k.durum === 'hazirlaniyor' && (
+                  <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+                    <span style={{ width: 14, height: 14, border: '2px solid #fff', borderTopColor: 'transparent', borderRadius: '50%', animation: 'spin 0.7s linear infinite', display: 'inline-block' }} />
+                    Hazırlanıyor
+                  </span>
+                )}
                 {k.durum === 'yukleniyor' && (
                   <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
                     <span style={{ width: 14, height: 14, border: '2px solid #fff', borderTopColor: 'transparent', borderRadius: '50%', animation: 'spin 0.7s linear infinite', display: 'inline-block' }} />
@@ -435,7 +487,7 @@ export function FotografYoneticisi({ deger, onDegis, onOlcum, onMesgul }: Props)
                       <ImagePlus size={13} aria-hidden="true" />Başka dosya seç
                     </button>
                   ) : (
-                    <button type="button" onClick={() => void ogeyiYukle(k)}
+                    <button type="button" onClick={() => void ogeyiYukle(k, true)}
                       aria-label={`${k.dosya.name} dosyasını tekrar yüklemeyi dene`}
                       className="m-btn" style={{ flex: 1, minHeight: 36, gap: 6, fontSize: 12.5 }}>
                       <RotateCcw size={13} aria-hidden="true" />Tekrar dene

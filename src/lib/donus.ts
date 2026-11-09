@@ -96,7 +96,7 @@ export const niyetOku = (ham: unknown): Niyet | null =>
  * gostermek icin kullaniliyor ve ozet sunucudan ayrica cekiliyor.
  * Mesaj metni, kimlik bilgisi ya da token ASLA adrese girmiyor.
  */
-export function girisAdresi(opts: { hedef?: string; niyet?: Niyet; ilan?: string } = {}): string {
+export function girisAdresi(opts: { hedef?: string; niyet?: Niyet; ilan?: string; akis?: string } = {}): string {
   const p = new URLSearchParams();
   /**
    * Mesaj niyetiyle gelindiyse dönüs hedefine `donus=mesaj` isareti
@@ -114,7 +114,17 @@ export function girisAdresi(opts: { hedef?: string; niyet?: Niyet; ilan?: string
   if (hedef && opts.niyet && ISARETLI.includes(opts.niyet)) {
     const [yol, parca] = hedef.split('#');
     const ayirac = yol.includes('?') ? '&' : '?';
-    hedef = `${yol}${ayirac}donus=${opts.niyet}${parca ? '#' + parca : ''}`;
+    /**
+     * `da` (dönüş akışı): kısa ömürlü, opak bir ÖLÇÜM korelasyon kimliği.
+     * Giriş duvarındaki başlangıç olayı ile giriş sonrası dönüş olayını
+     * AYNI girişime bağlamak için. Kimlik/yetki değil, kalıcı cihaz kimliği
+     * değil, fingerprint değil — yalnızca `donus` işaretiyle birlikte
+     * taşınan bir akış numarası. Dönüş ölçülünce adresten siliniyor.
+     * Google turunde de devam hedefi sessionStorage'da taşındığı için
+     * `da` kendiliğinden geliyor; OAuth state/PKCE'ye dokunulmuyor.
+     */
+    const akisEk = opts.akis ? `&da=${encodeURIComponent(opts.akis)}` : '';
+    hedef = `${yol}${ayirac}donus=${opts.niyet}${akisEk}${parca ? '#' + parca : ''}`;
   }
   if (hedef) p.set('devam', hedef);
   if (opts.niyet) p.set('niyet', opts.niyet);

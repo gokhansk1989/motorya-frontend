@@ -129,6 +129,22 @@ export function kampanyaAlanlari(): Partial<Kampanya> {
   return k ? { ...k } : {};
 }
 
+/**
+ * Kampanyayi tuketir/temizler. Kayit aninda damga vurulduktan SONRA ve
+ * CIKISTA cagriliyor.
+ *
+ * NEDEN: kampanya sekme-omurlu sessionStorage'da. Ayni sekmede once bir
+ * hesap acilip sonra cikis yapilip IKINCI bir hesap acilirsa, eski
+ * kampanya hala depoda durdugu icin yanlislikla yeni hesaba baglanirdi.
+ * Damga kayit aninda vuruluyor; isi biten kampanyayi hemen silerek bu
+ * yanlis atfi engelliyoruz. Yeni bir UTM'li acilis gelirse kampanya
+ * yeniden kuruluyor.
+ */
+export function kampanyayiTemizle() {
+  aktif = null;
+  try { sessionStorage.removeItem(KAMPANYA_ANAHTARI); } catch { /* erisilemez */ }
+}
+
 /** Kayit isteginde gonderilecek kampanya. Kampanya yoksa undefined. */
 export function kayitKampanyasi(): Record<string, string> | undefined {
   const k = aktifiCoz();

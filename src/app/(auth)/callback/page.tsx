@@ -1,6 +1,6 @@
 'use client';
 import { useEffect, Suspense } from 'react';
-import { kayitKampanyasi } from '@/lib/kampanya';
+import { kayitKampanyasi, kampanyayiTemizle } from '@/lib/kampanya';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useAuthStore } from '@/store/auth';
 import { api } from '@/lib/api';
@@ -47,6 +47,9 @@ function CallbackHandler() {
         const { accessToken, refreshToken, deviceId, user, needsConsent } = data;
         if (!accessToken || !user) { router.replace('/giris'); return; }
         setAuth(user, accessToken);
+        // Kampanya bu takasta sunucuya iletildi (yeni hesapsa damgalandi):
+        // sekmeden sil ki ayni sekmede acilacak baska hesaba devredilmesin.
+        kampanyayiTemizle();
         // needsConsent yalnızca sözleşmeleri henüz onaylamamış, yani ilk kez
         // giren Google kullanıcıları için true dönüyor — kayıt sinyali olarak
         // güvenilir.

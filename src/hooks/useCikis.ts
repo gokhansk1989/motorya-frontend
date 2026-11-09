@@ -3,6 +3,7 @@ import { useCallback } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { useAuthStore } from '@/store/auth';
 import { api } from '@/lib/api';
+import { kampanyayiTemizle } from '@/lib/kampanya';
 
 /**
  * Cikis islemi — oturumu VE kullaniciya ozel onbellegi birlikte temizler.
@@ -41,5 +42,8 @@ export function useCikis() {
     }
     logout();
     qc.clear();
+    // Sekmedeki kampanyayi da sil: cikis sonrasi ayni sekmede acilan
+    // IKINCI bir hesap, onceki ziyaretcinin kampanyasini DEVRALMASIN.
+    kampanyayiTemizle();
   }, [qc, logout]);
 }

@@ -15,7 +15,7 @@ import { ListingCard } from '@/components/listings/ListingCard';
 import { AdSlot } from '@/components/ui/AdSlot';
 import { useCreateSavedSearch } from '@/hooks/useSavedSearches';
 import { analytics } from '@/lib/analytics';
-import { olc } from '@/lib/olcum';
+import { olc, rastgeleKimlik } from '@/lib/olcum';
 import toast from 'react-hot-toast';
 import Link from 'next/link';
 import { girisAdresi, suAnkiYol } from '@/lib/donus';
@@ -134,14 +134,28 @@ export default function ListingDetailClient({ initialListing }: { initialListing
    * Yalnizca oturum gercekten acildiysa sayiliyor: parametre elle
    * yazilabilir bir sey, tek basina kanit degil.
    */
+  /**
+   * Mesaj akışı korelasyon kimliği. Giriş duvarında üretilip `da` ile
+   * dönüş adresinde taşınıyor; dönüşte buraya alınıyor ki sonraki
+   * "gönderim denendi" olayı da aynı girişime bağlansın. Opak, kısa
+   * ömürlü; kimlik/yetki taşımıyor.
+   */
+  const mesajAkisId = useRef<string | undefined>(undefined);
   const donusOlculdu = useRef(false);
   useEffect(() => {
     if (!listing?.id || !user || donusOlculdu.current) return;
     const p = new URLSearchParams(window.location.search);
     if (p.get('donus') !== 'mesaj') return;
     donusOlculdu.current = true;
-    olc('mesaj_girisden_donuldu', { listingId: listing.id });
+    // `da` varsa akış kimliğini dönüşle başlat; başlangıç (giris_gerekti)
+    // ile dönüş (girisden_donuldu) ARTIK aynı flowId'de buluşuyor.
+    const da = p.get('da') || undefined;
+    if (da) mesajAkisId.current = da;
+    olc('mesaj_girisden_donuldu', { listingId: listing.id }, mesajAkisId.current);
+    // Hem işareti hem akış kimliğini adresten sil: sayfa yenileme ve
+    // geri/ileri aynı dönüşü bir daha saymasın.
     p.delete('donus');
+    p.delete('da');
     const qs = p.toString();
     try {
       window.history.replaceState(null, '', window.location.pathname + (qs ? `?${qs}` : ''));
@@ -616,33 +630,39 @@ export default function ListingDetailClient({ initialListing }: { initialListing
                       // sunucuda kaydedildigi Message tablosundan okunuyor.
                       // Ikisinin arasindaki fark, mesajlasmaya baslayip
                       // vazgecenleri gosteriyor.
+                      // Akış kimliği: dönüşten geldiyse (misafir giriş
+                      // yapıp döndü) onu SÜRDÜR, yoksa yeni üret. Böylece
+                      // giriş duvarı → dönüş → gönderim denendi tek bir
+                      // flowId altında zincirleniyor.
+                      const akis = mesajAkisId.current ?? rastgeleKimlik();
+                      mesajAkisId.current = akis;
                       olc('mesaj_butonu_tiklandi', {
                         listingId: listing.id,
                         kendiIlani: !!user && user.id === listing.seller?.id,
                         // Misafir ve uye akislari raporda AYRI olculuyor:
                         // misafirin onunde giris duvari var, uyenin yok.
                         uyeMi: !!user,
-                      });
+                      }, akis);
                       if (!user) {
                         // Giris duvarina carpma ayri bir adim. Boylece
                         // "kac tiklama giris ekranina dustu" sorusu,
                         // uyelerin tiklamalarini paydaya katmadan
                         // cevaplanabiliyor.
-                        olc('mesaj_giris_gerekti', { listingId: listing.id });
-                        // Ilan ve niyet giris/kayit boyunca korunuyor;
-                        // giristen sonra kullanici BU ilana donuyor.
-                        // Parametreler yalnizca gezinme bilgisi - mesaj
-                        // gonderme yetkisi her zaman sunucuda, oturumdan
-                        // dogrulaniyor. Mesaj otomatik gonderilmiyor;
-                        // kullanici dondugunde kendisi yaziyor.
-                        router.push(girisAdresi({ hedef: suAnkiYol(), niyet: 'mesaj', ilan: listing.slug ?? listing.id }));
+                        olc('mesaj_giris_gerekti', { listingId: listing.id }, akis);
+                        // Ilan, niyet ve akis kimligi giris/kayit boyunca
+                        // korunuyor; giristen sonra kullanici BU ilana ayni
+                        // akis altinda donuyor. Parametreler yalnizca gezinme
+                        // ve olcum bilgisi - mesaj gonderme yetkisi her zaman
+                        // sunucuda, oturumdan dogrulaniyor. Mesaj otomatik
+                        // gonderilmiyor; kullanici dondugunde kendisi yaziyor.
+                        router.push(girisAdresi({ hedef: suAnkiYol(), niyet: 'mesaj', ilan: listing.slug ?? listing.id, akis }));
                         return;
                       }
                       // Deneme BASARI DEGIL. Basarinin tek kaniti
                       // sunucuda kaydedilmis konusma/mesaj satiri;
                       // ikisinin farki "basladi ama gonderemedi"
                       // grubunu gosteriyor.
-                      olc('mesaj_gonderim_denendi', { listingId: listing.id });
+                      olc('mesaj_gonderim_denendi', { listingId: listing.id }, akis);
                       try {
                         const conv = await startConversation.mutateAsync({ otherUserId: listing.seller.id, listingId: listing.id });
                         analytics.conversationStarted({ listingId: listing.id, price: Number(listing.price) });
@@ -660,7 +680,7 @@ export default function ListingDetailClient({ initialListing }: { initialListing
                           : durum >= 500 ? 'sunucu'
                           : durum ? 'istemci'
                           : 'ag';
-                        olc('mesaj_gonderim_hatasi', { listingId: listing.id, kod });
+                        olc('mesaj_gonderim_hatasi', { listingId: listing.id, kod }, akis);
                         toast.error('Mesaj başlatılamadı');
                       }
                     }}
