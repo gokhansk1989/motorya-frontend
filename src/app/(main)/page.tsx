@@ -6,8 +6,10 @@ import { PullToRefresh } from '@/components/ui/PullToRefresh';
 import { useListings, usePriceDrops } from '@/hooks/useListings';
 import { ListingCard } from '@/components/listings/ListingCard';
 import { api } from '@/lib/api';
-import { useAuthStore } from '@/store/auth';
-import { Search, ChevronRight, ChevronDown, Star, TrendingDown, Clock, Plus } from 'lucide-react';
+import {
+  Search, ChevronRight, ChevronLeft, Star, TrendingDown, Clock, ArrowRight,
+  Camera, MessageCircle, Truck,
+} from 'lucide-react';
 import Link from 'next/link';
 import { CategoryIcon } from '@/components/icons/CategoryIcons';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -16,60 +18,72 @@ import { formatPrice } from '@/lib/utils';
 
 interface Category { id: string; name: string; slug: string; parentId: string | null; }
 
-// "Fiyati Dustu" seridinin gorunmesi icin gereken en az ilan sayisi.
-//
-// Neden bir taban var: bu serit hem masaustunde hem mobilde listeyi
-// dondurerek gosteriyor, yani iki ilan varsa ayni iki urunu sonsuza kadar
-// tekrar ediyor. Uretimde tam olarak bu oldu ve sonuc "bu site bos"
-// izlenimi verdi. Ince bir liste gostermektense hic gostermemek daha iyi -
-// vitrin seridinde de ayni ilkeyi uyguluyoruz. Sunucu tarafi satici basina
-// tek ilan dondurdugu icin buradaki sayi artik gercek cesitliligi olcer.
+interface VitrinOzeti { toplam: number; buHafta: number; kategoriler: Record<string, number>; }
+
+// "Liste Fiyatinin Altinda" seridinin gorunmesi icin gereken en az ilan
+// sayisi. Iki ilanlik bir serit "bu site bos" izlenimi veriyor; ince bir
+// liste gostermektense hic gostermemek daha iyi.
 const FIYAT_DUSUSU_ESIGI = 3;
 
-// Bu liste fiyat GECMISINE bakmiyor - oyle bir veri tutulmuyor. Olcut,
-// saticinin ilan verirken girdigi liste fiyatinin istenen fiyattan yuksek
-// olmasi. Basliklar bu yuzden "fiyati dustu" demiyor.
-/**
- * Masaustunde basligin sagindaki alan.
- *
- * Burada once "liste fiyatinin altinda" paneli vardi; esik (3 ilan)
- * dolmadiginda hic cizilmedigi icin 1440px'te sagda genis bos bir alan
- * kaliyordu. Yerine her zaman dolu olan "Yeni Eklenenler" kondu:
- * hareketsiz, yalnizca fotograf, baslik ve fiyat.
- */
-function SonIlanlarPaneli() {
-  const { data } = useListings({ limit: 3 }, true);
-  const items = (Array.isArray(data) ? data : data?.items ?? []).slice(0, 3);
-  if (items.length === 0) return null;
+// Hero'daki mozaik en yeni dort ilani gosteriyor; asagidaki "Yeni Ilanlar"
+// izgarasi ayni sorgunun devamini kullaniyor ki ayni ilan iki kez cikmasin.
+const MOZAIK_ADEDI = 4;
+// 12: izgara 6, 4 ve 2 sutunda da tam satir veriyor.
+const IZGARA_ADEDI = 12;
+// Vitrindeki ilanlar izgaradan dusuldugu icin pay birakiyoruz.
+const YENI_ILAN_SORGUSU = { limit: 28 } as const;
 
+const ONE_CIKAN_SORGUSU = { isFeatured: true, limit: 12 } as const;
+
+function ilanlariAl(data: any): any[] {
+  return Array.isArray(data) ? data : data?.items ?? [];
+}
+
+function BolumBasligi({ icon, children, sag }: { icon?: React.ReactNode; children: React.ReactNode; sag?: React.ReactNode }) {
   return (
-    <div className="m-hide-mobile" style={{ width: 280, flexShrink: 0 }}>
-      <div style={{ background: 'var(--bg-1)', border: '1px solid var(--line-soft)', borderRadius: 16, padding: 14, display: 'flex', flexDirection: 'column', gap: 10 }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 7 }}>
-          <Clock size={15} style={{ color: 'var(--accent)' }} />
-          <span style={{ fontWeight: 700, fontSize: 13, color: 'var(--ink)' }}>Yeni Eklenenler</span>
-        </div>
-        {items.map((l: any) => (
-          <Link key={l.id} href={`/ilan/${l.slug ?? l.id}`} style={{ display: 'flex', alignItems: 'center', gap: 10, textDecoration: 'none' }}>
-            <div style={{ width: 52, height: 52, borderRadius: 9, background: 'var(--bg-2)', overflow: 'hidden', flexShrink: 0 }}>
-              {l.images?.[0] && <img src={l.images[0].url} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />}
-            </div>
-            <div style={{ minWidth: 0, flex: 1 }}>
-              <p style={{ margin: 0, fontSize: 12.5, color: 'var(--ink-2)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{l.title}</p>
-              <p style={{ margin: '3px 0 0', fontSize: 13, fontWeight: 700, color: 'var(--accent)' }}>{formatPrice(l.price)}</p>
-            </div>
+    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, marginBottom: 14 }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 8, minWidth: 0 }}>
+        {icon}
+        <h2 className="m-display" style={{ fontSize: 18, margin: 0 }}>{children}</h2>
+      </div>
+      {sag}
+    </div>
+  );
+}
+
+function TumuBaglantisi({ href, children }: { href: string; children: React.ReactNode }) {
+  return (
+    <Link href={href} style={{ fontSize: 13, color: 'var(--accent)', textDecoration: 'none', display: 'flex', alignItems: 'center', gap: 4, flexShrink: 0 }}>
+      {children} <ChevronRight size={14} />
+    </Link>
+  );
+}
+
+function YeniEklenenlerMozaigi({ items }: { items: any[] }) {
+  if (items.length < MOZAIK_ADEDI) return null;
+  return (
+    <div className="m-hero-mozaik">
+      <div style={{ display: 'flex', alignItems: 'center', gap: 7, marginBottom: 10 }}>
+        <Clock size={15} style={{ color: 'var(--accent)' }} />
+        <span style={{ fontWeight: 700, fontSize: 13, color: 'var(--ink)' }}>Yeni Eklenenler</span>
+      </div>
+      <div className="m-hero-mozaik-grid">
+        {items.slice(0, MOZAIK_ADEDI).map((l: any, i: number) => (
+          <Link key={l.id} href={`/ilan/${l.slug ?? l.id}`} className="m-hero-kare" aria-label={`${l.title}, ${formatPrice(l.price)}`}>
+            {/* Ilk ekranda gorunuyorlar: tembel yukleme LCP'yi geciktirirdi. */}
+            {l.images?.[0] && <img src={l.images[0].url} alt="" loading="eager" fetchPriority={i === 0 ? 'high' : 'auto'} />}
+            <span>{formatPrice(l.price)}</span>
           </Link>
         ))}
-        <Link href="/ara" style={{ fontSize: 12.5, fontWeight: 600, color: 'var(--accent)', textDecoration: 'none', textAlign: 'center', paddingTop: 2 }}>
-          Tüm ilanlara bak →
-        </Link>
       </div>
     </div>
   );
 }
 
-function HeroSection({ onSearch, categories, brands }: { onSearch: (q: string) => void; categories: Category[]; brands: BrandLite[] }) {
-  const { user } = useAuthStore();
+function HeroSection({ onSearch, categories, brands, yeniIlanlar, ilanSayisi, buHafta }: {
+  onSearch: (q: string) => void; categories: Category[]; brands: BrandLite[];
+  yeniIlanlar: any[]; ilanSayisi: number | null; buHafta: number;
+}) {
   const [val, setVal] = useState('');
   const [focused, setFocused] = useState(false);
   const blurTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -92,15 +106,14 @@ function HeroSection({ onSearch, categories, brands }: { onSearch: (q: string) =
         'radial-gradient(80% 120% at 12% -10%, color-mix(in oklch, var(--accent) 22%, transparent), transparent 55%),' +
         'radial-gradient(70% 100% at 100% 110%, color-mix(in oklch, var(--accent-2) 18%, transparent), transparent 55%)',
         zIndex: 0 }} />
-      <div className="m-wrap" style={{ position: 'relative', zIndex: 1, paddingTop: 'clamp(28px, 6vw, 54px)', paddingBottom: 'clamp(24px, 4vw, 46px)', display: 'flex', gap: 32, alignItems: 'flex-start', justifyContent: 'space-between' }}>
-        <div style={{ maxWidth: 620, flex: 1 }} className="m-fade-up">
-          <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 20, flexWrap: 'wrap' }}>
-            <span className="m-kicker">Türkiye'nin motosiklet ekipman pazarı</span>
-            {/* Yeni olduğumuzu pop-up ile kesintiye uğratmadan söylüyoruz;
-                erken gelmeyi dezavantaj yerine kalıcı bir ayrıcalığa çeviriyor. */}
-            {!user && (
+      <div className="m-wrap m-hero-row" style={{ position: 'relative', zIndex: 1, paddingTop: 'clamp(22px, 5vw, 54px)', paddingBottom: 'clamp(22px, 4vw, 46px)' }}>
+        <div style={{ maxWidth: 620, flex: 1, minWidth: 0 }} className="m-fade-up">
+          {/* minHeight: rozet veri gelince beliriyor; baslik o an asagi kaymasin. */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 16, flexWrap: 'wrap', minHeight: 28 }}>
+            <span className="m-kicker m-hide-mobile">Türkiye'nin motosiklet ekipman pazarı</span>
+            {ilanSayisi !== null && ilanSayisi > 0 && (
               <Link
-                href="/kayit"
+                href="/ara"
                 style={{
                   display: 'inline-flex', alignItems: 'center', gap: 6,
                   fontSize: 12.5, fontWeight: 600, textDecoration: 'none',
@@ -109,19 +122,19 @@ function HeroSection({ onSearch, categories, brands }: { onSearch: (q: string) =
                   borderRadius: 20, padding: '5px 12px',
                 }}
               >
-                <span aria-hidden="true">🚀</span>
-                Yeni açıldık — ilk 100 üye “Kurucu Üye” rozeti alıyor
+                {ilanSayisi} ilan{buHafta > 0 ? ` · bu hafta ${buHafta} yeni` : ''}
               </Link>
             )}
           </div>
-          <h1 className="m-display" style={{ fontSize: 'clamp(36px, 5vw, 60px)', margin: 0 }}>
+          <h1 className="m-display" style={{ fontSize: 'clamp(30px, 5vw, 60px)', margin: 0 }}>
             Garajındaki ekipman,<br /><span className="m-accent">başkasının</span> sıradaki yolculuğu.
           </h1>
-          <p style={{ fontSize: 'clamp(14px, 3vw, 17px)', maxWidth: 480, marginTop: 18, lineHeight: 1.55, color: 'var(--ink-2)' }}>
+          {/* Mobilde gizli: ilk ekrana arama ile ilk ilanlar birlikte sigsin. */}
+          <p className="m-hide-mobile" style={{ fontSize: 17, maxWidth: 480, marginTop: 18, lineHeight: 1.55, color: 'var(--ink-2)' }}>
             İkinci el kask, mont, egzoz ve parça al-sat. E-posta doğrulamalı
             üyelerle platform içinden mesajlaş, kargoyla ya da yüz yüze anlaş.
           </p>
-          <form onSubmit={e => { e.preventDefault(); onSearch(val); }} style={{ marginTop: 28, maxWidth: 540 }}>
+          <form onSubmit={e => { e.preventDefault(); onSearch(val); }} style={{ marginTop: 'clamp(16px, 3vw, 28px)', maxWidth: 540 }}>
             <div ref={searchBoxRef} style={{ display: 'flex', flex: 1, height: 54, background: 'var(--bg-1)', border: '1px solid var(--line)', borderRadius: 11, padding: '0 8px 0 16px', gap: 8, alignItems: 'center' }}>
               <Search size={20} style={{ color: 'var(--ink-3)', flexShrink: 0 }} />
               <input value={val} onChange={e => setVal(e.target.value)} onFocus={handleFocus} onBlur={handleBlur} placeholder="Ne arıyorsun?"
@@ -130,84 +143,101 @@ function HeroSection({ onSearch, categories, brands }: { onSearch: (q: string) =
             </div>
             {focused && <CategorySuggestionsDropdown query={val} matches={matches} brandMatches={brandMatches} anchorRef={searchBoxRef} onSearchQuery={onSearch} />}
           </form>
-
-          {/* SATICI CAGRISI.
-              Ilk ekranda yalnizca arama vardi; ilan vermeyi anlatan
-              yazili bir eylem yoktu ve mobilde tek isaret alt
-              gezinmedeki `+` idi - ne oldugunu bilmeyen biri icin bu
-              bir cagri degil. Arama ANA eylem olarak kaliyor (daha
-              buyuk ve ustte); bu ikincil, metinli bir yol.
-              Ayni agirlikta ikinci bir buton koymuyoruz ki ilk ekranda
-              iki esit cagri yarismasin. */}
-          {/* YALNIZCA MOBIL.
-              Header'daki "İlan Ver" butonu `.desktop-actions` icinde ve
-              768px altinda gizleniyor - yani masaustunde zaten gorunur
-              durumda. Burada bir tane daha koymak ayni ekranda iki ozdes
-              eylem demekti. Mobilde ise header hamburgerin icine
-              giriyor ve geriye tek isaret olarak alt bardaki `+` ikonu
-              kaliyor; ne oldugunu bilmeyen biri icin bu bir cagri degil.
-              `m-hide-desktop` tam bu esikte calisiyor (768px altinda
-              gorunur, ustunde gizli) - header'in kendi kirilim noktasiyla
-              ayni, boylece ikisi arasinda hicbir genislikte ne bosluk ne
-              de tekrar olusuyor.
-
-              Yardimci cumle de butonla birlikte gizleniyor: butonsuz tek
-              basina kalan bir alt yazi ortada duran yetim bir metin olurdu. */}
-          <div className="m-hide-desktop" style={{ marginTop: 14, alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
-            <Link
-              href="/ilan-ver"
-              className="m-btn"
-              style={{ height: 42, fontSize: 14, fontWeight: 600, gap: 8 }}
-            >
-              <Plus size={16} aria-hidden="true" /> Ücretsiz ilan ver
-            </Link>
-            {/* Misafire yonelik bir cumle; zaten uye olana anlamsiz.
-                Buton herkese kaliyor - mobilde header hamburgerin
-                icinde oldugu icin giris yapmis kullanicinin da ilan
-                vermeye tek elle tutulur yolu bu.
-
-                `!user` tek basina yeterli: ayni desen iki satir
-                yukaridaki "Kurucu Uye" rozetinde de kullaniliyor ve
-                uretimde dogru calistigi dogrulandi (uye girisinde rozet
-                gorunmuyor). Dev modunda bu bolumun gec hidrate oldugu
-                gorulmustu; uretim derlemesinde o davranis yok. */}
-            {!user && (
-              <span style={{ fontSize: 13, color: 'var(--ink-3)' }}>
-                Üye olmadan ilanlara göz atabilirsin.
-              </span>
-            )}
-          </div>
         </div>
-        <SonIlanlarPaneli />
+        <YeniEklenenlerMozaigi items={yeniIlanlar} />
       </div>
     </section>
   );
 }
 
-function PriceDropMobileStrip() {
-  const { data } = usePriceDrops(10);
-  const items = data ?? [];
+function FeaturedSectionSkeleton() {
+  return (
+    <div>
+      <BolumBasligi icon={<Star size={18} style={{ color: 'var(--line)' }} />}>Öne Çıkan İlanlar</BolumBasligi>
+      <div style={{ display: 'flex', gap: 14, overflow: 'hidden' }}>
+        {Array.from({ length: 5 }).map((_, i) => (
+          <div key={i} style={{ width: 220, flexShrink: 0, height: 300, borderRadius: 12, background: 'var(--bg-2)', animation: 'm-pulse 1.5s ease-in-out infinite' }} />
+        ))}
+      </div>
+      <style>{`@keyframes m-pulse { 0%,100%{opacity:1} 50%{opacity:.5} }`}</style>
+    </div>
+  );
+}
+
+function FeaturedSection() {
+  // SSR'de bu component'in üst tarafında Zustand persist (useAuthStore)
+  // hydration mismatch tetikliyor ve subtree cokuyor. Mount sonrasi CSR
+  // olarak render edip crash'i engelliyoruz.
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => { setMounted(true); }, []);
+
+  // One cikan yoksa serit hic gorunmuyor. Bos kalmasin diye en yenilere
+  // dusurmek basligi yalanci yapardi; siralama da yonetim panelindeki
+  // vitrin sirasina birakiliyor.
+  const { data, isLoading } = useListings(ONE_CIKAN_SORGUSU, mounted);
+  const items = data?.items ?? [];
+
+  const trackRef = useRef<HTMLDivElement | null>(null);
+  const kaydir = (yon: 1 | -1) => {
+    const el = trackRef.current;
+    if (el) el.scrollBy({ left: yon * el.clientWidth * 0.8, behavior: 'smooth' });
+  };
+
+  if (!mounted || isLoading) return <FeaturedSectionSkeleton />;
+  if (items.length === 0) return null;
+
+  const okStili: React.CSSProperties = { width: 34, height: 34, padding: 0, borderRadius: '50%' };
+
+  return (
+    <div>
+      <BolumBasligi
+        icon={<Star size={18} fill="var(--accent)" strokeWidth={0} style={{ color: 'var(--accent)' }} />}
+        sag={items.length > 4 && (
+          <div className="m-hide-mobile" style={{ display: 'flex', gap: 8 }}>
+            <button type="button" className="m-btn" style={okStili} aria-label="Önceki ilanlar" onClick={() => kaydir(-1)}><ChevronLeft size={16} /></button>
+            <button type="button" className="m-btn" style={okStili} aria-label="Sonraki ilanlar" onClick={() => kaydir(1)}><ChevronRight size={16} /></button>
+          </div>
+        )}
+      >
+        Öne Çıkan İlanlar
+      </BolumBasligi>
+      <div ref={trackRef} className="m-vitrin-track">
+        {items.map((l: any) => (
+          <div key={l.id}><ListingCard listing={l} /></div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+// Bu liste fiyat GECMISINE bakmiyor - oyle bir veri tutulmuyor. Olcut,
+// saticinin ilan verirken girdigi liste fiyatinin istenen fiyattan yuksek
+// olmasi. Baslik bu yuzden "fiyati dustu" demiyor.
+function FirsatSeridi() {
+  const { data } = usePriceDrops(12);
+  // Ayni sorgu anahtari: FeaturedSection ile tek istek paylasiliyor.
+  const { data: oneCikan } = useListings(ONE_CIKAN_SORGUSU, true);
+  const vitrindekiler = new Set(ilanlariAl(oneCikan).map((l: any) => l.id));
+  // Hemen ustteki vitrinde duran ilani burada tekrar gostermiyoruz.
+  const items = (data ?? []).filter((l: any) => !vitrindekiler.has(l.id));
   if (items.length < FIYAT_DUSUSU_ESIGI) return null;
 
   return (
-    <div className="m-pricedrop-mobile">
-      <div style={{ display: 'flex', alignItems: 'center', gap: 7, marginBottom: 10 }}>
-        <TrendingDown size={15} style={{ color: 'var(--bad)' }} />
-        <span style={{ fontWeight: 700, fontSize: 13, color: 'var(--ink)' }}>Liste Fiyatının Altında</span>
-      </div>
-      <div className="m-pricedrop-mobile-track">
+    <div>
+      <BolumBasligi icon={<TrendingDown size={18} style={{ color: 'var(--bad)' }} />}>Liste Fiyatının Altında</BolumBasligi>
+      <div className="m-firsat-track">
         {items.map((l: any) => {
           const discount = Math.round((1 - Number(l.price) / Number(l.originalPrice)) * 100);
           return (
-            <Link key={l.id} href={`/ilan/${l.slug ?? l.id}`} className="m-pricedrop-mobile-card">
-              <div className="m-pricedrop-mobile-img">
-                {l.images?.[0] && <img src={l.images[0].url} alt="" />}
-                <span className="m-pricedrop-mobile-badge">%{discount}</span>
+            <Link key={l.id} href={`/ilan/${l.slug ?? l.id}`} className="m-firsat-card">
+              <div className="m-firsat-img">
+                {l.images?.[0] && <img src={l.images[0].url} alt="" loading="lazy" />}
+                <span className="m-firsat-badge">%{discount}</span>
               </div>
-              <p className="m-pricedrop-mobile-title">{l.title}</p>
-              <p className="m-pricedrop-mobile-price">
-                <span className="old">{formatPrice(Number(l.originalPrice))}</span>
+              <p className="m-firsat-title">{l.title}</p>
+              <p className="m-firsat-price">
                 <span className="new">{formatPrice(Number(l.price))}</span>
+                <span className="old">{formatPrice(Number(l.originalPrice))}</span>
               </p>
             </Link>
           );
@@ -217,20 +247,13 @@ function PriceDropMobileStrip() {
   );
 }
 
-function CategoryGrid({ categories, allCategories, activeSlug, onSelect }: {
-  categories: Category[]; allCategories: Category[]; activeSlug: string; onSelect: (slug: string) => void;
+const KATEGORI_SUTUNU = 6;
+
+function CategoryGrid({ categories, allCategories, sayilar, onSelect }: {
+  categories: Category[]; allCategories: Category[]; sayilar: Record<string, number> | null; onSelect: (slug: string) => void;
 }) {
   const [expandedId, setExpandedId] = useState<string | null>(null);
-  const [isMobile, setIsMobile] = useState(false);
   const hoverTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
-
-  useEffect(() => {
-    const mq = window.matchMedia('(max-width: 767px)');
-    const update = () => setIsMobile(mq.matches);
-    update();
-    mq.addEventListener('change', update);
-    return () => mq.removeEventListener('change', update);
-  }, []);
 
   const scheduleExpand = (id: string) => {
     if (hoverTimer.current) clearTimeout(hoverTimer.current);
@@ -246,111 +269,87 @@ function CategoryGrid({ categories, allCategories, activeSlug, onSelect }: {
 
   if (!categories.length) return null;
 
+  const kartStili: React.CSSProperties = {
+    position: 'relative', borderRadius: 14, background: 'var(--bg-1)',
+    border: '1px solid var(--line-soft)', transition: 'all .15s ease',
+  };
+  const dugmeStili: React.CSSProperties = {
+    width: '100%', height: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6,
+    padding: '14px 10px', background: 'transparent', border: 0, cursor: 'pointer', textDecoration: 'none',
+  };
+  const adStili: React.CSSProperties = {
+    fontSize: 12, fontWeight: 600, color: 'var(--ink-2)', textAlign: 'center', lineHeight: 1.2,
+    height: 'calc(1.2em * 2)', display: 'flex', alignItems: 'center', justifyContent: 'center',
+  };
+
   return (
     <div>
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 14 }}>
-        <h2 className="m-display" style={{ fontSize: 18, margin: 0 }}>Kategoriler</h2>
-        <Link href="/ara" style={{ fontSize: 13, color: 'var(--accent)', textDecoration: 'none', display: 'flex', alignItems: 'center', gap: 4 }}>
-          Tümü <ChevronRight size={14} />
-        </Link>
-      </div>
-      <div className="m-category-grid-wrap">
-      <div className="m-category-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: 10 }}>
+      <BolumBasligi sag={<TumuBaglantisi href="/kategoriler">Tümü</TumuBaglantisi>}>Kategoriler</BolumBasligi>
+      <div className="m-category-grid">
         {categories.map((c, i) => {
-          const active = activeSlug === c.slug;
           const children = allCategories.filter(ch => ch.parentId === c.id);
           const hasChildren = children.length > 0;
-          const alignRight = i % 7 >= 4;
+          const alignRight = i % KATEGORI_SUTUNU >= KATEGORI_SUTUNU / 2;
+          const adet = sayilar ? sayilar[c.id] ?? 0 : null;
           return (
             <div
               key={c.id}
-              style={{
-                position: 'relative', borderRadius: 14,
-                background: active ? 'color-mix(in oklch, var(--accent) 12%, var(--bg-1))' : 'var(--bg-1)',
-                border: '1px solid ' + (active ? 'var(--accent)' : 'var(--line-soft)'),
-                transition: 'all .15s ease',
-              }}
+              style={kartStili}
+              // Alt kategori paneli yalnizca fareyle aciliyor; dokunmatikte
+              // kart dogrudan kategori sayfasina goturuyor.
               onMouseEnter={() => hasChildren ? scheduleExpand(c.id) : cancelPending()}
               onMouseLeave={scheduleCollapse}
             >
-              <button onClick={() => onSelect(active ? '' : c.slug)}
-                className="m-cat-select-btn"
-                style={{ width: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8,
-                  padding: '14px 10px', background: 'transparent', border: 0, cursor: 'pointer' }}>
-                <CategoryIcon slug={c.slug} size={52} alt={c.name} />
-                <span style={{
-                  fontSize: 12, fontWeight: 600, color: active ? 'var(--accent)' : 'var(--ink-2)',
-                  textAlign: 'center', lineHeight: 1.2, height: 'calc(1.2em * 2)',
-                  display: 'flex', alignItems: 'center', justifyContent: 'center',
-                }}>{c.name}</span>
+              <button onClick={() => onSelect(c.slug)} className="m-cat-select-btn" style={dugmeStili}>
+                <CategoryIcon slug={c.slug} size={48} alt="" />
+                <span className="m-cat-ad" style={adStili}>{c.name}</span>
+                {adet !== null && (
+                  <span style={{ fontSize: 11, color: 'var(--ink-3)', fontVariantNumeric: 'tabular-nums' }}>{adet} ilan</span>
+                )}
               </button>
-              {hasChildren && (
-                <button
-                  className="m-subcat-toggle"
-                  onClick={(e) => { e.stopPropagation(); cancelPending(); setExpandedId(prev => (prev === c.id ? null : c.id)); }}
-                  aria-label="Alt kategorileri göster"
-                  style={{
-                    width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 4,
-                    padding: '6px 4px', background: 'var(--bg-2)', border: 0, borderTop: '1px solid var(--line-soft)',
-                    borderRadius: '0 0 13px 13px',
-                    color: 'var(--ink-3)', cursor: 'pointer', fontSize: 10.5, fontWeight: 600,
-                  }}
-                >
-                  <ChevronDown size={11} style={{ transform: expandedId === c.id ? 'rotate(180deg)' : 'none', transition: 'transform .15s', flexShrink: 0 }} />
-                  <span className="m-subcat-toggle-label">Alt kategoriler</span>
-                </button>
-              )}
               <AnimatePresence>
                 {expandedId === c.id && hasChildren && (
-                  <>
-                    <motion.div
-                      key="backdrop"
-                      className="m-subcat-backdrop"
-                      initial={{ opacity: 0 }}
-                      animate={{ opacity: 1 }}
-                      exit={{ opacity: 0 }}
-                      transition={{ duration: 0.15 }}
-                      onClick={() => { cancelPending(); setExpandedId(null); }}
-                      style={{ position: 'fixed', inset: 0, zIndex: 25, background: 'transparent' }}
-                    />
-                    <motion.div
-                      key="panel"
-                      className="m-subcat-panel"
-                      initial={isMobile ? { opacity: 0, y: 80 } : { opacity: 0, y: -6 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      exit={isMobile ? { opacity: 0, y: 80 } : { opacity: 0, y: -6 }}
-                      transition={isMobile ? { duration: 0.28, ease: [0.32, 0.72, 0, 1] } : { duration: 0.15, ease: 'easeOut' }}
-                      onMouseEnter={cancelPending}
-                      onMouseLeave={scheduleCollapse}
-                      style={{
-                        position: 'absolute', top: 'calc(100% + 8px)', [alignRight ? 'right' : 'left']: 0,
-                        zIndex: 30, minWidth: 220, maxWidth: 320,
-                      }}
-                    >
-                      <div className="m-subcat-panel-inner" style={{ background: 'var(--bg-1)', border: '1px solid var(--line-soft)', borderRadius: 12, padding: 10, display: 'flex', flexDirection: 'column', gap: 4, boxShadow: '0 8px 24px -8px rgba(0,0,0,0.18)' }}>
-                        {children.map(ch => (
-                          <button
-                            key={ch.id}
-                            onClick={() => { cancelPending(); onSelect(ch.slug); setExpandedId(null); }}
-                            style={{
-                              textAlign: 'left', padding: '7px 10px', borderRadius: 8, border: 0, background: 'transparent',
-                              color: 'var(--ink-2)', fontSize: 13, cursor: 'pointer', whiteSpace: 'nowrap',
-                            }}
-                            onMouseEnter={(e) => (e.currentTarget.style.background = 'var(--bg-2)')}
-                            onMouseLeave={(e) => (e.currentTarget.style.background = 'transparent')}
-                          >
-                            {ch.name}
-                          </button>
-                        ))}
-                      </div>
-                    </motion.div>
-                  </>
+                  <motion.div
+                    className="m-subcat-panel m-hide-mobile"
+                    initial={{ opacity: 0, y: -6 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: -6 }}
+                    transition={{ duration: 0.15, ease: 'easeOut' }}
+                    onMouseEnter={cancelPending}
+                    onMouseLeave={scheduleCollapse}
+                    style={{
+                      position: 'absolute', top: 'calc(100% + 8px)', [alignRight ? 'right' : 'left']: 0,
+                      zIndex: 30, minWidth: 220, maxWidth: 320,
+                    }}
+                  >
+                    <div style={{ background: 'var(--bg-1)', border: '1px solid var(--line-soft)', borderRadius: 12, padding: 10, display: 'flex', flexDirection: 'column', gap: 4, boxShadow: '0 8px 24px -8px rgba(0,0,0,0.18)' }}>
+                      {children.map(ch => (
+                        <button
+                          key={ch.id}
+                          onClick={() => { cancelPending(); onSelect(ch.slug); setExpandedId(null); }}
+                          style={{
+                            textAlign: 'left', padding: '7px 10px', borderRadius: 8, border: 0, background: 'transparent',
+                            color: 'var(--ink-2)', fontSize: 13, cursor: 'pointer', whiteSpace: 'nowrap',
+                          }}
+                          onMouseEnter={(e) => (e.currentTarget.style.background = 'var(--bg-2)')}
+                          onMouseLeave={(e) => (e.currentTarget.style.background = 'transparent')}
+                        >
+                          {ch.name}
+                        </button>
+                      ))}
+                    </div>
+                  </motion.div>
                 )}
               </AnimatePresence>
             </div>
           );
         })}
-      </div>
+        <div style={kartStili}>
+          <Link href="/ara" className="m-cat-select-btn" style={{ ...dugmeStili, justifyContent: 'center', color: 'var(--accent)' }}>
+            <ArrowRight size={26} aria-hidden="true" />
+            <span className="m-cat-ad" style={{ ...adStili, color: 'var(--accent)' }}>Tüm ilanlar</span>
+          </Link>
+        </div>
       </div>
     </div>
   );
@@ -359,16 +358,14 @@ function CategoryGrid({ categories, allCategories, activeSlug, onSelect }: {
 function CategoryGridSkeleton() {
   return (
     <div>
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 14 }}>
-        <h2 className="m-display" style={{ fontSize: 18, margin: 0 }}>Kategoriler</h2>
-      </div>
-      <div className="m-category-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: 10 }}>
-        {Array.from({ length: 14 }).map((_, i) => (
+      <BolumBasligi>Kategoriler</BolumBasligi>
+      <div className="m-category-grid">
+        {Array.from({ length: 12 }).map((_, i) => (
           <div key={i} style={{
             borderRadius: 14, border: '1px solid var(--line-soft)', background: 'var(--bg-1)',
             padding: '14px 10px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8,
           }}>
-            <div style={{ width: 52, height: 52, borderRadius: 12, background: 'var(--bg-2)', animation: 'm-pulse 1.5s ease-in-out infinite' }} />
+            <div style={{ width: 48, height: 48, borderRadius: 12, background: 'var(--bg-2)', animation: 'm-pulse 1.5s ease-in-out infinite' }} />
             <div style={{ height: 10, width: '70%', borderRadius: 6, background: 'var(--bg-2)', animation: 'm-pulse 1.5s ease-in-out infinite' }} />
           </div>
         ))}
@@ -378,111 +375,90 @@ function CategoryGridSkeleton() {
   );
 }
 
-function FeaturedSectionSkeleton() {
+function YeniIlanlar({ adaylar }: { adaylar: any[] }) {
+  // Ayni sorgu anahtari: FeaturedSection ile tek istek paylasiliyor.
+  const { data: oneCikan } = useListings(ONE_CIKAN_SORGUSU, true);
+  const vitrindekiler = new Set(ilanlariAl(oneCikan).map((l: any) => l.id));
+  const items = adaylar.filter((l: any) => !vitrindekiler.has(l.id)).slice(0, IZGARA_ADEDI);
+  if (items.length === 0) return null;
   return (
     <div>
-      <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 14 }}>
-        <Star size={18} style={{ color: 'var(--line)' }} />
-        <h2 className="m-display" style={{ fontSize: 18, margin: 0 }}>Öne Çıkan İlanlar</h2>
+      <BolumBasligi
+        icon={<Clock size={18} style={{ color: 'var(--accent)' }} />}
+        sag={<TumuBaglantisi href="/ara">Tümü</TumuBaglantisi>}
+      >
+        Yeni İlanlar
+      </BolumBasligi>
+      <div className="m-yeni-grid">
+        {items.map((l: any) => <ListingCard key={l.id} listing={l} />)}
       </div>
-      <div style={{ display: 'flex', gap: 14, overflow: 'hidden' }}>
-        {Array.from({ length: 5 }).map((_, i) => (
-          <div key={i} style={{ width: 220, minWidth: 220, maxWidth: 220, flexShrink: 0, display: 'flex' }}>
-            <div style={{ height: 150, borderRadius: 12, background: 'var(--bg-2)', animation: 'm-pulse 1.5s ease-in-out infinite' }} />
-            <div style={{ height: 12, marginTop: 10, borderRadius: 6, background: 'var(--bg-2)', width: '80%', animation: 'm-pulse 1.5s ease-in-out infinite' }} />
-            <div style={{ height: 12, marginTop: 8, borderRadius: 6, background: 'var(--bg-2)', width: '40%', animation: 'm-pulse 1.5s ease-in-out infinite' }} />
-          </div>
-        ))}
+      <div style={{ display: 'flex', justifyContent: 'center', marginTop: 22 }}>
+        <Link href="/ara" className="m-btn" style={{ height: 44, fontSize: 14, fontWeight: 600, gap: 8 }}>
+          Tüm ilanları gör <ArrowRight size={16} aria-hidden="true" />
+        </Link>
       </div>
-      <style>{`@keyframes m-pulse { 0%,100%{opacity:1} 50%{opacity:.5} }`}</style>
     </div>
   );
 }
 
-function FeaturedSection() {
-  // SSR'de bu component'in üst tarafında Zustand persist (useAuthStore)
-  // hydration mismatch tetikliyor ve subtree cokuyor. Mount sonrasi CSR
-  // olarak render edip crash'i engelliyoruz.
-  const [mounted, setMounted] = useState(false);
-  useEffect(() => { setMounted(true); }, []);
+const ADIMLAR = [
+  { icon: Camera, baslik: 'Fotoğrafla, ilan ver', metin: 'Ekipmanını birkaç dakikada ücretsiz ilana çevir.' },
+  { icon: MessageCircle, baslik: 'Platformdan mesajlaş', metin: 'E-posta doğrulamalı üyelerle numara paylaşmadan anlaş.' },
+  { icon: Truck, baslik: 'Kargo ya da yüz yüze', metin: 'Teslimatı alıcıyla birlikte, sana uyan şekilde belirle.' },
+];
 
-  // Bu serit adi "One Cikan Ilanlar" olmasina ragmen uzun sure yalnizca
-  // "en yeni 12 ilan"i gosteriyordu: isFeatured'a hic bakmiyordu. Yani
-  // yonetim panelindeki "Reklam & Vitrin" ekranindan bir ilani one
-  // cikarmanin vitrin uzerinde hicbir etkisi yoktu.
-  //
-  // One cikan yoksa serit hic gorunmuyor (asagida items.length === 0 ->
-  // null). Bos kalmasin diye en yenilere dusurmek cazip geliyor ama ayni
-  // hatanin daha hafif hali olurdu: baslik yine yalan soylerdi. Ana
-  // sayfada zaten fiyat dusenler, kategoriler ve ilan izgarasi var; serit
-  // tamamen kalktigi icin gorsel bir bosluk da olusmuyor.
-  const { data, isLoading } = useListings({ isFeatured: true, limit: 12 }, mounted);
-  const items = data?.items ?? [];
+function NasilCalisir() {
+  return (
+    <div>
+      <BolumBasligi sag={<TumuBaglantisi href="/sayfa/nasil-calisir">Ayrıntılar</TumuBaglantisi>}>Nasıl Çalışır</BolumBasligi>
+      <div className="m-uclu-grid">
+        {ADIMLAR.map(({ icon: Icon, baslik, metin }) => (
+          <div key={baslik} style={{ display: 'flex', gap: 12, alignItems: 'flex-start', background: 'var(--bg-1)', border: '1px solid var(--line-soft)', borderRadius: 14, padding: 16 }}>
+            <span style={{ width: 38, height: 38, borderRadius: 10, display: 'grid', placeItems: 'center', flexShrink: 0, color: 'var(--accent)', background: 'color-mix(in oklch, var(--accent) 10%, transparent)' }}>
+              <Icon size={19} aria-hidden="true" />
+            </span>
+            <div style={{ minWidth: 0 }}>
+              <p style={{ margin: 0, fontWeight: 700, fontSize: 14, color: 'var(--ink)' }}>{baslik}</p>
+              <p style={{ margin: '4px 0 0', fontSize: 13, lineHeight: 1.45, color: 'var(--ink-2)' }}>{metin}</p>
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
 
-  const [touchPaused, setTouchPaused] = useState(false);
-  const resumeTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
-
-  const handleTouchStart = () => {
-    if (resumeTimer.current) clearTimeout(resumeTimer.current);
-    setTouchPaused(true);
-  };
-  const handleTouchEnd = () => {
-    if (resumeTimer.current) clearTimeout(resumeTimer.current);
-    resumeTimer.current = setTimeout(() => setTouchPaused(false), 1500);
-  };
-
-  if (isLoading) return <FeaturedSectionSkeleton />;
-  if (items.length === 0) return null;
+function BlogdanSonYazilar() {
+  const { data } = useQuery({
+    queryKey: ['blog', 'ana-sayfa'],
+    queryFn: () => api.get('/blog', { params: { limit: 3 } }).then(r => r.data),
+    staleTime: 5 * 60 * 1000,
+  });
+  const yazilar = ilanlariAl(data).slice(0, 3);
+  if (yazilar.length === 0) return null;
 
   return (
-    <motion.div
-      initial={{ opacity: 0, y: 16 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.4, ease: 'easeOut' }}
-    >
-      <motion.div
-        initial={{ opacity: 0, x: -8 }}
-        animate={{ opacity: 1, x: 0 }}
-        transition={{ duration: 0.35, ease: 'easeOut' }}
-        style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 14 }}
-      >
-        <motion.span
-          initial={{ scale: 0.5, rotate: -30, opacity: 0 }}
-          animate={{ scale: 1, rotate: 0, opacity: 1 }}
-          transition={{ duration: 0.4, ease: 'backOut', delay: 0.1 }}
-          style={{ display: 'flex' }}
-        >
-          <Star size={18} fill="var(--accent)" strokeWidth={0} style={{ color: 'var(--accent)' }} />
-        </motion.span>
-        <h2 className="m-display" style={{ fontSize: 18, margin: 0 }}>Öne Çıkan İlanlar</h2>
-      </motion.div>
-      <motion.div
-        initial={{ opacity: 0, y: 18, scale: 0.98 }}
-        animate={{ opacity: 1, y: 0, scale: 1 }}
-        transition={{ duration: 0.35, ease: 'easeOut' }}
-        className="m-marquee-wrap"
-        style={{ paddingTop: 10, paddingBottom: 10, margin: '-10px 0' }}
-        onTouchStart={handleTouchStart}
-        onTouchEnd={handleTouchEnd}
-        onTouchCancel={handleTouchEnd}
-      >
-        <div
-          className="m-marquee-track"
-          style={{ '--marquee-duration': `${items.length * 6}s`, animationPlayState: touchPaused ? 'paused' : undefined } as React.CSSProperties}
-        >
-          {[...items, ...items].map((l: any, i: number) => (
-            <motion.div
-              key={`${l.id}-${i}`}
-              whileHover={{ y: -4, transition: { duration: 0.18 } }}
-              whileTap={{ scale: 0.97 }}
-              style={{ width: 220, minWidth: 220, maxWidth: 220, flexShrink: 0, display: 'flex' }}
-            >
-              <ListingCard listing={l} />
-            </motion.div>
-          ))}
-        </div>
-      </motion.div>
-    </motion.div>
+    <div>
+      <BolumBasligi sag={<TumuBaglantisi href="/blog">Tümü</TumuBaglantisi>}>Blogdan</BolumBasligi>
+      <div className="m-uclu-grid">
+        {yazilar.map((y: any) => (
+          <Link key={y.slug} href={`/blog/${y.slug}`} style={{ display: 'flex', gap: 12, alignItems: 'center', textDecoration: 'none', background: 'var(--bg-1)', border: '1px solid var(--line-soft)', borderRadius: 14, padding: 10 }}>
+            {/* Yazilarin cogunda kapak yok; bos kutu gostermektense metin karti. */}
+            {y.coverImage && (
+              <img src={y.coverImage} alt="" loading="lazy" style={{ width: 84, height: 64, borderRadius: 9, objectFit: 'cover', flexShrink: 0 }} />
+            )}
+            <div style={{ minWidth: 0, padding: y.coverImage ? 0 : '4px 6px' }}>
+              <span className="m-kicker" style={{ letterSpacing: '0.12em' }}>
+                {[y.category, y.readTime ? `${y.readTime} dk` : null].filter(Boolean).join(' · ')}
+              </span>
+              <p style={{ margin: '5px 0 0', fontSize: 13.5, fontWeight: 600, lineHeight: 1.35, color: 'var(--ink)', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
+                {y.title}
+              </p>
+            </div>
+          </Link>
+        ))}
+      </div>
+    </div>
   );
 }
 
@@ -510,35 +486,42 @@ function HomeContent() {
     queryFn: () => api.get('/listings/meta/brands').then(r => r.data),
   });
 
+  // Sayilar gelmezse sayfa calismaya devam ediyor: rozet toplam sayiyi
+  // ilan sorgusundan aliyor, kategori kartlari sayisiz ciziliyor.
+  const { data: ozet } = useQuery<VitrinOzeti>({
+    queryKey: ['vitrin-ozeti'],
+    queryFn: () => api.get('/listings/meta/vitrin-ozeti').then(r => r.data),
+    staleTime: 60 * 1000,
+    retry: false,
+  });
+
+  const { data: yeniVeri } = useListings(YENI_ILAN_SORGUSU, true);
+  const yeniIlanlar = hydrated ? ilanlariAl(yeniVeri) : [];
+  const ilanSayisi = !hydrated ? null : ozet?.toplam ?? yeniVeri?.meta?.total ?? null;
+
   const l1Categories = allCategories.filter(c => !c.parentId);
 
   const handleSearch = (val: string) => router.push(`/ara?q=${encodeURIComponent(val)}`);
-
-  // Kategori seçildiğinde anasayfada filtrelemek yerine direkt kategori sayfasına gidiyoruz —
-  // anasayfa artık sadece öne çıkanlar + kategori vitrini, ağır ilan listesi/sayfalama taşımıyor.
-  const handleSelect = (slug: string) => {
-    if (slug) router.push(`/kategori/${slug}`);
-  };
+  const handleSelect = (slug: string) => router.push(`/kategori/${slug}`);
 
   return (
     <div>
       <PullToRefresh onRefresh={handleRefresh} />
-      <HeroSection onSearch={handleSearch} categories={allCategories} brands={allBrands} />
-      <div className="m-wrap" style={{ paddingTop: 32, paddingBottom: 48 }}>
-
-        <PriceDropMobileStrip />
-
+      <HeroSection
+        onSearch={handleSearch} categories={allCategories} brands={allBrands}
+        yeniIlanlar={yeniIlanlar} ilanSayisi={ilanSayisi} buHafta={ozet?.buHafta ?? 0}
+      />
+      <div className="m-wrap" style={{ paddingTop: 32, paddingBottom: 48, display: 'flex', flexDirection: 'column', gap: 'clamp(28px, 4vw, 40px)' }}>
         <FeaturedSection />
-
-        <div style={{ height: 28 }} />
-
-        {/* Kategori grid */}
+        <FirsatSeridi />
         {!hydrated || categoriesLoading ? (
           <CategoryGridSkeleton />
         ) : (
-          <CategoryGrid categories={l1Categories} allCategories={allCategories} activeSlug="" onSelect={handleSelect} />
+          <CategoryGrid categories={l1Categories} allCategories={allCategories} sayilar={ozet?.kategoriler ?? null} onSelect={handleSelect} />
         )}
-
+        <YeniIlanlar adaylar={yeniIlanlar.slice(MOZAIK_ADEDI)} />
+        <NasilCalisir />
+        <BlogdanSonYazilar />
       </div>
     </div>
   );

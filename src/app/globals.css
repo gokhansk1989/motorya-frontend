@@ -378,34 +378,81 @@ textarea.m-field { height: auto; padding: 12px 14px; resize: vertical; line-heig
 .m-fade-up { animation: m-fadeUp .4s cubic-bezier(.2,.7,.2,1) both; }
 @keyframes m-spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
 
-/* ---------- sonsuz kayan vitrin (öne çıkanlar) ---------- */
-@keyframes m-marquee { from { transform: translateX(0); } to { transform: translateX(-50%); } }
-.m-marquee-wrap {
-  overflow-x: auto;
-  overflow-y: hidden;
-  -webkit-overflow-scrolling: touch;
-  scrollbar-width: none;
+/* ---------- ana sayfa: hero + yeni eklenenler mozaigi ---------- */
+.m-hero-row { display: flex; gap: 40px; align-items: center; justify-content: space-between; }
+.m-hero-mozaik { width: 360px; flex-shrink: 0; }
+.m-hero-mozaik-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.m-hero-kare {
+  position: relative; display: block; aspect-ratio: 4 / 3; border-radius: 12px;
+  overflow: hidden; background: var(--bg-2); border: 1px solid var(--line-soft);
 }
-.m-marquee-wrap::-webkit-scrollbar { display: none; }
-.m-marquee-track {
-  display: flex;
-  gap: 14px;
-  width: max-content;
-  animation: m-marquee var(--marquee-duration, 40s) linear infinite;
+.m-hero-kare img { width: 100%; height: 100%; object-fit: cover; }
+.m-hero-kare span {
+  position: absolute; left: 6px; bottom: 6px; background: oklch(0 0 0 / 0.62); color: #fff;
+  font-size: 12px; font-weight: 700; padding: 2px 7px; border-radius: 6px;
 }
-.m-marquee-wrap:hover .m-marquee-track { animation-play-state: paused; }
+@media (max-width: 768px) {
+  .m-hero-row { flex-direction: column; align-items: stretch; gap: 18px; }
+  .m-hero-mozaik { width: 100%; }
+  .m-hero-mozaik-grid { grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 6px; }
+  .m-hero-kare { aspect-ratio: 1 / 1; border-radius: 9px; }
+  .m-hero-kare span { font-size: 10.5px; left: 4px; bottom: 4px; padding: 1px 5px; }
+}
 
-@keyframes m-marquee-v { from { transform: translateY(0); } to { transform: translateY(-50%); } }
-.m-marquee-track-v {
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-  animation: m-marquee-v var(--marquee-duration, 24s) linear infinite;
+/* ---------- ana sayfa: one cikanlar (elle kaydirilan satir) ---------- */
+.m-vitrin-track {
+  display: flex; gap: 14px; overflow-x: auto; scroll-snap-type: x proximity;
+  scrollbar-width: none; padding: 10px 0; margin: -10px 0;
 }
-.m-marquee-wrap:hover .m-marquee-track-v { animation-play-state: paused; }
+.m-vitrin-track::-webkit-scrollbar { display: none; }
+.m-vitrin-track > * { flex: 0 0 220px; width: 220px; display: flex; scroll-snap-align: start; }
+@media (max-width: 580px) {
+  .m-vitrin-track > * { flex-basis: 172px; width: 172px; }
+}
 
-@media (prefers-reduced-motion: reduce) {
-  .m-marquee-track, .m-marquee-track-v { animation: none; }
+/* ---------- ana sayfa: liste fiyatinin altinda ---------- */
+/* Masaustunde tek satir: sigmayan kartlar sifir yukseklikli ikinci
+   satira duser ve gizlenir, boylece yarim satir olusmaz. */
+.m-firsat-track {
+  display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+  grid-template-rows: auto; grid-auto-rows: 0; column-gap: 14px; overflow: hidden;
+}
+.m-firsat-card { text-decoration: none; min-width: 0; }
+.m-firsat-img {
+  position: relative; aspect-ratio: 4 / 3; border-radius: 10px; overflow: hidden;
+  background: #fff; border: 1px solid var(--line-soft);
+}
+.m-firsat-img img { width: 100%; height: 100%; object-fit: contain; padding: 6px; box-sizing: border-box; }
+.m-firsat-badge {
+  position: absolute; top: 6px; left: 6px; background: var(--bad); color: #fff;
+  font-size: 10.5px; font-weight: 700; padding: 2px 6px; border-radius: 6px;
+}
+.m-firsat-title {
+  font-size: 12.5px; color: var(--ink-2); margin: 7px 0 2px;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.m-firsat-price { font-size: 13px; margin: 0; display: flex; gap: 6px; align-items: center; flex-wrap: wrap; }
+.m-firsat-price .old { color: var(--ink-3); text-decoration: line-through; font-size: 11.5px; }
+.m-firsat-price .new { color: var(--bad); font-weight: 700; }
+@media (max-width: 767px) {
+  .m-firsat-track { display: flex; gap: 10px; overflow-x: auto; padding-bottom: 4px; scrollbar-width: none; }
+  .m-firsat-track::-webkit-scrollbar { display: none; }
+  .m-firsat-card { flex: 0 0 140px; width: 140px; }
+}
+
+/* ---------- ana sayfa: yeni ilanlar izgarasi ---------- */
+.m-yeni-grid { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 14px; }
+@media (max-width: 1199px) {
+  .m-yeni-grid { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+}
+@media (max-width: 767px) {
+  .m-yeni-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+}
+
+/* ---------- ana sayfa: nasil calisir + blog ---------- */
+.m-uclu-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 14px; }
+@media (max-width: 767px) {
+  .m-uclu-grid { grid-template-columns: 1fr; gap: 10px; }
 }
 
 /* scrollbar */
@@ -474,84 +521,16 @@ textarea.m-field { height: auto; padding: 12px 14px; resize: vertical; line-heig
 }
 
 /* ---------- category grid ---------- */
-@media (max-width: 767px) {
-  .m-category-grid {
-    display: flex !important;
-    overflow-x: auto;
-    gap: 8px !important;
-    padding-bottom: 6px;
-    scrollbar-width: none;
-  }
-  .m-category-grid::-webkit-scrollbar { display: none; }
-  .m-category-grid > * {
-    flex: 0 0 72px;
-    width: 72px;
-  }
-  .m-category-grid > * .m-cat-select-btn {
-    padding: 10px 6px !important;
-    gap: 6px !important;
-  }
-  .m-category-grid > * .m-cat-select-btn span:first-child { font-size: 20px !important; }
-  .m-category-grid > * .m-cat-select-btn span:last-child  { font-size: 11px !important; }
-
-  /* alt kategori paneli — yatay scroll container'ın overflow'una takılmaması için bottom-sheet'e dönüşür */
-  .m-subcat-backdrop { background: oklch(0 0 0 / 0.45) !important; }
-  .m-subcat-panel {
-    position: fixed !important;
-    left: 16px !important;
-    right: 16px !important;
-    bottom: 16px !important;
-    top: auto !important;
-    width: auto !important;
-    min-width: 0 !important;
-    max-width: none !important;
-  }
-  .m-subcat-panel-inner {
-    max-height: 60vh;
-    overflow-y: auto;
-    border-radius: 16px !important;
-  }
-
-  /* yatay scroll yapılabileceğini belirten sağ kenar fade ipucu */
-  .m-category-grid-wrap { position: relative; }
-  .m-category-grid-wrap::after {
-    content: '';
-    position: absolute;
-    top: 0; right: 0; bottom: 6px; width: 28px;
-    background: linear-gradient(to right, transparent, var(--bg-0) 75%);
-    pointer-events: none;
-  }
-
-  /* alt kategori şeridi — dar kartlarda metin yerine sadece ok ikonu gösterilir */
-  .m-subcat-toggle-label { display: none; }
+.m-category-grid { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 10px; }
+@media (max-width: 1023px) {
+  .m-category-grid { grid-template-columns: repeat(4, minmax(0, 1fr)); }
 }
-
-/* ---------- fiyatı düştü — mobil yatay şerit (masaüstünde gizli, hero'nun yan paneli yeterli) ---------- */
-.m-pricedrop-mobile { display: none; }
 @media (max-width: 767px) {
-  .m-pricedrop-mobile { display: block; margin-bottom: 24px; }
-  .m-pricedrop-mobile-track {
-    display: flex; gap: 10px; overflow-x: auto; padding-bottom: 4px;
-    scrollbar-width: none;
-  }
-  .m-pricedrop-mobile-track::-webkit-scrollbar { display: none; }
-  .m-pricedrop-mobile-card { flex: 0 0 140px; width: 140px; text-decoration: none; }
-  .m-pricedrop-mobile-img {
-    position: relative; width: 140px; height: 100px; border-radius: 10px;
-    overflow: hidden; background: var(--bg-2);
-  }
-  .m-pricedrop-mobile-img img { width: 100%; height: 100%; object-fit: contain; background: #fff; padding: 6px; box-sizing: border-box; }
-  .m-pricedrop-mobile-badge {
-    position: absolute; top: 6px; left: 6px; background: var(--bad); color: #fff;
-    font-size: 10px; font-weight: 700; padding: 2px 6px; border-radius: 6px;
-  }
-  .m-pricedrop-mobile-title {
-    font-size: 12px; color: var(--ink-2); margin: 6px 0 2px;
-    overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
-  }
-  .m-pricedrop-mobile-price { font-size: 12px; margin: 0; display: flex; gap: 5px; align-items: center; }
-  .m-pricedrop-mobile-price .old { color: var(--ink-3); text-decoration: line-through; font-size: 11px; }
-  .m-pricedrop-mobile-price .new { color: var(--bad); font-weight: 700; }
+  .m-category-grid { gap: 8px; }
+  .m-category-grid .m-cat-select-btn { padding: 10px 4px !important; gap: 5px !important; }
+  .m-category-grid .m-cat-select-btn img,
+  .m-category-grid .m-cat-select-btn svg { width: 34px !important; height: 34px !important; }
+  .m-category-grid .m-cat-ad { font-size: 11px !important; }
 }
 
 /* ---------- footer ---------- */
