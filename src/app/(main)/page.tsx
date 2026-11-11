@@ -18,8 +18,6 @@ import { formatPrice } from '@/lib/utils';
 
 interface Category { id: string; name: string; slug: string; parentId: string | null; }
 
-interface VitrinOzeti { toplam: number; buHafta: number; kategoriler: Record<string, number>; }
-
 // Hero'daki mozaik en yeni dort ilani gosteriyor; asagidaki "Diger Ilanlar"
 // izgarasi ayni sorgunun devamini kullaniyor ki ayni ilan iki kez cikmasin.
 const MOZAIK_ADEDI = 4;
@@ -75,9 +73,9 @@ function YeniEklenenlerMozaigi({ items }: { items: any[] }) {
   );
 }
 
-function HeroSection({ onSearch, categories, brands, yeniIlanlar, ilanSayisi, buHafta }: {
+function HeroSection({ onSearch, categories, brands, yeniIlanlar }: {
   onSearch: (q: string) => void; categories: Category[]; brands: BrandLite[];
-  yeniIlanlar: any[]; ilanSayisi: number | null; buHafta: number;
+  yeniIlanlar: any[];
 }) {
   const [val, setVal] = useState('');
   const [focused, setFocused] = useState(false);
@@ -103,23 +101,8 @@ function HeroSection({ onSearch, categories, brands, yeniIlanlar, ilanSayisi, bu
         zIndex: 0 }} />
       <div className="m-wrap m-hero-row" style={{ position: 'relative', zIndex: 1, paddingTop: 'clamp(22px, 5vw, 54px)', paddingBottom: 'clamp(22px, 4vw, 46px)' }}>
         <div style={{ maxWidth: 620, flex: 1, minWidth: 0 }} className="m-fade-up">
-          {/* minHeight: rozet veri gelince beliriyor; baslik o an asagi kaymasin. */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 16, flexWrap: 'wrap', minHeight: 28 }}>
-            <span className="m-kicker m-hide-mobile">Türkiye'nin motosiklet ekipman pazarı</span>
-            {ilanSayisi !== null && ilanSayisi > 0 && (
-              <Link
-                href="/ara"
-                style={{
-                  display: 'inline-flex', alignItems: 'center', gap: 6,
-                  fontSize: 12.5, fontWeight: 600, textDecoration: 'none',
-                  color: 'var(--accent)', background: 'color-mix(in oklch, var(--accent) 10%, transparent)',
-                  border: '1px solid color-mix(in oklch, var(--accent) 28%, transparent)',
-                  borderRadius: 20, padding: '5px 12px',
-                }}
-              >
-                {ilanSayisi} ilan{buHafta > 0 ? ` · bu hafta ${buHafta} yeni` : ''}
-              </Link>
-            )}
+          <div className="m-hide-mobile" style={{ marginBottom: 16 }}>
+            <span className="m-kicker">Türkiye'nin motosiklet ekipman pazarı</span>
           </div>
           <h1 className="m-display" style={{ fontSize: 'clamp(30px, 5vw, 60px)', margin: 0 }}>
             Garajındaki ekipman,<br /><span className="m-accent">başkasının</span> sıradaki yolculuğu.
@@ -207,8 +190,8 @@ function FeaturedSection() {
 
 const KATEGORI_SUTUNU = 6;
 
-function CategoryGrid({ categories, allCategories, sayilar, onSelect }: {
-  categories: Category[]; allCategories: Category[]; sayilar: Record<string, number> | null; onSelect: (slug: string) => void;
+function CategoryGrid({ categories, allCategories, onSelect }: {
+  categories: Category[]; allCategories: Category[]; onSelect: (slug: string) => void;
 }) {
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const hoverTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -248,7 +231,6 @@ function CategoryGrid({ categories, allCategories, sayilar, onSelect }: {
           const children = allCategories.filter(ch => ch.parentId === c.id);
           const hasChildren = children.length > 0;
           const alignRight = i % KATEGORI_SUTUNU >= KATEGORI_SUTUNU / 2;
-          const adet = sayilar ? sayilar[c.id] ?? 0 : null;
           return (
             <div
               key={c.id}
@@ -261,9 +243,6 @@ function CategoryGrid({ categories, allCategories, sayilar, onSelect }: {
               <button onClick={() => onSelect(c.slug)} className="m-cat-select-btn" style={dugmeStili}>
                 <CategoryIcon slug={c.slug} size={48} alt="" />
                 <span className="m-cat-ad" style={adStili}>{c.name}</span>
-                {adet !== null && (
-                  <span style={{ fontSize: 11, color: 'var(--ink-3)', fontVariantNumeric: 'tabular-nums' }}>{adet} ilan</span>
-                )}
               </button>
               <AnimatePresence>
                 {expandedId === c.id && hasChildren && (
@@ -441,18 +420,8 @@ function HomeContent() {
     queryFn: () => api.get('/listings/meta/brands').then(r => r.data),
   });
 
-  // Sayilar gelmezse sayfa calismaya devam ediyor: rozet toplam sayiyi
-  // ilan sorgusundan aliyor, kategori kartlari sayisiz ciziliyor.
-  const { data: ozet } = useQuery<VitrinOzeti>({
-    queryKey: ['vitrin-ozeti'],
-    queryFn: () => api.get('/listings/meta/vitrin-ozeti').then(r => r.data),
-    staleTime: 60 * 1000,
-    retry: false,
-  });
-
   const { data: yeniVeri } = useListings(YENI_ILAN_SORGUSU, true);
   const yeniIlanlar = hydrated ? ilanlariAl(yeniVeri) : [];
-  const ilanSayisi = !hydrated ? null : ozet?.toplam ?? yeniVeri?.meta?.total ?? null;
 
   const l1Categories = allCategories.filter(c => !c.parentId);
 
@@ -464,14 +433,14 @@ function HomeContent() {
       <PullToRefresh onRefresh={handleRefresh} />
       <HeroSection
         onSearch={handleSearch} categories={allCategories} brands={allBrands}
-        yeniIlanlar={yeniIlanlar} ilanSayisi={ilanSayisi} buHafta={ozet?.buHafta ?? 0}
+        yeniIlanlar={yeniIlanlar}
       />
       <div className="m-wrap" style={{ paddingTop: 32, paddingBottom: 48, display: 'flex', flexDirection: 'column', gap: 'clamp(28px, 4vw, 40px)' }}>
         <FeaturedSection />
         {!hydrated || categoriesLoading ? (
           <CategoryGridSkeleton />
         ) : (
-          <CategoryGrid categories={l1Categories} allCategories={allCategories} sayilar={ozet?.kategoriler ?? null} onSelect={handleSelect} />
+          <CategoryGrid categories={l1Categories} allCategories={allCategories} onSelect={handleSelect} />
         )}
         <YeniIlanlar adaylar={yeniIlanlar.slice(MOZAIK_ADEDI)} />
         <NasilCalisir />
