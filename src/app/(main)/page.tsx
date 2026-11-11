@@ -3,11 +3,11 @@ import { Suspense, useState, useRef, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { PullToRefresh } from '@/components/ui/PullToRefresh';
-import { useListings, usePriceDrops } from '@/hooks/useListings';
+import { useListings } from '@/hooks/useListings';
 import { ListingCard } from '@/components/listings/ListingCard';
 import { api } from '@/lib/api';
 import {
-  Search, ChevronRight, ChevronLeft, Star, TrendingDown, Clock, ArrowRight,
+  Search, ChevronRight, ChevronLeft, Star, Clock, ArrowRight,
   Camera, MessageCircle, Truck,
 } from 'lucide-react';
 import Link from 'next/link';
@@ -20,12 +20,7 @@ interface Category { id: string; name: string; slug: string; parentId: string | 
 
 interface VitrinOzeti { toplam: number; buHafta: number; kategoriler: Record<string, number>; }
 
-// "Liste Fiyatinin Altinda" seridinin gorunmesi icin gereken en az ilan
-// sayisi. Iki ilanlik bir serit "bu site bos" izlenimi veriyor; ince bir
-// liste gostermektense hic gostermemek daha iyi.
-const FIYAT_DUSUSU_ESIGI = 3;
-
-// Hero'daki mozaik en yeni dort ilani gosteriyor; asagidaki "Yeni Ilanlar"
+// Hero'daki mozaik en yeni dort ilani gosteriyor; asagidaki "Diger Ilanlar"
 // izgarasi ayni sorgunun devamini kullaniyor ki ayni ilan iki kez cikmasin.
 const MOZAIK_ADEDI = 4;
 // 12: izgara 6, 4 ve 2 sutunda da tam satir veriyor.
@@ -65,7 +60,7 @@ function YeniEklenenlerMozaigi({ items }: { items: any[] }) {
     <div className="m-hero-mozaik">
       <div style={{ display: 'flex', alignItems: 'center', gap: 7, marginBottom: 10 }}>
         <Clock size={15} style={{ color: 'var(--accent)' }} />
-        <span style={{ fontWeight: 700, fontSize: 13, color: 'var(--ink)' }}>Yeni Eklenenler</span>
+        <span style={{ fontWeight: 700, fontSize: 13, color: 'var(--ink)' }}>Son Eklenen {MOZAIK_ADEDI} İlan</span>
       </div>
       <div className="m-hero-mozaik-grid">
         {items.slice(0, MOZAIK_ADEDI).map((l: any, i: number) => (
@@ -210,43 +205,6 @@ function FeaturedSection() {
   );
 }
 
-// Bu liste fiyat GECMISINE bakmiyor - oyle bir veri tutulmuyor. Olcut,
-// saticinin ilan verirken girdigi liste fiyatinin istenen fiyattan yuksek
-// olmasi. Baslik bu yuzden "fiyati dustu" demiyor.
-function FirsatSeridi() {
-  const { data } = usePriceDrops(12);
-  // Ayni sorgu anahtari: FeaturedSection ile tek istek paylasiliyor.
-  const { data: oneCikan } = useListings(ONE_CIKAN_SORGUSU, true);
-  const vitrindekiler = new Set(ilanlariAl(oneCikan).map((l: any) => l.id));
-  // Hemen ustteki vitrinde duran ilani burada tekrar gostermiyoruz.
-  const items = (data ?? []).filter((l: any) => !vitrindekiler.has(l.id));
-  if (items.length < FIYAT_DUSUSU_ESIGI) return null;
-
-  return (
-    <div>
-      <BolumBasligi icon={<TrendingDown size={18} style={{ color: 'var(--bad)' }} />}>Liste Fiyatının Altında</BolumBasligi>
-      <div className="m-firsat-track">
-        {items.map((l: any) => {
-          const discount = Math.round((1 - Number(l.price) / Number(l.originalPrice)) * 100);
-          return (
-            <Link key={l.id} href={`/ilan/${l.slug ?? l.id}`} className="m-firsat-card">
-              <div className="m-firsat-img">
-                {l.images?.[0] && <img src={l.images[0].url} alt="" loading="lazy" />}
-                <span className="m-firsat-badge">%{discount}</span>
-              </div>
-              <p className="m-firsat-title">{l.title}</p>
-              <p className="m-firsat-price">
-                <span className="new">{formatPrice(Number(l.price))}</span>
-                <span className="old">{formatPrice(Number(l.originalPrice))}</span>
-              </p>
-            </Link>
-          );
-        })}
-      </div>
-    </div>
-  );
-}
-
 const KATEGORI_SUTUNU = 6;
 
 function CategoryGrid({ categories, allCategories, sayilar, onSelect }: {
@@ -383,12 +341,9 @@ function YeniIlanlar({ adaylar }: { adaylar: any[] }) {
   if (items.length === 0) return null;
   return (
     <div>
-      <BolumBasligi
-        icon={<Clock size={18} style={{ color: 'var(--accent)' }} />}
-        sag={<TumuBaglantisi href="/ara">Tümü</TumuBaglantisi>}
-      >
-        Yeni İlanlar
-      </BolumBasligi>
+      {/* "Yeni Ilanlar" degil: en yeni dort ilan hero'da, vitrindekiler
+          yukarida; bu liste en yeniden baslamiyor. */}
+      <BolumBasligi sag={<TumuBaglantisi href="/ara">Tümü</TumuBaglantisi>}>Diğer İlanları Keşfet</BolumBasligi>
       <div className="m-yeni-grid">
         {items.map((l: any) => <ListingCard key={l.id} listing={l} />)}
       </div>
@@ -513,7 +468,6 @@ function HomeContent() {
       />
       <div className="m-wrap" style={{ paddingTop: 32, paddingBottom: 48, display: 'flex', flexDirection: 'column', gap: 'clamp(28px, 4vw, 40px)' }}>
         <FeaturedSection />
-        <FirsatSeridi />
         {!hydrated || categoriesLoading ? (
           <CategoryGridSkeleton />
         ) : (

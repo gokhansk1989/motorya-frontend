@@ -125,24 +125,64 @@ export function ListingCard({ listing }: { listing: Listing }) {
       </Link>
 
       <div className="m-card-body">
-        {/* Durum + marka TEK SATIRDA kalıyor.
-            Uzun marka adlarında ("Alpinestars", "Rev'it!") bu satır
-            360 px'te ikinci satıra kayıyor ve kart 17 px uzuyordu;
-            aynı satırdaki iki karttan birinde fiyat ve konum 17 px
-            aşağıda kalıyordu (canlıda ölçüldü). Marka artık sarmıyor,
-            sığmazsa kısalıyor — dış yükseklik eşitlenerek gizlenen bir
-            iç hizasızlık kalmıyor. */}
+        {/* Okuma sirasi: baslik -> fiyat -> durum ve beden -> sehir.
+            Liste fiyati karsilastirmasi ve goruntulenme bilerek geri
+            planda: ikisi de karar verdiren bilgi degil, dar kartta asil
+            bilgiyle yarisiyorlardi. */}
+        <Link href={`/ilan/${listing.slug ?? listing.id}`} style={{ textDecoration: 'none' }}>
+          <h3 className="m-card-title">{listing.title}</h3>
+        </Link>
+        {/* Fiyat bloğu SABİT YÜKSEKLİKTE: ikinci satır indirim olmayan
+            kartlarda da yer kaplıyor, böylece alttaki satırlar tüm
+            kartlarda aynı hizada. */}
+        <div>
+          <div className="m-price" style={{ whiteSpace: 'nowrap' }}>
+            {formatPrice(listing.price)}
+          </div>
+          <div
+            // Bu oran SATICININ girdigi liste fiyatina gore; dogrulanmis
+            // bir magaza indirimi degil. "satici" kelimesi bu yuzden kaliyor.
+            title={discountPct && discountPct > 0 ? 'Satıcının belirttiği liste fiyatına göre' : undefined}
+            style={{
+              display: 'flex', alignItems: 'center', gap: 6, minHeight: 17, marginTop: 1,
+              overflow: 'hidden', whiteSpace: 'nowrap', fontSize: 11.5, color: 'var(--ink-3)',
+            }}
+          >
+            {listing.originalPrice && discountPct !== null && discountPct > 0 && (
+              <>
+                <span style={{ textDecoration: 'line-through' }}>{formatPrice(listing.originalPrice)}</span>
+                <span>%{discountPct} satıcı</span>
+              </>
+            )}
+          </div>
+        </div>
+        {/* Durum + beden + marka TEK SATIRDA ve sabit yukseklikte: beden
+            ya da marka olmayan kartlar da ayni hizada kaliyor. Durum ve
+            beden hic kisalmiyor; sigmazsa kisalan marka. Beden bossa
+            rozet basilmiyor - bos etiket bilgi varmis izlenimi verirdi. */}
         <div style={{
-          display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-          gap: 6, marginBottom: 8, minHeight: 17, flexWrap: 'nowrap',
+          display: 'flex', alignItems: 'center', gap: 7, marginTop: 7,
+          minHeight: 22, flexWrap: 'nowrap', overflow: 'hidden',
         }}>
           <ConditionPill condition={listing.condition} />
+          {sizeLabel && (
+            <span
+              title={`Beden ${sizeLabel}`}
+              style={{
+                fontSize: 11.5, fontWeight: 600, padding: '2px 7px', borderRadius: 5,
+                background: 'var(--bg-2)', color: 'var(--ink-2)', whiteSpace: 'nowrap', flexShrink: 0,
+                fontFamily: 'var(--font-mono)', letterSpacing: '0.02em',
+              }}
+            >
+              {sizeLabel}
+            </span>
+          )}
           {listing.brand && (
             <span
               className="m-kicker"
               title={listing.brand.name}
               style={{
-                letterSpacing: '0.12em', whiteSpace: 'nowrap',
+                letterSpacing: '0.12em', whiteSpace: 'nowrap', marginLeft: 'auto',
                 overflow: 'hidden', textOverflow: 'ellipsis', minWidth: 0,
               }}
             >
@@ -150,105 +190,27 @@ export function ListingCard({ listing }: { listing: Listing }) {
             </span>
           )}
         </div>
-        <Link href={`/ilan/${listing.slug ?? listing.id}`} style={{ textDecoration: 'none' }}>
-          <h3 className="m-card-title">{listing.title}</h3>
-        </Link>
-        {/* Beden/olcu.
-            Veride `sizeLabel` olarak duruyordu ama kartta HIC
-            gosterilmiyordu; kullanici bedeni ancak baslikta geciyorsa
-            gorebiliyordu - cogu ilanda gecmiyor. Giyimde beden, botta
-            numara ayni alanda tutuluyor, bu yuzden tek bir rozet yetiyor.
-            Alan bossa rozet hic basilmiyor: bos bir etiket gostermek ya
-            da "—" yazmak, bilgi varmis izlenimi verirdi. */}
-        {sizeLabel && (
-          <div style={{ marginTop: 2, marginBottom: 2 }}>
-            <span
-              style={{
-                display: 'inline-block', fontSize: 11.5, fontWeight: 600,
-                padding: '2px 7px', borderRadius: 5,
-                background: 'var(--bg-2)', color: 'var(--ink-2)',
-                fontFamily: 'var(--font-mono)', letterSpacing: '0.02em',
-              }}
-            >
-              Beden {sizeLabel}
+        {/* Alt bilgi tek satir: sehir + tarih solda, goruntulenme sagda.
+            Dar kartta (<=580px) ucu sigmiyor ve sehir kisaliyordu; orada
+            goruntulenme her zaman, tarih de sehir varsa gizleniyor
+            (.m-card-goruntulenme, .m-card-tarih). */}
+        <div style={{
+          marginTop: 'auto', paddingTop: 9, display: 'flex', alignItems: 'center', gap: 6,
+          minWidth: 0, minHeight: 27, whiteSpace: 'nowrap', color: 'var(--ink-2)', fontSize: 12.5,
+        }}>
+          {listing.city && (
+            <>
+              <MapPin size={13} style={{ flexShrink: 0 }} />
+              <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', minWidth: 0 }}>{listing.city}</span>
+              <span aria-hidden="true" className="m-card-tarih" style={{ width: 3, height: 3, borderRadius: '50%', background: 'currentColor', opacity: 0.5, flexShrink: 0 }} />
+            </>
+          )}
+          <span className={listing.city ? 'm-card-tarih' : undefined} style={{ flexShrink: 0, color: 'var(--ink-3)' }}>{timeAgo(listing.createdAt)}</span>
+          {views > 0 && (
+            <span className="m-card-goruntulenme" style={{ marginLeft: 'auto', display: 'inline-flex', alignItems: 'center', gap: 4, flexShrink: 0, color: 'var(--ink-3)', fontSize: 11.5 }}>
+              <Eye size={12} aria-hidden="true" />{views}
             </span>
-          </div>
-        )}
-        {/* Fiyat bloğu SABİT YÜKSEKLİKTE: fiyat kendi satırında, eski
-            fiyat ve indirim rozeti altında.
-
-            Önceden üçü tek bir saran satırdaydı ve içeriğe göre 1, 2
-            ya da 3 satıra çıkıyordu; 390 px'te kartlar 345–400 px
-            arasında değişiyor, aynı satırdaki kartlar arasında boşluk
-            oluşuyordu (canlıda ölçüldü). İkinci satır indirim olmayan
-            kartlarda da yer kaplıyor, böylece fiyat ve konum
-            satırları tüm kartlarda aynı hizada. */}
-        <div>
-          <div className="m-price" style={{ whiteSpace: 'nowrap' }}>
-            {formatPrice(listing.price)}
-          </div>
-          <div style={{
-            display: 'flex', alignItems: 'center', gap: 5,
-            minHeight: 20, marginTop: 2, overflow: 'hidden',
-          }}>
-            {listing.originalPrice && (
-              <span className="m-price-old" style={{ whiteSpace: 'nowrap' }}>
-                {formatPrice(listing.originalPrice)}
-              </span>
-            )}
-            {discountPct && discountPct > 0 && (
-              // Bu oran SATICININ girdigi liste fiyatina gore hesaplaniyor;
-              // dogrulanmis bir magaza indirimi degil. Baslik metni bunu
-              // soyluyor ki rozet bir garanti gibi okunmasin.
-              <span
-                title="Satıcının belirttiği liste fiyatına göre"
-                style={{
-                  fontSize: 10, fontWeight: 700, padding: '2px 5px', borderRadius: 4,
-                  background: '#ffe5d3', color: '#c04a12', lineHeight: 1.3,
-                  whiteSpace: 'nowrap', flexShrink: 0,
-                }}
-              >
-                {/* "satici" kelimesi dar kartta da kaliyor: rozetin
-                    dogrulanmis bir magaza indirimi gibi okunmamasi
-                    bunun tek guvencesi. Uzun kelime yerine kisasi. */}
-                %{discountPct} <span style={{ fontWeight: 500 }}>satıcı</span>
-              </span>
-            )}
-          </div>
-        </div>
-        {/* Sehir, tarih ve goruntulenme 12px ve --ink-3 ile yaziliyordu; bes
-            sutunlu masaustu duzeninde okunmasi zordu. Bir punto buyutup bir
-            ton koyulastirdik - yerlesim ayni kaliyor. */}
-        {/* Sehir, goruntulenme ve tarih tek satirda zorlaniyordu: dar
-            kartlarda tarih kirpiliyor, favorilerde ucu birden sigmiyordu.
-            Iki gruba ayirip sarmaya izin veriyoruz - sigdiginda tek satir,
-            sigmadiginda tarih alt satira iniyor. Uzun sehir adi kendi
-            icinde kisaliyor, tarih hic kirpilmiyor. */}
-        {/* Alt bilgi iki SABIT satir: ustte tarih, altta sehir + goruntulenme.
-            Onceden tek satirda `space-between` ile zorlaniyordu; dar kartta
-            sigmayinca tarih alt satira sariyor, genis kartta tek satir
-            kaliyordu - ayni vitrinde kimi kart tek kimi iki satir. Artik
-            her kart iki satir, hiza tutarli. marginTop:auto ile blok kartin
-            en altina sabit. */}
-        <div style={{ marginTop: 'auto', paddingTop: 9, color: 'var(--ink-2)', fontSize: 13 }}>
-          {/* Ust satir: tarih */}
-          <div style={{ whiteSpace: 'nowrap', marginBottom: 3 }}>{timeAgo(listing.createdAt)}</div>
-          {/* Alt satir: sehir + goruntulenme */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: 6, minWidth: 0, whiteSpace: 'nowrap', minHeight: 18 }}>
-            {listing.city && (
-              <>
-                <MapPin size={14} style={{ flexShrink: 0 }} />
-                <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: 130 }}>{listing.city}</span>
-              </>
-            )}
-            {views > 0 && (
-              <>
-                {listing.city && <span style={{ width: 3, height: 3, borderRadius: '50%', background: 'currentColor', opacity: 0.6, flexShrink: 0 }} />}
-                <Eye size={14} style={{ flexShrink: 0 }} />
-                <span style={{ flexShrink: 0 }}>{views}</span>
-              </>
-            )}
-          </div>
+          )}
         </div>
       </div>
     </article>
