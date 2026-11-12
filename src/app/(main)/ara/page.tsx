@@ -1,5 +1,5 @@
 'use client';
-import { Fragment, Suspense, useState, useCallback, useEffect, useRef } from 'react';
+import { Fragment, Suspense, useState, useCallback, useEffect, useMemo, useRef } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useSearch } from '@/hooks/useSearch';
 import { useCreateSavedSearch } from '@/hooks/useSavedSearches';
@@ -10,6 +10,10 @@ import { useAuthStore } from '@/store/auth';
 import { analytics } from '@/lib/analytics';
 import { olc } from '@/lib/olcum';
 import { markalariGrupla } from '@/lib/markaGruplama';
+import {
+  adrestenOku, aramaAdresi, temizAdres, aramaSorgusu, facetSorgusu, facetSecenekleri,
+  aktifEtiketler, filtreVarMi, ayniDeger, type AramaDegisikligi, type AktifEtiket,
+} from '@/lib/aramaDurumu';
 import Link from 'next/link';
 import { Search, SlidersHorizontal, X, BellPlus, Info } from 'lucide-react';
 import { IzgaraReklami } from '@/components/ui/IzgaraReklami';
@@ -175,7 +179,7 @@ function FilterFields({
         <div>
           <label className="m-label">Beden</label>
           <select
-            value={sizeLabel}
+            value={facets!.sizes.find(s => ayniDeger(s.value, sizeLabel))?.value ?? ''}
             onChange={e => push({ sizeLabel: e.target.value, page: 1 })}
             className="m-field"
             style={{ height: 38 }}
@@ -321,6 +325,48 @@ function FilterFields({
   );
 }
 
+/**
+ * Sonuclarin ustundeki aktif filtre seridi. Her etiket yalnizca kendi
+ * filtresini kaldiran bir dugme (span + onClick klavyeyle ulasilamiyordu).
+ * `onTemizle` verilirse birden fazla etiket varken "Tumunu temizle" cikar.
+ */
+function AktifFiltreler({ etiketler, onKaldir, onTemizle, ortala }: {
+  etiketler: AktifEtiket[];
+  onKaldir: (degisiklik: AramaDegisikligi) => void;
+  onTemizle?: () => void;
+  ortala?: boolean;
+}) {
+  if (etiketler.length === 0) return null;
+  return (
+    <div
+      role="group"
+      aria-label="Aktif filtreler"
+      style={{ display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'center', justifyContent: ortala ? 'center' : undefined, marginTop: ortala ? 14 : 0, marginBottom: ortala ? 0 : 16 }}
+    >
+      {etiketler.map((e) => (
+        <button
+          key={e.anahtar}
+          type="button"
+          className="m-chip active"
+          aria-label={`${e.etiket} filtresini kaldır`}
+          onClick={() => onKaldir(e.kaldir)}
+        >
+          {e.etiket} <X size={13} aria-hidden="true" />
+        </button>
+      ))}
+      {onTemizle && etiketler.length > 1 && (
+        <button
+          type="button"
+          onClick={onTemizle}
+          style={{ background: 'none', border: 0, padding: '8px 4px', fontSize: 13, fontWeight: 600, color: 'var(--accent)', cursor: 'pointer' }}
+        >
+          Tümünü temizle
+        </button>
+      )}
+    </div>
+  );
+}
+
 function SearchPageInner() {
   const router = useRouter();
   const sp = useSearchParams();
@@ -329,23 +375,23 @@ function SearchPageInner() {
   const queryClient = useQueryClient();
   const handleRefresh = useCallback(() => queryClient.refetchQueries({ type: 'active' }), [queryClient]);
 
-  const q = sp.get('q') ?? '';
-  const categoryId = sp.get('categoryId') ?? '';
-  const brandId = sp.get('brandId') ?? '';
-  const condition = sp.get('condition') ?? '';
-  const gender = sp.get('gender') ?? '';
-  const city = sp.get('city') ?? '';
-  const sizeLabel = sp.get('sizeLabel') ?? '';
-  const minPrice = sp.get('minPrice') ? Number(sp.get('minPrice')) : undefined;
-  const maxPrice = sp.get('maxPrice') ? Number(sp.get('maxPrice')) : undefined;
-  const sort = sp.get('sort') ?? 'newest';
-  const page = Number(sp.get('page') ?? 1);
+  // Adres cubugu tek dogruluk kaynagi: panel, etiketler ve sorgu bundan turuyor.
+  const filtreler = useMemo(() => adrestenOku(sp), [sp]);
+  const { q, categoryId, brandId, condition, gender, city, sizeLabel, minPrice, maxPrice, sort, page } = filtreler;
 
   const [inputVal, setInputVal] = useState(q);
   const [priceFrom, setPriceFrom] = useState(minPrice?.toString() ?? '');
   const [priceTo, setPriceTo] = useState(maxPrice?.toString() ?? '');
   const [showFilters, setShowFilters] = useState(false);
   const [markaArama, setMarkaArama] = useState('');
+
+  // Metin ve fiyat kutulari yerel durumda tutuluyor (yazarken her tusta
+  // adres degismesin diye). Adres baska bir yoldan degisince - geri/ileri,
+  // etiketten kaldirma, "tumunu temizle" - kutular eski degerde kaliyordu
+  // ve bir sonraki odak kaybinda silinen filtreyi geri yaziyordu.
+  useEffect(() => { setInputVal(q); }, [q]);
+  useEffect(() => { setPriceFrom(minPrice?.toString() ?? ''); }, [minPrice]);
+  useEffect(() => { setPriceTo(maxPrice?.toString() ?? ''); }, [maxPrice]);
 
   const selectedL1Id = (cats: any[]) => {
     const cat = cats.find((c: any) => c.id === categoryId);
@@ -367,45 +413,17 @@ function SearchPageInner() {
       .then((r) => r.data),
   });
 
-  const { data, isLoading, isError, refetch } = useSearch({
-    q: q || undefined,
-    categoryId: categoryId || undefined,
-    brandId: brandId || undefined,
-    condition: condition || undefined,
-    city: city || undefined,
-    sizeLabel: sizeLabel || undefined,
-    gender: gender || undefined,
-    minPrice,
-    maxPrice,
-    sort,
-    page,
-    limit: 20,
-  });
+  const { data, isLoading, isError, refetch } = useSearch(aramaSorgusu(filtreler));
 
-  /**
-   * Adres cubugunu guncelle.
-   *
-   * IKI HATA VARDI:
-   *
-   * 1. `merged` icinde minPrice/maxPrice YOKTU. Yani sehir ya da marka
-   *    degistirmek fiyat araligini sessizce siliyordu - kullanici 2.000-
-   *    5.000 secip sonra sehir secince fiyat filtresi ucuyordu.
-   * 2. `v !== 1` KONTROLU her anahtara uygulaniyordu; yalnizca page icin
-   *    dusunulmustu ama minPrice=1 gibi gecerli bir degeri de atiyordu.
-   */
-  const push = useCallback((overrides: Record<string, string | number | undefined>) => {
-    const params = new URLSearchParams();
-    const merged: Record<string, string | number | undefined> = {
-      q, categoryId, brandId, condition, gender, city, sizeLabel,
-      minPrice, maxPrice, sort, page: 1, ...overrides,
-    };
-    Object.entries(merged).forEach(([k, v]) => {
-      if (v === undefined || v === '') return;
-      if (k === 'page' && Number(v) === 1) return; // page=1 adreste gorunmesin
-      params.set(k, String(v));
-    });
-    router.push(`/ara?${params.toString()}`);
-  }, [q, categoryId, brandId, condition, gender, city, sizeLabel, minPrice, maxPrice, sort, router]);
+  // Beden ve sehir seceneklerini sayan ek sorgular; yalnizca o filtre
+  // seciliyken calisir (secili degilken asil yanitin dagilimi zaten dogru).
+  const bedenSecenekSorgusu = useSearch(facetSorgusu(filtreler, 'sizeLabel'), !!sizeLabel);
+  const sehirSecenekSorgusu = useSearch(facetSorgusu(filtreler, 'city'), !!city);
+
+  // Verilmeyen filtreler korunur, sayfa basa doner (bkz. aramaAdresi).
+  const push = useCallback((degisiklik: AramaDegisikligi) => {
+    router.push(aramaAdresi(filtreler, degisiklik));
+  }, [filtreler, router]);
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
@@ -413,14 +431,13 @@ function SearchPageInner() {
     push({ q: inputVal, page: 1 });
   };
 
+  // Arama metni ve siralama kalir; yalnizca filtreler temizlenir.
   const handleReset = () => {
-    setPriceFrom('');
-    setPriceTo('');
-    router.push(`/ara${q ? `?q=${q}` : ''}`);
+    router.push(temizAdres(filtreler));
     setShowFilters(false);
   };
 
-  const hasActiveFilters = !!(categoryId || brandId || condition || city || sizeLabel || minPrice || maxPrice);
+  const hasActiveFilters = filtreVarMi(filtreler);
 
   // Arama olayi sonuc dondukten SONRA uretiliyor: sonuc sayisini ve sifir
   // sonuc durumunu ancak o zaman biliyoruz. Serbest metnin kendisi
@@ -433,47 +450,22 @@ function SearchPageInner() {
   const meta = data?.meta;
 
   /**
-   * Beden ve sehir secenekleri.
+   * Beden ve sehir secenekleri, `/search` yanitinin facet dagilimindan
+   * gelir: sayilar ekrandaki sayfadan degil, sorgunun TAMAMINDAN.
    *
-   * ONCEDEN: sayfa `/listings/meta/facets` ucunu HIC PARAMETRESIZ
-   * cagiriyordu, yani sayilar TUM SITEYE aitti. "Kislik Mont" secili ve
-   * tek sonuc varken sehir listesinde "Istanbul (9)" yaziyordu, beden
-   * listesinde botlardan gelen "42, 43" goruniyordu. Uc aslinda
-   * categorySlug destekliyordu; sayfa onu hic gondermiyordu.
-   *
-   * SIMDI: `/search` yanitinin kendi facet dagilimi kullaniliyor.
-   * Bu dagilim o anki TUM filtreleri (kategori, marka, durum, cinsiyet,
-   * fiyat, metin) hesaba katiyor; ikinci bir uca gitmeye de gerek
-   * kalmiyor. Yani istemci ve sunucu ayni filtre kurallarini kullaniyor
-   * - cunku sayilar zaten sonucu ureten sorgudan geliyor.
-   *
-   * KAPSAM KURALI: facet sayilari KENDI secimleri DAHIL tum filtrelerle
-   * hesaplanir. Yani "Istanbul" seciliyken sehir listesinde yalnizca
-   * Istanbul kalir. Bu, bir secenegin yaninda yazan sayinin "bunu
-   * secersem kac sonuc gorurum" degil "su an kac sonuc var" anlamina
-   * geldigini soyluyor; arayuzde de boyle anlatiliyor.
+   * KAPSAM KURALI: bir filtrenin secenekleri, o filtrenin KENDI secimi
+   * haric diger butun filtrelerle sayilir. Oncesinde kendi secimi de
+   * dahildi; "L" secilince listede yalnizca "L (1)" kaliyor, XL'ye gecmek
+   * icin once filtreyi kaldirmak gerekiyordu. Artik sayi "bunu secersem
+   * kac sonuc gorurum" demek. Kendi secimi haric dagilim ayri bir sorgu
+   * ister (facetSorgusu); o gelene kadar asil yanitinki gosterilir.
    */
-  const facetDagilimi = (data as any)?.facets ?? {};
-  const facetListesi = useCallback(
-    (alan: string, seciliDeger: string) => {
-      const ham: Record<string, number> = facetDagilimi[alan] ?? {};
-      const liste = Object.entries(ham)
-        .map(([value, count]) => ({ value, count: Number(count) }))
-        .sort((a, b) => b.count - a.count || a.value.localeCompare(b.value, 'tr'));
-      // Secili deger sonucu sifira dusurse bile listede KALMALI; yoksa
-      // kullanici kendi secimini geri alamaz.
-      if (seciliDeger && !liste.some((o) => o.value === seciliDeger)) {
-        liste.unshift({ value: seciliDeger, count: 0 });
-      }
-      return liste;
-    },
-    [facetDagilimi],
-  );
-
-  const facets = {
-    sizes: facetListesi('sizeLabel', sizeLabel),
-    cities: facetListesi('city', city),
-  };
+  const bedenDagilimi = (sizeLabel ? bedenSecenekSorgusu.data?.facets : undefined) ?? data?.facets;
+  const sehirDagilimi = (city ? sehirSecenekSorgusu.data?.facets : undefined) ?? data?.facets;
+  const facets = useMemo(() => ({
+    sizes: facetSecenekleri(bedenDagilimi?.sizeLabel, sizeLabel),
+    cities: facetSecenekleri(sehirDagilimi?.city, city),
+  }), [bedenDagilimi, sehirDagilimi, sizeLabel, city]);
   const sonOlculen = useRef<string>('');
   useEffect(() => {
     if (isLoading || !meta || page !== 1) return;
@@ -505,6 +497,19 @@ function SearchPageInner() {
 
   const cats = categories ?? [];
   const brnds = brands ?? [];
+
+  // Kategori listesi gelene kadar etiket basilmiyor: sunucuda liste yok,
+  // ham kimlik basip sonra ada cevirmek hydration uyusmazligi yaratiyordu.
+  const etiketler = useMemo(() => {
+    const kat = cats.find((c: any) => c.id === categoryId);
+    const ust = kat?.parentId ? cats.find((c: any) => c.id === kat.parentId) : undefined;
+    return aktifEtiketler(filtreler, {
+      kategori: kat ? (ust ? `${ust.name} › ${kat.name}` : kat.name) : undefined,
+      marka: brnds.find((b: any) => b.id === brandId)?.name,
+      durum: CONDITIONS.find((c) => c.value && c.value === condition)?.label,
+      cinsiyet: GENDERS.find((g) => g.value && g.value === gender)?.label,
+    });
+  }, [filtreler, cats, brnds, categoryId, brandId, condition, gender]);
 
   /**
    * Izgaranin GERCEK sutun sayisi.
@@ -689,7 +694,7 @@ function SearchPageInner() {
               className="m-btn m-btn-ghost"
               style={{ width: '100%', height: 38, fontSize: 13 }}
             >
-              Filtreleri sıfırla
+              Tümünü temizle
             </button>
           </div>
         </div>
@@ -793,7 +798,7 @@ function SearchPageInner() {
                 className="m-btn m-btn-ghost"
                 style={{ width: '100%', height: 42, fontSize: 14 }}
               >
-                Sıfırla
+                Tümünü temizle
               </button>
             </div>
           </div>
@@ -832,50 +837,16 @@ function SearchPageInner() {
         </select>
       </div>
 
-      {/* Active filter chips.
-          `cats.length > 0` kosulu SSR icin: sunucuda kategori listesi
-          yok, dolayisiyla etiket ham kategori kimligine dusuyordu
-          ("cmvcobg4n...") ve istemci adi cozunce metin degisiyordu.
-          React bunu hydration uyusmazligi sayip TUM arama agacini
-          sokup yeniden kuruyordu - sayfa gozle gorulur bicimde bos
-          kalip sonra doluyordu. Liste gelene kadar cipi hic basmiyoruz;
-          iki tarafta da ayni sey render ediliyor. */}
-      {/* Bos sonuc ekrani aktif filtreleri KENDI icinde gosteriyor (orada
-          kaldirmak asil eylem). Ikisi birden basilirsa ayni cip iki kez
-          goruluyor; o durumda ustteki serit gizleniyor. */}
-      {cats.length > 0 && items.length > 0 && (categoryId || brandId || condition || gender || city) && (
-        <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginBottom: 16 }}>
-          {categoryId && (() => {
-            const cat = cats.find((c: any) => c.id === categoryId);
-            const l1 = cat?.parentId ? cats.find((c: any) => c.id === cat.parentId) : cat;
-            const label = cat?.parentId ? `${l1?.name} › ${cat.name}` : cat?.name ?? categoryId;
-            return (
-              <span className="m-chip active" onClick={() => push({ categoryId: '', page: 1 })}>
-                {label} <X size={13} />
-              </span>
-            );
-          })()}
-          {brandId && (
-            <span className="m-chip active" onClick={() => push({ brandId: '', page: 1 })}>
-              {brnds.find((b: any) => b.id === brandId)?.name ?? brandId} <X size={13} />
-            </span>
-          )}
-          {condition && (
-            <span className="m-chip active" onClick={() => push({ condition: '', page: 1 })}>
-              {CONDITIONS.find(c => c.value === condition)?.label} <X size={13} />
-            </span>
-          )}
-          {gender && (
-            <span className="m-chip active" onClick={() => push({ gender: '', page: 1 })}>
-              {GENDERS.find(g => g.value === gender)?.label} <X size={13} />
-            </span>
-          )}
-        </div>
+      {/* Aktif filtreler. Bos sonuc ekrani ayni seridi KENDI icinde
+          gosteriyor (orada kaldirmak asil eylem); ikisi birden basilmasin
+          diye ustteki yalnizca sonuc varken ciziliyor. */}
+      {items.length > 0 && (
+        <AktifFiltreler etiketler={etiketler} onKaldir={push} onTemizle={handleReset} />
       )}
 
       {/* Grid */}
       {isLoading ? (
-        <div className="m-listing-grid" style={{ gap: 12 }}>
+        <div className="m-listing-grid m-listing-grid--sonuc">
           {Array.from({ length: 12 }).map((_, i) => (
             <div key={i} style={{ aspectRatio: '4/5', background: 'var(--bg-1)', borderRadius: 12, animation: 'pulse 1.5s ease-in-out infinite' }} />
           ))}
@@ -915,51 +886,11 @@ function SearchPageInner() {
 
               {/* Aktif filtreler burada da GORUNUR kaliyor; kullanici
                   hangi secimin sonucu bosalttigini gormeden neyi
-                  kaldiracagini bilemez. Tek tek kaldirilabiliyorlar. */}
-              <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', justifyContent: 'center', marginTop: 14 }}>
-                {cats.length > 0 && categoryId && (() => {
-                  const cat = cats.find((c: any) => c.id === categoryId);
-                  const l1 = cat?.parentId ? cats.find((c: any) => c.id === cat.parentId) : cat;
-                  return (
-                    <span className="m-chip active" onClick={() => push({ categoryId: '', page: 1 })}>
-                      {cat?.parentId ? `${l1?.name} › ${cat.name}` : cat?.name} <X size={13} />
-                    </span>
-                  );
-                })()}
-                {brnds.length > 0 && brandId && (
-                  <span className="m-chip active" onClick={() => push({ brandId: '', page: 1 })}>
-                    {brnds.find((b: any) => b.id === brandId)?.name} <X size={13} />
-                  </span>
-                )}
-                {condition && (
-                  <span className="m-chip active" onClick={() => push({ condition: '', page: 1 })}>
-                    {CONDITIONS.find(c => c.value === condition)?.label} <X size={13} />
-                  </span>
-                )}
-                {gender && (
-                  <span className="m-chip active" onClick={() => push({ gender: '', page: 1 })}>
-                    {GENDERS.find(g => g.value === gender)?.label} <X size={13} />
-                  </span>
-                )}
-                {city && (
-                  <span className="m-chip active" onClick={() => push({ city: '', page: 1 })}>
-                    {city} <X size={13} />
-                  </span>
-                )}
-                {sizeLabel && (
-                  <span className="m-chip active" onClick={() => push({ sizeLabel: '', page: 1 })}>
-                    Beden {sizeLabel} <X size={13} />
-                  </span>
-                )}
-                {(minPrice !== undefined || maxPrice !== undefined) && (
-                  <span className="m-chip active" onClick={() => { setPriceFrom(''); setPriceTo(''); push({ minPrice: undefined, maxPrice: undefined, page: 1 }); }}>
-                    Fiyat <X size={13} />
-                  </span>
-                )}
-              </div>
+                  kaldiracagini bilemez. */}
+              <AktifFiltreler etiketler={etiketler} onKaldir={push} ortala />
 
               <button type="button" onClick={handleReset} className="m-btn m-btn-primary" style={{ margin: '18px auto 0' }}>
-                Filtreleri temizle
+                Tümünü temizle
               </button>
 
               <div className="m-alarm-eylem" style={{ display: 'flex', gap: 14, justifyContent: 'center', marginTop: 22, flexWrap: 'wrap' }}>
@@ -1006,7 +937,7 @@ function SearchPageInner() {
         </div>
       ) : (
         <>
-          <div ref={izgaraRef} className="m-listing-grid" style={{ gap: 12 }}>
+          <div ref={izgaraRef} className="m-listing-grid m-listing-grid--sonuc">
             {items.map((item: any, i: number) => (
               // Fragment'in KENDISI dizi elemani oldugu icin key onda
               // olmali; eskiden ictekı div'deydi ve React her render'da

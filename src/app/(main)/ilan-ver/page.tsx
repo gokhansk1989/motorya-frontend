@@ -38,7 +38,6 @@ const schema = z.object({
   brandId: z.string().optional(),
   condition: z.enum(['NEW', 'LIKE_NEW', 'GOOD', 'FAIR']),
   price: z.string().min(1, 'Fiyat giriniz').transform(Number),
-  originalPrice: z.string().optional().transform(v => v ? Number(v) : undefined),
   city: z.string().optional(),
   district: z.string().optional(),
   sizeLabel: z.string().optional(),
@@ -307,7 +306,7 @@ export default function CreateListingPage() {
   const watchedCity = watch('city');
   // Ozet icin: gonderim oncesi kullaniciya ne gonderecegini gostermek
   // istiyoruz, bu yuzden alanlari izliyoruz.
-  const ozetDegerleri = watch(['title', 'description', 'condition', 'price', 'originalPrice', 'city', 'district', 'sizeLabel']);
+  const ozetDegerleri = watch(['title', 'description', 'condition', 'price', 'city', 'district', 'sizeLabel']);
   const { data: priceGuide } = usePriceGuide(watchedCategoryId, watchedBrandId || undefined);
 
   useEffect(() => {
@@ -391,7 +390,7 @@ export default function CreateListingPage() {
     if (p.categoryId) setSelL1(p.categoryId);
     if (p.altKategoriId) setSelL2(p.altKategoriId);
     if (p.gender) setGender(p.gender);
-    for (const alan of ['title', 'description', 'brandId', 'condition', 'sizeLabel', 'city', 'district', 'price', 'originalPrice'] as const) {
+    for (const alan of ['title', 'description', 'brandId', 'condition', 'sizeLabel', 'city', 'district', 'price'] as const) {
       if (p[alan]) setValue(alan, p[alan]);
     }
     setImageUrls(taslak.imageUrls ?? []);
@@ -459,7 +458,7 @@ export default function CreateListingPage() {
     // Yeni adim temiz acilsin: o adimin alanlarinda onceki bir dogrulamadan
     // kalmis hata varsa kullanici henuz hicbir sey yapmadan hatayla
     // karsilasiyor.
-    if (step === 3) clearErrors(['price', 'originalPrice']);
+    if (step === 3) clearErrors(['price']);
     setStep(s => s + 1);
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
@@ -473,7 +472,7 @@ export default function CreateListingPage() {
   // bilgiler korunuyor; dogrulama hatasi tasimamak icin o adimin
   // alanlarindaki eski hatalar temizleniyor.
   const adimaGit = (n: number) => {
-    if (n === 4) clearErrors(['price', 'originalPrice']);
+    if (n === 4) clearErrors(['price']);
     setStep(n);
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
@@ -846,19 +845,11 @@ export default function CreateListingPage() {
         {/* ── STEP 4: Fiyat — display:none ile gizle ── */}
         <div className="m-form-card" style={{ ...card, display: step === 4 ? 'block' : 'none' }}>
             <p style={{ ...lbl, fontSize: 15, marginBottom: 18 }}>Fiyat Belirle</p>
-            <div className="m-form-2col" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16, marginBottom: 4 }}>
+            <div style={{ maxWidth: 320, marginBottom: 4 }}>
               <div>
                 <label style={lbl}>Fiyat (₺) *</label>
                 <input {...register('price')} type="number" style={inputSt(!!errors.price)} placeholder="0" />
                 {errors.price && <p style={errTxt}>{errors.price.message as string}</p>}
-              </div>
-              <div>
-                <label style={lbl}>Liste Fiyatı (₺) <span style={{ fontWeight: 400, opacity: 0.5 }}>opsiyonel</span></label>
-                <input {...register('originalPrice')} type="number" style={inputSt()} placeholder="0" />
-                <p style={{ fontSize: 11.5, color: 'var(--ink-3)', marginTop: 5, lineHeight: 1.5 }}>
-                  Ürünün sıfır/etiket fiyatı. İlan sayfasında üstü çizili olarak
-                  &ldquo;satıcının belirttiği liste fiyatı&rdquo; notuyla gösterilir.
-                </p>
               </div>
             </div>
 
@@ -938,19 +929,16 @@ export default function CreateListingPage() {
             <OzetSatiri etiket="Durum" adim={3} adimaGit={adimaGit}
               deger={CONDITIONS.find(c => c.value === ozetDegerleri[2])?.label} />
             {olcu.tur !== 'yok' && (
-              <OzetSatiri etiket={olcu.etiket} adim={3} adimaGit={adimaGit} deger={ozetDegerleri[7]} />
+              <OzetSatiri etiket={olcu.etiket} adim={3} adimaGit={adimaGit} deger={ozetDegerleri[6]} />
             )}
             {showGender && (
               <OzetSatiri etiket="Cinsiyet" adim={3} adimaGit={adimaGit}
                 deger={gender ? gender.charAt(0) + gender.slice(1).toLowerCase() : ''} />
             )}
             <OzetSatiri etiket="Konum" adim={3} adimaGit={adimaGit}
-              deger={[ozetDegerleri[5], ozetDegerleri[6]].filter(Boolean).join(' / ')} />
+              deger={[ozetDegerleri[4], ozetDegerleri[5]].filter(Boolean).join(' / ')} />
             <OzetSatiri etiket="Fiyat" adim={4} adimaGit={adimaGit}
               deger={ozetDegerleri[3] ? formatPrice(Number(ozetDegerleri[3])) : ''} />
-            {ozetDegerleri[4] ? (
-              <OzetSatiri etiket="Liste fiyatı" adim={4} adimaGit={adimaGit} deger={formatPrice(Number(ozetDegerleri[4]))} />
-            ) : null}
 
             {/* Gonderildi ile yayinlandi ayni sey degil; dugmeye basmadan
                 once bunu soylemek, onay beklerken "ilanim nerede" sorusunu

@@ -38,10 +38,6 @@ export function ListingCard({ listing }: { listing: Listing }) {
   const thumb = listing.images?.[0]?.url;
   const views = (listing as any).viewCount ?? 0;
   const sizeLabel = ((listing as any).sizeLabel ?? '').toString().trim();
-  const discountPct = listing.originalPrice
-    ? Math.round((1 - Number(listing.price) / Number(listing.originalPrice)) * 100)
-    : null;
-
   // Kapagin kadraji: yalnizca ONAYLI surumden geliyor. Incelenmemis
   // kadraj ListingPendingEdit'te bekliyor ve Listing satirina
   // gecmedigi icin karta sizamiyor.
@@ -126,35 +122,13 @@ export function ListingCard({ listing }: { listing: Listing }) {
 
       <div className="m-card-body">
         {/* Okuma sirasi: baslik -> fiyat -> durum ve beden -> sehir.
-            Liste fiyati karsilastirmasi ve goruntulenme bilerek geri
-            planda: ikisi de karar verdiren bilgi degil, dar kartta asil
-            bilgiyle yarisiyorlardi. */}
+            Goruntulenme bilerek geri planda: karar verdiren bilgi degil,
+            dar kartta asil bilgiyle yarisiyordu. */}
         <Link href={`/ilan/${listing.slug ?? listing.id}`} style={{ textDecoration: 'none' }}>
           <h3 className="m-card-title">{listing.title}</h3>
         </Link>
-        {/* Fiyat bloğu SABİT YÜKSEKLİKTE: ikinci satır indirim olmayan
-            kartlarda da yer kaplıyor, böylece alttaki satırlar tüm
-            kartlarda aynı hizada. */}
-        <div>
-          <div className="m-price" style={{ whiteSpace: 'nowrap' }}>
-            {formatPrice(listing.price)}
-          </div>
-          <div
-            // Bu oran SATICININ girdigi liste fiyatina gore; dogrulanmis
-            // bir magaza indirimi degil. "satici" kelimesi bu yuzden kaliyor.
-            title={discountPct && discountPct > 0 ? 'Satıcının belirttiği liste fiyatına göre' : undefined}
-            style={{
-              display: 'flex', alignItems: 'center', gap: 6, minHeight: 17, marginTop: 1,
-              overflow: 'hidden', whiteSpace: 'nowrap', fontSize: 11.5, color: 'var(--ink-3)',
-            }}
-          >
-            {listing.originalPrice && discountPct !== null && discountPct > 0 && (
-              <>
-                <span style={{ textDecoration: 'line-through' }}>{formatPrice(listing.originalPrice)}</span>
-                <span>%{discountPct} satıcı</span>
-              </>
-            )}
-          </div>
+        <div className="m-price" style={{ whiteSpace: 'nowrap' }}>
+          {formatPrice(listing.price)}
         </div>
         {/* Durum + beden + marka TEK SATIRDA ve sabit yukseklikte: beden
             ya da marka olmayan kartlar da ayni hizada kaliyor. Durum ve

@@ -246,9 +246,6 @@ export default function ListingDetailClient({ initialListing }: { initialListing
     return sonuc;
   }, [listing.tags, listing.brand, listing.category, listing.sizeLabel, listing.city]);
   const images = listing.images || [];
-  const discountPct = listing.originalPrice
-    ? Math.round((1 - Number(listing.price) / Number(listing.originalPrice)) * 100)
-    : null;
 
   // Satıldı işaretlemeden önce alıcı seçtiriyoruz: alıcının kaydedilmesi
   // her iki tarafa karşılıklı değerlendirme hakkı açıyor. Zorunlu değil —
@@ -520,20 +517,7 @@ export default function ListingDetailClient({ initialListing }: { initialListing
               <span className="m-price" style={{ fontSize: 34 }}>
                 {formatPrice(listing.price)}
               </span>
-              {/* Ustu cizili fiyat, saticinin ilan verirken kendi girdigi
-                  liste fiyatidir; sistemin takip ettigi onceki ilan fiyati
-                  degil ve dogrulanmis bir indirim anlamina gelmiyor. Bu
-                  yuzden "%X INDIRIM" rozeti yerine kaynagi soyluyoruz. */}
-              {listing.originalPrice && Number(listing.originalPrice) > Number(listing.price) && (
-                <span className="m-price-old" style={{ fontSize: 16 }}>{formatPrice(listing.originalPrice)}</span>
-              )}
             </div>
-            {listing.originalPrice && Number(listing.originalPrice) > Number(listing.price) && (
-              <p style={{ fontSize: 12, color: 'var(--ink-3)', margin: '2px 0 0' }}>
-                Üstü çizili fiyat satıcının belirttiği liste fiyatıdır
-                {discountPct && discountPct > 0 ? ` — %${discountPct} altında` : ''}. Motorya doğrulamaz.
-              </p>
-            )}
 
             <div style={{ display: 'flex', gap: 16, color: 'var(--ink-3)', fontSize: 12.5, marginTop: 6 }}>
               <span style={{ display: 'flex', gap: 5, alignItems: 'center' }}><Eye size={14} />{listing.viewCount} görüntülenme</span>

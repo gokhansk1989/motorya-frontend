@@ -20,7 +20,6 @@ const schema = z.object({
   brandId: z.string().optional(),
   condition: z.enum(['NEW', 'LIKE_NEW', 'GOOD', 'FAIR']),
   price: z.string().min(1, 'Fiyat giriniz').transform(Number),
-  originalPrice: z.string().optional().transform(v => v ? Number(v) : undefined),
   city: z.string().optional(),
   district: z.string().optional(),
   sizeLabel: z.string().optional(),
@@ -98,7 +97,6 @@ export default function EditListingPage() {
         brandId: listing.brandId ?? '',
         condition: listing.condition ?? 'GOOD',
         price: String(listing.price ?? ''),
-        originalPrice: listing.originalPrice ? String(listing.originalPrice) : '',
         city: listing.city ?? '',
         district: listing.district ?? '',
         sizeLabel: listing.sizeLabel ?? '',
@@ -270,16 +268,10 @@ export default function EditListingPage() {
         </div>
 
         {/* Fiyat */}
-        <div className="m-grid-1-mobile" style={{ ...card, display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
-          <div>
-            <label style={label}>Fiyat (₺) *</label>
-            <input {...register('price')} type="number" style={inputSt(!!errors.price)} />
-            {errors.price && <p style={errTxt}>{errors.price.message as string}</p>}
-          </div>
-          <div>
-            <label style={label}>Orijinal Fiyat (₺) <span style={{ fontWeight: 400, opacity: 0.5 }}>opsiyonel</span></label>
-            <input {...register('originalPrice')} type="number" style={inputSt()} />
-          </div>
+        <div style={card}>
+          <label style={label}>Fiyat (₺) *</label>
+          <input {...register('price')} type="number" style={inputSt(!!errors.price)} />
+          {errors.price && <p style={errTxt}>{errors.price.message as string}</p>}
         </div>
 
         <button

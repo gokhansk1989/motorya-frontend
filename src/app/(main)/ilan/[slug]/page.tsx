@@ -11,7 +11,6 @@ interface ListingData {
   title: string;
   description: string;
   price: string | number;
-  originalPrice?: string | number;
   condition: string;
   status: string;
   city?: string;

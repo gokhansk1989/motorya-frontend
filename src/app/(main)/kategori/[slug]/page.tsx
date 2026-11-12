@@ -3,6 +3,7 @@ import Link from 'next/link';
 import React from 'react';
 import { ListingCard } from '@/components/listings/ListingCard';
 import Image from 'next/image';
+import { SlidersHorizontal } from 'lucide-react';
 import { notFound, redirect } from 'next/navigation';
 import { AdSlot } from '@/components/ui/AdSlot';
 import { CategoryIcon as CatIcon } from '@/components/icons/CategoryIcons';
@@ -178,9 +179,19 @@ export default async function CategoryPage({ params }: { params: Promise<{ slug:
           <h1 className="m-display" style={{ fontSize: 28, margin: '0 0 8px', display: 'flex', alignItems: 'center', gap: 12 }}>
             <CatIcon slug={slug} size={40} iconUrl={category.iconKey} /> İkinci El {category.name}
           </h1>
-          <p style={{ color: 'var(--ink-3)', fontSize: 14.5, margin: 0 }}>
-            {total > 0 ? `${total.toLocaleString('tr-TR')} ilan bulundu` : 'Bu kategoride ilan bekleniyor'}
-          </p>
+          {/* Filtreye giris sonuc sayisinin yaninda: alttaki baglanti
+              ilanlarin altinda kaldigi icin gorulmuyordu. Ayri bir filtre
+              arayuzu kurmuyor, kategori secili halde aramaya goturuyor. */}
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap' }}>
+            <p style={{ color: 'var(--ink-3)', fontSize: 14.5, margin: 0 }}>
+              {total > 0 ? `${total.toLocaleString('tr-TR')} ilan bulundu` : 'Bu kategoride ilan bekleniyor'}
+            </p>
+            {total > 0 && (
+              <Link href={`/ara?categoryId=${category.id}`} className="m-btn" style={{ height: 44, gap: 7, fontSize: 14, textDecoration: 'none' }}>
+                <SlidersHorizontal size={16} aria-hidden="true" /> Filtrele
+              </Link>
+            )}
+          </div>
         </div>
 
         {/* L1 kategori navigasyonu.
@@ -253,7 +264,7 @@ export default async function CategoryPage({ params }: { params: Promise<{ slug:
           </div>
         ) : (
           <>
-            <div className="m-listing-grid" style={{ gap: 14 }}>
+            <div className="m-listing-grid m-listing-grid--sonuc">
               {listings.map((listing, i) => (
                 <React.Fragment key={listing.id}>
                   <ListingCard listing={listing as any} />

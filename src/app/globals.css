@@ -120,6 +120,12 @@ input, textarea, select { font-family: inherit; color: var(--ink); }
 .m-main { flex: 1; position: relative; z-index: 1; }
 .m-wrap:has(.m-subcat-panel),
 .m-main:has(.m-subcat-panel) { z-index: 40; }
+/* Ayni yigin sorunu mobil filtre panelinde: panel <main> icinde, z-index'i
+   orada kaliyor. Az sonuclu aramada altbilgi panelin altina denk gelince
+   altbilgideki logo ve baglantilar panelin USTUNDE ciziliyor, "Tumunu
+   temizle"ye basan kisi logoya tikliyordu. Panel acikken (govdeye
+   .m-panel-acik konuyor) <main> one aliniyor. */
+body.m-panel-acik .m-main { z-index: 40; }
 
 /* ---------- desktop-only ---------- */
 .m-hide-desktop { display: none !important; }
@@ -350,6 +356,7 @@ input, textarea, select { font-family: inherit; color: var(--ink); }
    duzeninde iki satir cogunu kesiyordu. Uc satira cikariyoruz ve
    min-height'i de buyutuyoruz ki kartlarin alt hizasi bozulmasin. */
 .m-card-title--blog { -webkit-line-clamp: 3; min-height: 3.75em; }
+
 @media (max-width: 580px) {
   .m-card-goruntulenme, .m-card-tarih { display: none !important; }
 }
@@ -357,7 +364,6 @@ input, textarea, select { font-family: inherit; color: var(--ink); }
 /* ---------- price ---------- */
 .m-price { font-family: var(--font-display); font-weight: 800; font-size: 19px; letter-spacing: -0.01em; color: var(--ink); }
 .m-price .cur { font-size: 13px; color: var(--ink-3); font-weight: 600; margin-left: 2px; }
-.m-price-old { font-size: 13px; color: var(--ink-3); text-decoration: line-through; margin-left: 8px; white-space: nowrap; }
 
 /* ---------- inputs ---------- */
 .m-field {
@@ -548,8 +554,18 @@ textarea.m-field { height: auto; padding: 12px 14px; resize: vertical; line-heig
   gap: clamp(10px, 2vw, 18px);
   justify-content: center;
 }
+/* Izgara ogeleri iceriklerinden genis olamaz.
+   `1fr` aslinda `minmax(auto, 1fr)`: bir ogenin sarmayan icerigi (fiyat,
+   durum+beden satiri) sutunun en kucuk genisligini buyutuyordu. Arama
+   sayfasinda kartlar bir <div> ile sarildigi icin bu gerceklesiyor,
+   390 px'te sutunlar 188/215 px olup sag kart ekrandan tasiyordu;
+   kategori sayfasinda kartin kendisi (overflow: hidden) oge oldugu icin
+   gorunmuyordu. Kural izgarada: saran oge olsa da olmasa da ayni. */
+.m-listing-grid > * { min-width: 0; }
+/* Arama ve kategori sonuclari ayni araligi kullanir (1440 px'te bes sutun). */
+.m-listing-grid--sonuc { gap: 12px; }
 @media (max-width: 580px) {
-  .m-listing-grid { grid-template-columns: repeat(2, 1fr) !important; gap: 10px; justify-content: stretch; }
+  .m-listing-grid { grid-template-columns: repeat(2, minmax(0, 1fr)) !important; gap: 10px; justify-content: stretch; }
 }
 
 /* ---------- modal — bottom sheet mobil ---------- */

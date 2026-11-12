@@ -8,7 +8,6 @@ export interface Listing {
   title: string;
   description: string;
   price: string;
-  originalPrice?: string;
   condition: string;
   sizeLabel?: string;
   city?: string;
