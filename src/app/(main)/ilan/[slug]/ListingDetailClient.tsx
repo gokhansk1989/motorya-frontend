@@ -1,6 +1,6 @@
 'use client';
 import { useEffect, useRef, useState, useMemo } from 'react';
-import { useParams, useRouter } from 'next/navigation';
+import { useParams, usePathname, useRouter } from 'next/navigation';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useListingBySlug, useToggleFavorite, useFavoriteIds, useSimilarListings, useListingsByIds, useMarkSold, useBuyerCandidates, useReserveListing, useUnreserveListing, usePriceGuide } from '@/hooks/useListings';
 import { useCreateOffer, useListingOffers, useRespondOffer, useCounterOffer, useOfferUpdates } from '@/hooks/useOffers';
@@ -62,6 +62,7 @@ const FAVORI_GOSTERME_ESIGI = 3;
 export default function ListingDetailClient({ initialListing }: { initialListing?: unknown } = {}) {
   const { slug } = useParams<{ slug: string }>();
   const router = useRouter();
+  const yol = usePathname();
   const { user } = useAuthStore();
   const { data: listing, isLoading } = useListingBySlug(slug, initialListing);
   const id = listing?.id ?? '';
@@ -676,7 +677,10 @@ export default function ListingDetailClient({ initialListing }: { initialListing
                 {!user && (
                   <p style={{ fontSize: 12, textAlign: 'center', color: 'var(--ink-3)' }}>
                     Satıcıyla iletişim kurmak için{' '}
-                    <Link href={girisAdresi({ hedef: suAnkiYol(), niyet: 'mesaj', ilan: listing.slug ?? listing.id })} style={{ color: 'var(--accent)', fontWeight: 600 }}>giriş yap</Link>
+                    {/* Hedef usePathname'den: suAnkiYol() sunucuda bos doner,
+                        sunucu HTML'indeki adres donus hedefsiz kalir ve
+                        hydration uyusmazligi olusur. */}
+                    <Link href={girisAdresi({ hedef: yol, niyet: 'mesaj', ilan: listing.slug ?? listing.id })} style={{ color: 'var(--accent)', fontWeight: 600 }}>giriş yap</Link>
                     {' '}veya{' '}
                     <Link href="/kayit" style={{ color: 'var(--accent)', fontWeight: 600 }}>üye ol</Link>
                   </p>
