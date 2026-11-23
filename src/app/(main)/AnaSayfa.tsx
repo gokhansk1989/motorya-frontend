@@ -5,6 +5,7 @@ import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { PullToRefresh } from '@/components/ui/PullToRefresh';
 import { useListings } from '@/hooks/useListings';
 import { ListingCard } from '@/components/listings/ListingCard';
+import { KartIskeleti } from '@/components/listings/KartIskeleti';
 import { api } from '@/lib/api';
 import {
   Search, ChevronRight, ChevronLeft, Star, Clock, ArrowRight,
@@ -66,20 +67,6 @@ function TumuBaglantisi({ href, children, etiket }: { href: string; children: Re
  * `data === undefined` ile okunuyor, `isLoading` ile degil (o, sunucu ile
  * istemcide farkli deger verip hydration uyusmazligi yaratiyordu).
  */
-function KartIskeleti() {
-  return (
-    <div className="m-card" aria-hidden="true" style={{ pointerEvents: 'none' }}>
-      <div className="m-card-media m-iskelet" />
-      <div className="m-card-body">
-        <div className="m-card-title"><span className="m-iskelet-cizgi" style={{ width: '85%' }}>&nbsp;</span></div>
-        <div className="m-price"><span className="m-iskelet-cizgi" style={{ width: '45%' }}>&nbsp;</span></div>
-        <div style={{ marginTop: 7, minHeight: 22 }} />
-        <div style={{ marginTop: 'auto', paddingTop: 9, minHeight: 27, fontSize: 12.5 }}>&nbsp;</div>
-      </div>
-    </div>
-  );
-}
-
 function YeniEklenenlerMozaigi({ items, hazir }: { items: any[]; hazir: boolean }) {
   if (hazir && items.length < MOZAIK_ADEDI) return null;
   return (

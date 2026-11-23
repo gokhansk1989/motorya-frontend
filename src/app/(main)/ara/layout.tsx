@@ -1,5 +1,13 @@
 import type { Metadata } from 'next';
 
+// Istek aninda uretiliyor. Sayfa adres parametrelerini (useSearchParams)
+// okudugu icin statik uretimde Next sunucuda HICBIR SEY cizmiyordu
+// (BAILOUT_TO_CLIENT_SIDE_RENDERING): HTML'de arama cubugu ya da iskelet
+// yoktu, altbilgi ilk ekrandaydi ve sayfa gelince asagi firliyordu
+// (PageSpeed masaustu CLS 0,518, mobil ~0,85). Sunucuda API istegi
+// yapilmadigi icin derleme ani fetch tuzagi burada gecerli degil.
+export const dynamic = 'force-dynamic';
+
 export const metadata: Metadata = {
   title: 'İlan Ara — Motosiklet Ekipman',
   description: 'İkinci el motosiklet kıyafet ve aksesuar ara. Kask, mont, eldiven, bot, koruma, yedek parça. Fiyata, markaya ve şehre göre filtrele.',

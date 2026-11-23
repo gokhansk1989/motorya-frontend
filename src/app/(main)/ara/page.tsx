@@ -4,6 +4,7 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import { useSearch } from '@/hooks/useSearch';
 import { useCreateSavedSearch } from '@/hooks/useSavedSearches';
 import { ListingCard } from '@/components/listings/ListingCard';
+import { KartIskeleti } from '@/components/listings/KartIskeleti';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { api } from '@/lib/api';
 import { useAuthStore } from '@/store/auth';
@@ -12,7 +13,7 @@ import { olc } from '@/lib/olcum';
 import { markalariGrupla } from '@/lib/markaGruplama';
 import {
   adrestenOku, aramaAdresi, temizAdres, aramaSorgusu, facetSorgusu, facetSecenekleri,
-  aktifEtiketler, filtreVarMi, ayniDeger, type AramaDegisikligi, type AktifEtiket,
+  aktifEtiketler, filtreVarMi, ayniDeger, SAYFA_BOYU, type AramaDegisikligi, type AktifEtiket,
 } from '@/lib/aramaDurumu';
 import Link from 'next/link';
 import { Search, SlidersHorizontal, X, BellPlus, Info } from 'lucide-react';
@@ -99,7 +100,7 @@ function FilterFields({
       {/* Ana Kategori */}
       <div>
         <label className="m-label">Ana Kategori</label>
-        <select
+        <select aria-label="Ana Kategori"
           value={l1id}
           onChange={e => push({ categoryId: e.target.value, page: 1 })}
           className="m-field"
@@ -115,7 +116,7 @@ function FilterFields({
       {/* Alt Kategori */}
       <div style={{ opacity: l1id ? 1 : 0.4, transition: 'opacity .15s' }}>
         <label className="m-label">Alt Kategori</label>
-        <select
+        <select aria-label="Alt Kategori"
           value={l2val}
           onChange={e => push({ categoryId: e.target.value || l1id, page: 1 })}
           disabled={!l1id}
@@ -178,7 +179,7 @@ function FilterFields({
       {(facets?.sizes?.length ?? 0) > 0 && (
         <div>
           <label className="m-label">Beden</label>
-          <select
+          <select aria-label="Beden"
             value={facets!.sizes.find(s => ayniDeger(s.value, sizeLabel))?.value ?? ''}
             onChange={e => push({ sizeLabel: e.target.value, page: 1 })}
             className="m-field"
@@ -229,7 +230,7 @@ function FilterFields({
       {/* Min Fiyat */}
       <div>
         <label className="m-label">Min Fiyat (₺)</label>
-        <input
+        <input aria-label="Min Fiyat"
           type="number"
           value={priceFrom}
           onChange={e => setPriceFrom(e.target.value)}
@@ -243,7 +244,7 @@ function FilterFields({
       {/* Max Fiyat */}
       <div>
         <label className="m-label">Max Fiyat (₺)</label>
-        <input
+        <input aria-label="Max Fiyat"
           type="number"
           value={priceTo}
           onChange={e => setPriceTo(e.target.value)}
@@ -280,7 +281,7 @@ function FilterFields({
       {/* Durum */}
       <div>
         <label className="m-label">Durum</label>
-        <select
+        <select aria-label="Durum"
           value={condition}
           onChange={e => push({ condition: e.target.value, page: 1 })}
           className="m-field"
@@ -293,7 +294,7 @@ function FilterFields({
       {/* Cinsiyet */}
       <div>
         <label className="m-label">Cinsiyet</label>
-        <select
+        <select aria-label="Cinsiyet"
           value={gender}
           onChange={e => push({ gender: e.target.value, page: 1 })}
           className="m-field"
@@ -306,7 +307,7 @@ function FilterFields({
       {(facets?.cities?.length ?? 0) > 0 && (
         <div>
           <label className="m-label">Şehir</label>
-          <select
+          <select aria-label="Şehir"
             value={city}
             onChange={e => push({ city: e.target.value, page: 1 })}
             className="m-field"
@@ -414,6 +415,11 @@ function SearchPageInner() {
   });
 
   const { data, isLoading, isError, refetch } = useSearch(aramaSorgusu(filtreler));
+  // Ekrandaki "yukleniyor" durumu `isLoading` ile DEGIL veri var mi diye
+  // okunuyor: sunucuda istek hic baslamadigi icin isLoading false ve sayfa
+  // "ilan yok" olarak ciziliyordu; altbilgi ilk ekranda kaliyor, sonra
+  // iskelet ve sonuclar gelince iki kez asagi itiliyordu (masaustu CLS 0,518).
+  const yukleniyor = data === undefined && !isError;
 
   // Beden ve sehir seceneklerini sayan ek sorgular; yalnizca o filtre
   // seciliyken calisir (secili degilken asil yanitin dagilimi zaten dogru).
@@ -630,6 +636,7 @@ function SearchPageInner() {
           <div style={{ flex: '1 1 200px', minWidth: 0, display: 'flex', alignItems: 'center', gap: 10, height: 48, background: 'var(--bg-1)', border: '1px solid var(--line)', borderRadius: 10, padding: '0 8px 0 14px' }}>
             <Search size={18} style={{ color: 'var(--ink-3)', flexShrink: 0 }} />
             <input
+              aria-label="İlan ara"
               value={inputVal}
               onChange={e => setInputVal(e.target.value)}
               placeholder="Kask, mont, egzoz ara…"
@@ -789,7 +796,7 @@ function SearchPageInner() {
                     paneli kapatiyor. Sonuc sayisi zaten guncel oldugu
                     icin dugmede gosterilebiliyor. Sayi henuz bilinmiyorsa
                     yaniltici bir deger basmak yerine sade metne donuyor. */}
-                {isLoading || meta?.total === undefined
+                {yukleniyor || meta?.total === undefined
                   ? 'Sonuçları göster'
                   : `${meta.total.toLocaleString('tr-TR')} ilanı göster`}
               </button>
@@ -808,7 +815,7 @@ function SearchPageInner() {
       {/* Tam eşleşme bulunamayıp sorgu gevşetildiyse kullanıcıya söyle —
           aksi halde alakasız görünen sonuçlar aramanın bozuk olduğu
           izlenimi veriyor. */}
-      {!isLoading && (meta as any)?.relaxed && (
+      {!yukleniyor && (meta as any)?.relaxed && (
         <div style={{ display: 'flex', alignItems: 'flex-start', gap: 10, marginBottom: 14, padding: '12px 14px', borderRadius: 10, background: 'color-mix(in oklch, var(--warn) 8%, var(--bg-1))', border: '1px solid color-mix(in oklch, var(--warn) 25%, transparent)' }}>
           <Info size={16} style={{ color: 'var(--warn)', flexShrink: 0, marginTop: 1 }} />
           <p style={{ fontSize: 13.5, color: 'var(--ink-2)', lineHeight: 1.55, margin: 0 }}>
@@ -821,13 +828,14 @@ function SearchPageInner() {
       {/* Result header */}
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16, flexWrap: 'wrap', gap: 10 }}>
         <p style={{ fontSize: 14, color: 'var(--ink-2)' }}>
-          {isLoading ? 'Aranıyor…' : (
+          {yukleniyor ? 'Aranıyor…' : (
             meta?.total !== undefined
               ? <><strong style={{ color: 'var(--ink)' }}>{meta.total.toLocaleString('tr-TR')}</strong> sonuç{q ? ` — "${q}"` : ''}</>
               : null
           )}
         </p>
         <select
+          aria-label="Sıralama"
           value={sort}
           onChange={e => push({ sort: e.target.value, page: 1 })}
           className="m-field"
@@ -840,16 +848,25 @@ function SearchPageInner() {
       {/* Aktif filtreler. Bos sonuc ekrani ayni seridi KENDI icinde
           gosteriyor (orada kaldirmak asil eylem); ikisi birden basilmasin
           diye ustteki yalnizca sonuc varken ciziliyor. */}
-      {items.length > 0 && (
-        <AktifFiltreler etiketler={etiketler} onKaldir={push} onTemizle={handleReset} />
+      {/* Filtre varken satirin yeri bastan ayriliyor (34 px etiket + 16
+          bosluk): etiketler kategori/marka adlari gelince ciziliyor ve
+          sonuclari asagi itiyordu. Bos sonucta satir yok (orada ayni
+          etiketler ortada gosteriliyor). */}
+      {hasActiveFilters && !(data !== undefined && items.length === 0) && (
+        <div style={{ minHeight: 50 }}>
+          <AktifFiltreler etiketler={etiketler} onKaldir={push} onTemizle={handleReset} />
+        </div>
       )}
 
-      {/* Grid */}
-      {isLoading ? (
+      {/* Sonuc alani en az bir ekran yuksekliginde. Kac sonuc gelecegi
+          onceden bilinmiyor: iskelet bir sayfa dolusu kart ciziyor, sonuc
+          az gelince altbilgi yukari firliyordu (filtreli aramada CLS
+          0,13-0,19). Alt sinir altbilgiyi her durumda ekranin altinda
+          tutuyor. */}
+      <div style={{ minHeight: '100vh' }}>
+      {yukleniyor ? (
         <div className="m-listing-grid m-listing-grid--sonuc">
-          {Array.from({ length: 12 }).map((_, i) => (
-            <div key={i} style={{ aspectRatio: '4/5', background: 'var(--bg-1)', borderRadius: 12, animation: 'pulse 1.5s ease-in-out infinite' }} />
-          ))}
+          {Array.from({ length: SAYFA_BOYU }).map((_, i) => <KartIskeleti key={i} />)}
         </div>
       ) : isError ? (
         /* AG HATASI ile GERCEK BOS SONUC ayri seyler. Oncesinde ikisi de
@@ -973,6 +990,7 @@ function SearchPageInner() {
           )}
         </>
       )}
+      </div>
       <style>{`@keyframes pulse{0%,100%{opacity:1}50%{opacity:.5}}`}</style>
     </div>
   );
