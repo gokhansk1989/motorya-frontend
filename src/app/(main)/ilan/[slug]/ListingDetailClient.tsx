@@ -425,16 +425,18 @@ export default function ListingDetailClient({ initialListing }: { initialListing
                   background: 'transparent', cursor: 'zoom-in', display: 'block',
                 }}
               >
-                {/* Sayfanin LCP ogesi. Once orijinal dosya (864x1920 gibi)
-                    duz <img> ile iniyordu ve tarayici onu ancak JS
-                    calisinca buluyordu. next/image: kucultulmus kopya,
-                    ilk fotograf icin onden yukleme (priority). */}
+                {/* Sayfanin LCP ogesi. next/image: kucultulmus kopya, ilk
+                    fotograf onden yukleniyor. fetchPriority ACIKCA veriliyor:
+                    Next 16'da `priority` yalnizca onden yukleme ekliyor,
+                    yuksek oncelik vermiyor; 35 KB'lik gorsel mobilde diger
+                    indirmelerle ayni sirada 5,8 sn bekliyordu. */}
                 <Image
                   src={images[imgIdx].url}
                   alt={listing.title}
                   fill
                   sizes="(max-width: 900px) 100vw, 60vw"
-                  priority={imgIdx === 0}
+                  preload={imgIdx === 0}
+                  fetchPriority={imgIdx === 0 ? 'high' : undefined}
                   style={{ objectFit: 'contain' }}
                 />
               </button>
@@ -889,7 +891,9 @@ export default function ListingDetailClient({ initialListing }: { initialListing
           {/* Seller card */}
           <Link href={`/kullanici/${listing.seller.id}`} className="m-surface" style={{ display: 'flex', alignItems: 'center', gap: 14, padding: '18px 20px', marginTop: 16, textDecoration: 'none', cursor: 'pointer' }}>
             {listing.seller.avatarUrl ? (
-              <img src={listing.seller.avatarUrl} style={{ width: 48, height: 48, borderRadius: '50%', objectFit: 'cover' }} alt="" />
+              // loading=lazy: React ilk HTML'deki tembel olmayan gorselleri
+              // kendiliginden onden yukluyor; bu fotograf ana gorselle yarisiyordu.
+              <img src={listing.seller.avatarUrl} loading="lazy" style={{ width: 48, height: 48, borderRadius: '50%', objectFit: 'cover' }} alt="" />
             ) : (
               <div style={{ width: 48, height: 48, borderRadius: '50%', background: 'var(--bg-3)', display: 'grid', placeItems: 'center', fontFamily: 'var(--font-display)', fontWeight: 700, fontSize: 18, color: 'var(--accent)', flexShrink: 0 }}>
                 {listing.seller.displayName[0]}
