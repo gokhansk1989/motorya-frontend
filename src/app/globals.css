@@ -22,7 +22,10 @@
      beyaz yazı 4.55 kontrast veriyor (WCAG AA eşiği 4.5). Logonun kendi
      tonu 3.38'de kalıyordu - eski renk de 3.46 ile zaten eşiğin altındaydı,
      yani o sorun devralınmadı, düzeltildi. */
-  --accent: oklch(0.588 0.197 35);
+  /* L 0.588 -> 0.56: beyaz uzerinde 4,43 / acik gri (--bg-1) uzerinde 4,17
+     kontrast veriyordu; WCAG AA siniri 4,5. 0.56 ile 4,97 / 4,68. Ton ve
+     doygunluk ayni, yalnizca bir tik koyu. */
+  --accent: oklch(0.56 0.197 35);
   --accent-ink: oklch(0.99 0.002 255);
   /* Metin taşımayan yüzeyler için logonun kendi canlı tonu: rozet, gradyan
      ucu, dekoratif vurgu. Üzerine yazı konmamalı. */
@@ -387,6 +390,17 @@ textarea.m-field { height: auto; padding: 12px 14px; resize: vertical; line-heig
 .m-fade-up { animation: m-fadeUp .4s cubic-bezier(.2,.7,.2,1) both; }
 @keyframes m-spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
 
+/* ---------- iskeletler (veri gelene kadar yer ayirir) ---------- */
+@keyframes m-iskelet-nabiz { 0%, 100% { opacity: 1; } 50% { opacity: .55; } }
+.m-iskelet { background: var(--bg-2); animation: m-iskelet-nabiz 1.5s ease-in-out infinite; }
+.m-iskelet-cizgi {
+  display: inline-block; max-width: 100%; border-radius: 6px;
+  background: var(--bg-2); animation: m-iskelet-nabiz 1.5s ease-in-out infinite;
+}
+@media (prefers-reduced-motion: reduce) {
+  .m-iskelet, .m-iskelet-cizgi { animation: none; }
+}
+
 /* ---------- ana sayfa: hero + yeni eklenenler mozaigi ---------- */
 .m-hero-row { display: flex; gap: 40px; align-items: center; justify-content: space-between; }
 .m-hero-mozaik { width: 360px; flex-shrink: 0; }
@@ -508,7 +522,8 @@ textarea.m-field { height: auto; padding: 12px 14px; resize: vertical; line-heig
   .m-category-grid { gap: 8px; }
   .m-category-grid .m-cat-select-btn { padding: 10px 4px !important; gap: 5px !important; }
   .m-category-grid .m-cat-select-btn img,
-  .m-category-grid .m-cat-select-btn svg { width: 34px !important; height: 34px !important; }
+  .m-category-grid .m-cat-select-btn svg,
+  .m-category-grid .m-cat-ikon-yer { width: 34px !important; height: 34px !important; }
   .m-category-grid .m-cat-ad { font-size: 11px !important; }
 }
 
