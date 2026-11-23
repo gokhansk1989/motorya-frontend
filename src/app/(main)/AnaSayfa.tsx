@@ -11,6 +11,7 @@ import {
   Camera, MessageCircle, Truck,
 } from 'lucide-react';
 import Link from 'next/link';
+import Image from 'next/image';
 import { CategoryIcon } from '@/components/icons/CategoryIcons';
 import { motion, AnimatePresence } from 'framer-motion';
 import { matchCategories, matchBrands, CategorySuggestionsDropdown, type BrandLite } from '@/components/ui/CategorySuggestions';
@@ -93,8 +94,18 @@ function YeniEklenenlerMozaigi({ items, hazir }: { items: any[]; hazir: boolean 
         ))}
         {hazir && items.slice(0, MOZAIK_ADEDI).map((l: any, i: number) => (
           <Link key={l.id} href={`/ilan/${l.slug ?? l.id}`} className="m-hero-kare" aria-label={`${l.title}, ${formatPrice(l.price)}`}>
-            {/* Ilk ekranda gorunuyorlar: tembel yukleme LCP'yi geciktirirdi. */}
-            {l.images?.[0] && <img src={l.images[0].url} alt="" loading="eager" fetchPriority={i === 0 ? 'high' : 'auto'} />}
+            {/* Ilk ekranda gorunuyorlar: tembel yukleme yok.
+                next/image ile kucultulmus kopya: once orijinal dosya
+                (1440-1920 px, 180-420 KB) 80-180 px'lik kutuya iniyordu,
+                dort kutu toplam 1,3 MB'ti. */}
+            {l.images?.[0] && (
+              <Image
+                src={l.images[0].url} alt="" fill
+                sizes="(max-width: 768px) 25vw, 180px"
+                loading="eager" fetchPriority={i === 0 ? 'high' : 'auto'}
+                style={{ objectFit: 'cover' }}
+              />
+            )}
             <span>{formatPrice(l.price)}</span>
           </Link>
         ))}
