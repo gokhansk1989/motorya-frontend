@@ -1,4 +1,4 @@
-import { Saira, Saira_Condensed, Hanken_Grotesk, Space_Mono } from 'next/font/google';
+import { Saira, Hanken_Grotesk, Space_Mono } from 'next/font/google';
 import type { Metadata, Viewport } from 'next';
 import Script from 'next/script';
 import UcuncuTarafBetikleri from '@/components/UcuncuTarafBetikleri';
@@ -29,9 +29,17 @@ export const viewport: Viewport = {
  * Değişkenler globals.css'teki --font-* tanımlarıyla aynı isimde, yani
  * stil tarafında hiçbir şey değişmiyor.
  */
-const saira = Saira({ subsets: ['latin-ext'], weight: ['400','500','600','700','800'], variable: '--font-saira', display: 'swap' });
-const sairaCond = Saira_Condensed({ subsets: ['latin-ext'], weight: ['500','600','700'], variable: '--font-saira-cond', display: 'swap' });
-const hanken = Hanken_Grotesk({ subsets: ['latin-ext'], weight: ['400','500','600','700'], variable: '--font-hanken', display: 'swap' });
+//
+// ALT KUMELER: Turkce metin IKI dosyaya ihtiyac duyuyor - a-z "latin",
+// ı/ş/ğ/İ "latin-ext" dosyasinda. Yalnizca latin-ext onden yukleniyordu;
+// asil metin dosyasini tarayici sayfayi yerlestirirken fark ediyor ve
+// PageSpeed'in kritik zincirinde 3,3 sn'de iniyordu. Ikisi de onden.
+//
+// Saira ve Hanken Grotesk degisken font: agirlik sayisi dosya sayisini
+// degistirmiyor (alt kume basina tek dosya). Saira Condensed hic
+// kullanilmiyordu ama 3 dosyasi her sayfada onden indiriliyordu; kaldirildi.
+const saira = Saira({ subsets: ['latin', 'latin-ext'], weight: ['400','500','600','700','800'], variable: '--font-saira', display: 'swap' });
+const hanken = Hanken_Grotesk({ subsets: ['latin', 'latin-ext'], weight: ['400','500','600','700'], variable: '--font-hanken', display: 'swap' });
 const spaceMono = Space_Mono({ subsets: ['latin'], weight: ['400','700'], variable: '--font-space-mono', display: 'swap' });
 
 export const metadata: Metadata = {
@@ -51,6 +59,10 @@ export const metadata: Metadata = {
   description: 'İkinci el motosiklet kıyafet, kask, mont, eldiven ve aksesuar al-sat. E-posta doğrulamalı üyeler, ücretsiz ilan, platform içi mesajlaşma.',
   keywords: ['motosiklet', 'ikinci el kask', 'ikinci el motosiklet kıyafeti', 'motosiklet aksesuar', 'ikinci el kask satış', 'motosiklet mont', 'ikinci el eldiven', 'motorya', 'motosiklet ekipman'],
   metadataBase: new URL('https://motorya.com.tr'),
+  // AdSense site dogrulamasi. Reklam betigi artik sayfa yuklendikten sonra
+  // ekleniyor ve sunucu HTML'inde yok; dogrulama taramasi kodu bulamazsa
+  // hesap dogrulamasi dusebilirdi. Bu etiket Google'in resmi alternatifi.
+  other: { 'google-adsense-account': 'ca-pub-4400330012095219' },
   alternates: { canonical: 'https://motorya.com.tr' },
   openGraph: {
     type: 'website',
@@ -99,14 +111,11 @@ const ORGANIZATION_SCHEMA = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="tr" className={`h-full ${saira.variable} ${sairaCond.variable} ${hanken.variable} ${spaceMono.variable}`}>
+    <html lang="tr" className={`h-full ${saira.variable} ${hanken.variable} ${spaceMono.variable}`}>
       <head>
-        {/* AdSense betiği async yüklenirken DNS + TLS el sıkışması ilk
-            boyamayla yarışıyor; ölçümde tek başına ~314 ms. preconnect bu
-            turu HTML ayrıştırılırken peşin yapıyor. Betiğin KENDİSİ artık
-            UcuncuTarafBetikleri içinde: kimlik ve hesap sayfalarında hiç
-            yüklenmiyor. preconnect zararsız olduğu için burada kalıyor. */}
-        <link rel="preconnect" href="https://pagead2.googlesyndication.com" crossOrigin="anonymous" />
+        {/* AdSense'e preconnect yok: betik artik sayfa yuklenip tarayici
+            bosa cikinca ekleniyor (UcuncuTarafBetikleri). Erken acilan
+            baglanti kullanilmadan kapanir, ilk boyamayla yarisirdi. */}
       </head>
       <body className="min-h-full antialiased">
         {/* JSON-LD head yerine body'de: Next.js'in önerdiği yerleşim bu ve

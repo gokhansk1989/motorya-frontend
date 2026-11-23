@@ -1,6 +1,5 @@
 'use client';
 
-import Script from 'next/script';
 import { useEffect } from 'react';
 import { usePathname } from 'next/navigation';
 import { hassasYolMu } from '@/lib/hassas-yollar';
@@ -93,7 +92,15 @@ export default function UcuncuTarafBetikleri() {
     if (hassas && betikYuklenmisMi()) window.location.reload();
   }, [hassas, yol]);
 
-  // GA'yi next/script yerine ELLE yukluyoruz.
+  // GA ve AdSense next/script yerine ELLE yukleniyor.
+  //
+  // AdSense eskiden `afterInteractive` idi: sayfa etkilesime hazir olur
+  // olmaz yukleniyordu, ustelik React onu <head>'e onden yukleme olarak
+  // tasiyordu. Mobil PageSpeed'de 254 KB ile en buyuk ucuncu taraf yukuydu
+  // ve ilk boyamayla ag icin yarisiyordu. Reklam slotlari betik gelmeden
+  // once de `adsbygoogle.push` ile siraya giriyor; betik gelince
+  // dolduruluyor, yani gecikme reklamlari kaybettirmiyor.
+  //
   //
   // `lazyOnload` window load olayina bagli. Kok layout'tayken bu
   // sorunsuzdu: bilesen belge ilk render edilirken baglaniyordu. Artik
@@ -106,11 +113,19 @@ export default function UcuncuTarafBetikleri() {
   // degil, bos ana is parcaciginda) ama yeniden baglanmada da calisiyor.
   useEffect(() => {
     if (hassas) return;
-    if (document.querySelector('script[src*="googletagmanager"]')) return;
+    if (document.querySelector('script[src*="googlesyndication"]') && document.querySelector('script[src*="googletagmanager"]')) return;
 
     let iptal = false;
     const yukle = () => {
-      if (iptal || document.querySelector('script[src*="googletagmanager"]')) return;
+      if (iptal) return;
+      if (!document.querySelector('script[src*="googlesyndication"]')) {
+        const reklam = document.createElement('script');
+        reklam.async = true;
+        reklam.crossOrigin = 'anonymous';
+        reklam.src = 'https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-4400330012095219';
+        document.head.appendChild(reklam);
+      }
+      if (document.querySelector('script[src*="googletagmanager"]')) return;
       const el = document.createElement('script');
       el.async = true;
       el.src = 'https://www.googletagmanager.com/gtag/js?id=' + GA_ID;
@@ -133,18 +148,7 @@ export default function UcuncuTarafBetikleri() {
     return () => { iptal = true; };
   }, [hassas]);
 
-  if (hassas) return null;
-
-  return (
-    <>
-      {/* AdSense. React bu etiketi head'e tasiyor; Google'in dogrulama
-          taramasi ana sayfa ve ilan sayfalarindan geciyor, orada
-          degismedi. */}
-      <Script
-        src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-4400330012095219"
-        crossOrigin="anonymous"
-        strategy="afterInteractive"
-      />
-    </>
-  );
+  // AdSense site dogrulamasi kok layout'taki google-adsense-account meta
+  // etiketiyle yapiliyor; betigin sunucu HTML'inde olmasi gerekmiyor.
+  return null;
 }

@@ -55,7 +55,6 @@
   --header-h: 68px;
 
   --font-display: var(--font-saira), system-ui, sans-serif;
-  --font-cond: var(--font-saira-cond), var(--font-saira), sans-serif;
   --font-body: var(--font-hanken), system-ui, sans-serif;
   --font-mono: var(--font-space-mono), ui-monospace, monospace;
 }
