@@ -18,6 +18,7 @@ import { analytics } from '@/lib/analytics';
 import { olc, rastgeleKimlik } from '@/lib/olcum';
 import toast from 'react-hot-toast';
 import Link from 'next/link';
+import Image from 'next/image';
 import { girisAdresi, suAnkiYol } from '@/lib/donus';
 import { oneCikanGecerliMi } from '@/lib/oneCikan';
 import { TamEkranGaleri } from '@/components/ui/TamEkranGaleri';
@@ -420,14 +421,21 @@ export default function ListingDetailClient({ initialListing }: { initialListing
                 onClick={() => setGaleriAcik(true)}
                 aria-label={`${listing.title} fotoğraflarını tam ekran aç`}
                 style={{
-                  width: '100%', height: '100%', padding: 0, border: 0,
+                  position: 'relative', width: '100%', height: '100%', padding: 0, border: 0,
                   background: 'transparent', cursor: 'zoom-in', display: 'block',
                 }}
               >
-                <img
+                {/* Sayfanin LCP ogesi. Once orijinal dosya (864x1920 gibi)
+                    duz <img> ile iniyordu ve tarayici onu ancak JS
+                    calisinca buluyordu. next/image: kucultulmus kopya,
+                    ilk fotograf icin onden yukleme (priority). */}
+                <Image
                   src={images[imgIdx].url}
                   alt={listing.title}
-                  style={{ width: '100%', height: '100%', objectFit: 'contain' }}
+                  fill
+                  sizes="(max-width: 900px) 100vw, 60vw"
+                  priority={imgIdx === 0}
+                  style={{ objectFit: 'contain' }}
                 />
               </button>
             ) : (
@@ -487,9 +495,9 @@ export default function ListingDetailClient({ initialListing }: { initialListing
                   aria-selected={i === imgIdx}
                   aria-label={`Fotoğraf ${i + 1} / ${images.length}`}
                   onClick={() => setImgIdx(i)}
-                  style={{ width: 76, height: 62, borderRadius: 8, overflow: 'hidden', border: '2px solid ' + (i === imgIdx ? 'var(--accent)' : 'var(--line)'), opacity: i === imgIdx ? 1 : 0.65, padding: 0, flexShrink: 0, cursor: 'pointer' }}
+                  style={{ position: 'relative', width: 76, height: 62, borderRadius: 8, overflow: 'hidden', border: '2px solid ' + (i === imgIdx ? 'var(--accent)' : 'var(--line)'), opacity: i === imgIdx ? 1 : 0.65, padding: 0, flexShrink: 0, cursor: 'pointer' }}
                 >
-                  <img src={img.url} style={{ width: '100%', height: '100%', objectFit: 'cover' }} alt="" />
+                  <Image src={img.url} alt="" fill sizes="76px" style={{ objectFit: 'cover' }} />
                 </button>
               ))}
             </div>
@@ -680,9 +688,9 @@ export default function ListingDetailClient({ initialListing }: { initialListing
                     {/* Hedef usePathname'den: suAnkiYol() sunucuda bos doner,
                         sunucu HTML'indeki adres donus hedefsiz kalir ve
                         hydration uyusmazligi olusur. */}
-                    <Link href={girisAdresi({ hedef: yol, niyet: 'mesaj', ilan: listing.slug ?? listing.id })} style={{ color: 'var(--accent)', fontWeight: 600 }}>giriş yap</Link>
+                    <Link href={girisAdresi({ hedef: yol, niyet: 'mesaj', ilan: listing.slug ?? listing.id })} style={{ color: 'var(--accent-metin)', fontWeight: 600 }}>giriş yap</Link>
                     {' '}veya{' '}
-                    <Link href="/kayit" style={{ color: 'var(--accent)', fontWeight: 600 }}>üye ol</Link>
+                    <Link href="/kayit" style={{ color: 'var(--accent-metin)', fontWeight: 600 }}>üye ol</Link>
                   </p>
                 )}
               </div>
@@ -871,7 +879,7 @@ export default function ListingDetailClient({ initialListing }: { initialListing
                 <div style={{ fontSize: 12, color: 'var(--ink-3)', lineHeight: 1.5 }}>
                   Satıcıyla mesajlaşarak buluşma yeri ve ödeme şeklini belirleyin. Ödemeyi teslimatta yapın — önceden yabancılara para göndermeyin.
                 </div>
-                <Link href="/sss" style={{ fontSize: 11, color: 'var(--accent)', textDecoration: 'none', fontWeight: 600, marginTop: 4, display: 'inline-block' }}>
+                <Link href="/sss" style={{ fontSize: 11, color: 'var(--accent-metin)', textDecoration: 'none', fontWeight: 600, marginTop: 4, display: 'inline-block' }}>
                   Sıkça sorulan sorular
                 </Link>
               </div>
@@ -941,7 +949,7 @@ export default function ListingDetailClient({ initialListing }: { initialListing
                   </Link>
                 ))}
               </div>
-              <Link href={`/kullanici/${listing.seller.id}`} style={{ display: 'block', textAlign: 'center', fontSize: 12.5, color: 'var(--accent)', fontWeight: 600, textDecoration: 'none', marginTop: 12 }}>
+              <Link href={`/kullanici/${listing.seller.id}`} style={{ display: 'block', textAlign: 'center', fontSize: 12.5, color: 'var(--accent-metin)', fontWeight: 600, textDecoration: 'none', marginTop: 12 }}>
                 Tüm ilanlarını gör
               </Link>
             </div>

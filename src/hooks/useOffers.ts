@@ -38,11 +38,15 @@ export function useReceivedOffers() {
   });
 }
 
+// Oturum gerektiren uc: girissiz ziyaretcide 401 ve ardindan basarisiz
+// bir /auth/refresh uretiyordu (konsolda dort hata, PageSpeed "En iyi
+// uygulamalar" puanini dusuruyordu).
 export function useListingOffers(listingId: string) {
+  const oturumVar = useAuthStore((s) => !!s.user);
   return useQuery({
     queryKey: ['listing-offers', listingId],
     queryFn: () => api.get(`/offers/listing/${listingId}`).then((r) => r.data),
-    enabled: !!listingId,
+    enabled: !!listingId && oturumVar,
   });
 }
 
